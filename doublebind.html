@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Oscillation via Restricted↔Nuanced Mapping — Agenda / Bridging Teacher / Subject Teacher / Students</title>
+  <style>
+    :root { --bg:#0b0d12; --panel:#121624; --ink:#e9ecf1; --muted:#a8b0c0; --line:#2a3350; }
+    html,body { height:100%; margin:0; background:var(--bg); color:var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    .wrap { max-width:1220px; margin:0 auto; padding:18px; display:grid; gap:14px; grid-template-columns: 1.3fr 0.7fr; }
+    header { grid-column:1 / -1; display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
+    h1 { margin:0; font-size:18px; letter-spacing:.2px; }
+    .sub { color:var(--muted); font-size:13px; margin-top:6px; line-height:1.35; max-width: 980px; }
+    .card { background:var(--panel); border:1px solid #1c2340; border-radius:16px;
+      box-shadow: 0 10px 26px rgba(0,0,0,.35); overflow:hidden; }
+    .card .hd { padding:12px 14px; border-bottom:1px solid #1c2340; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .card .bd { padding:14px; }
+    canvas { width:100%; background:
+      radial-gradient(1200px 460px at 20% 0%, rgba(120,140,255,.10), transparent 55%),
+      radial-gradient(900px 420px at 80% 0%, rgba(255,160,120,.08), transparent 60%);
+      border-radius:14px; border:1px solid #1c2340; display:block; }
+    #plot { height:380px; }
+    #trend { height:120px; margin-top:10px; }
+
+    .legend { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .pill { display:inline-flex; gap:6px; align-items:center; padding:4px 8px; border-radius:999px;
+      border:1px solid #2a3350; font-size:11px; color:var(--muted); }
+    .sw { width:10px; height:10px; border-radius:999px; display:inline-block; }
+
+    .btns { display:flex; gap:8px; flex-wrap:wrap; }
+    button {
+      background:#1b2340; color:var(--ink); border:1px solid #2a3350;
+      border-radius:12px; padding:9px 10px; font-weight:800; cursor:pointer;
+    }
+    button:hover { filter: brightness(1.08); }
+    button:active { transform: translateY(1px); }
+    button.primary { background:#2a3cff; border-color:#3b4cff; }
+    button.warn { background:#3a1f29; border-color:#6a2a3d; }
+
+    .kpi { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .kpi .box { border:1px solid #1c2340; border-radius:14px; padding:10px; background: rgba(255,255,255,.02); }
+    .k { font-size:11px; color:var(--muted); }
+    .v { font-size:16px; font-weight:900; margin-top:4px; }
+
+    .row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px dashed #212a45; }
+    .row:last-child { border-bottom:none; }
+    label { font-size:12px; color:var(--muted); }
+    input[type="range"] { width: 250px; }
+    .note { color:var(--muted); font-size:12px; line-height:1.45; }
+
+    .log { height:255px; overflow:auto; padding-right:6px; }
+    .msg { border:1px solid #1c2340; border-radius:14px; padding:10px; margin:10px 0; background: rgba(255,255,255,.02); }
+    .msg .who { font-size:11px; color:var(--muted); margin-bottom:6px; }
+
+    .err {
+      position: fixed; left: 14px; right: 14px; bottom: 14px;
+      background: rgba(80, 18, 26, 0.92); border: 1px solid #6a2a3d; color: #ffd6dc;
+      padding: 10px 12px; border-radius: 14px; font-size: 12px; display:none; z-index: 9999;
+      white-space: pre-wrap;
+    }
+    @media (max-width: 980px) {
+      .wrap { grid-template-columns:1fr; }
+      #plot { height:340px; }
+      input[type="range"] { width: 190px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Teacher Oscillation: Restricted Agenda ↔ Nuanced Subject ↔ Students</h1>
+        <div class="sub">
+          Teacher oscillates because restricted agenda language (low σ) can’t map onto nuanced subject discourse (higher σ).
+          Moving right requires nuance (σ↑), but that reduces overlap with the agenda — pulling the teacher back left.
+        </div>
+      </div>
+      <div class="legend">
+        <span class="pill"><span class="sw" style="background:#8fd3ff"></span>Agenda (restricted)</span>
+        <span class="pill"><span class="sw" style="background:#ffffff"></span>Bridging teacher</span>
+        <span class="pill"><span class="sw" style="background:#ffd36a"></span>Subject teacher</span>
+        <span class="pill"><span class="sw" style="background:#ff8ab1"></span>Students</span>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="hd">
+        <strong>Distributions + overlaps</strong>
+        <span class="pill" id="modePill">Teacher register: …</span>
+      </div>
+      <div class="bd">
+        <canvas id="plot"></canvas>
+        <canvas id="trend"></canvas>
+        <div class="note" style="margin-top:10px;">
+          Shading shows overlap of the bridging teacher with (a) agenda, (b) subject teacher, (c) students.
+          Bottom chart tracks σ (complexity): agenda σ↓, subject/students σ↑, teacher σ oscillates.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hd">
+        <strong>Controls</strong>
+        <div class="btns">
+          <button class="primary" id="playBtn" type="button">Play</button>
+          <button id="stepBtn" type="button">Step</button>
+          <button class="warn" id="resetBtn" type="button">Reset</button>
+        </div>
+      </div>
+      <div class="bd">
+        <div class="kpi">
+          <div class="box"><div class="k">Turn</div><div class="v" id="turnKpi">0</div></div>
+          <div class="box"><div class="k">Mode switches</div><div class="v" id="oscKpi">0</div></div>
+          <div class="box"><div class="k">Overlap T↔Agenda</div><div class="v" id="ovTAKpi">0.00</div></div>
+          <div class="box"><div class="k">Overlap T↔Subject</div><div class="v" id="ovTTKpi">0.00</div></div>
+          <div class="box"><div class="k">Overlap T↔Students</div><div class="v" id="ovTSKpi">0.00</div></div>
+          <div class="box"><div class="k">Mapping capacity (0–1)</div><div class="v" id="mapKpi">0.00</div></div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <div>
+            <label for="institutionPressure">Institution pressure (pull left)</label>
+            <div class="note">Stronger pressure increases attraction to the agenda position/register.</div>
+          </div>
+          <input id="institutionPressure" type="range" min="0" max="1.8" step="0.01" value="1.00" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="learnerNeed">Learner need (pull right)</label>
+            <div class="note">Stronger need increases attraction to subject/students.</div>
+          </div>
+          <input id="learnerNeed" type="range" min="0" max="1.8" step="0.01" value="1.05" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="agendaSimplify">Agenda simplification rate (agenda σ↓)</label>
+          </div>
+          <input id="agendaSimplify" type="range" min="0" max="1.6" step="0.01" value="0.95" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="subjectComplexify">Subject complexity growth (subject/students σ↑)</label>
+          </div>
+          <input id="subjectComplexify" type="range" min="0" max="1.6" step="0.01" value="1.05" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="nuanceThreshold">Nuance threshold (σ needed to “map” right side)</label>
+            <div class="note">Higher = it takes more nuance (higher teacher σ) to communicate with subject/students.</div>
+          </div>
+          <input id="nuanceThreshold" type="range" min="0.7" max="2.2" step="0.01" value="1.35" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="mappingDifficulty">Mapping difficulty</label>
+            <div class="note">Higher = restricted vocabulary is harder to translate → more oscillation.</div>
+          </div>
+          <input id="mappingDifficulty" type="range" min="0" max="1.6" step="0.01" value="1.00" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="teacherDamping">Teacher damping (resilience)</label>
+            <div class="note">Higher = teacher holds a steadier compromise (less oscillation amplitude).</div>
+          </div>
+          <input id="teacherDamping" type="range" min="0" max="1.4" step="0.01" value="0.55" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="interactionNoise">Interaction noise</label>
+            <div class="note">Adds jitter to switching and movement.</div>
+          </div>
+          <input id="interactionNoise" type="range" min="0" max="1" step="0.01" value="0.22" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="teacherNuancedSigma">Teacher σ target when nuanced (right register)</label>
+          </div>
+          <input id="teacherNuancedSigma" type="range" min="1.1" max="2.4" step="0.01" value="1.75" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="grid-column:1 / -1;">
+      <div class="hd">
+        <strong>Conversation trace</strong>
+        <span class="pill" id="statusPill">…</span>
+      </div>
+      <div class="bd">
+        <div class="log" id="log"></div>
+        <div class="note">
+          When teacher goes right but stays restricted, mapping capacity stays low → subject/students remain “unreached.”
+          To reach them, teacher increases σ (nuance), which pushes them away from the agenda → then institutional pull yanks them back.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="err" class="err"></div>
+
+<script>
+window.addEventListener("DOMContentLoaded", () => {
+  const errEl = document.getElementById("err");
+  function showErr(e) {
+    errEl.style.display = "block";
+    errEl.textContent = "Runtime error:\n" + (e && e.stack ? e.stack : String(e));
+  }
+  window.addEventListener("error", (ev) => showErr(ev.error || ev.message));
+  window.addEventListener("unhandledrejection", (ev) => showErr(ev.reason));
+
+  try {
+    const $ = (id) => document.getElementById(id);
+    const clamp = (v,a,b) => Math.max(a, Math.min(b,v));
+
+    /* ---- Math ---- */
+    function gaussian(x, mu, sigma) {
+      const z = (x - mu) / sigma;
+      return Math.exp(-0.5*z*z) / (sigma * Math.sqrt(2*Math.PI));
+    }
+    function overlapArea(mu1, s1, mu2, s2) {
+      const lo = Math.min(mu1 - 6*s1, mu2 - 6*s2);
+      const hi = Math.max(mu1 + 6*s1, mu2 + 6*s2);
+      const steps = 1500;
+      const dx = (hi - lo) / steps;
+      let area = 0;
+      for (let i=0;i<=steps;i++){
+        const x = lo + i*dx;
+        area += Math.min(gaussian(x,mu1,s1), gaussian(x,mu2,s2)) * dx;
+      }
+      return clamp(area, 0, 1);
+    }
+    function randn(){
+      let u=0,v=0; while(u===0) u=Math.random(); while(v===0) v=Math.random();
+      return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+    }
+    function hexToRgba(hex, a) {
+      const h = hex.replace("#","");
+      const r = parseInt(h.slice(0,2),16);
+      const g = parseInt(h.slice(2,4),16);
+      const b = parseInt(h.slice(4,6),16);
+      return `rgba(${r},${g},${b},${a})`;
+    }
+
+    /* ---- Params ---- */
+    function params(){
+      return {
+        institutionPressure: parseFloat($("institutionPressure").value),
+        learnerNeed: parseFloat($("learnerNeed").value),
+        agendaSimplify: parseFloat($("agendaSimplify").value),
+        subjectComplexify: parseFloat($("subjectComplexify").value),
+        nuanceThreshold: parseFloat($("nuanceThreshold").value),
+        mappingDifficulty: parseFloat($("mappingDifficulty").value),
+        teacherDamping: parseFloat($("teacherDamping").value),
+        interactionNoise: parseFloat($("interactionNoise").value),
+        teacherNuancedSigma: parseFloat($("teacherNuancedSigma").value),
+      };
+    }
+
+    /* ---- Colors & domain ---- */
+    const COLORS = {
+      agenda: "#8fd3ff",
+      teacher:"#ffffff",
+      subjT:  "#ffd36a",
+      studs:  "#ff8ab1"
+    };
+    const X = { min:-5.2, max: 5.2 };
+
+    /* ---- State ---- */
+    const state = {
+      turn: 0,
+      running: false,
+      timer: null,
+      switches: 0,
+      // register: "restricted" (agenda-like) or "nuanced" (subject-like)
+      register: "restricted",
+      vTeacher: 0,
+      hist: { a:[], t:[], st:[], ss:[] },
+      agenda: { mu:-3.7, sigma:0.80 },
+      subjTeacher: { mu: 2.2, sigma:1.10 },
+      students: { mu: 3.4, sigma:1.55 },
+      teacher: { mu:-0.8, sigma:0.90 }
+    };
+
+    /* ---- Conversation ---- */
+    function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+    function agendaUtter(){
+      return pick([
+        "Standardise: one workflow, one dashboard, one KPI.",
+        "Reduce variance: define the taxonomy, enforce consistent capture.",
+        "We need measurable indicators and automated reporting."
+      ]);
+    }
+    function subjTeacherUtter(){
+      return pick([
+        "In this topic, meaning depends on context and disciplinary conventions.",
+        "We have to surface assumptions; otherwise the same term shifts underneath us.",
+        "The nuance is not noise — it’s the content of the subject."
+      ]);
+    }
+    function studentsUtter(){
+      return pick([
+        "The metric doesn’t reflect what we were trying to understand.",
+        "We can’t translate the dashboard into ‘what to do next’ in the subject.",
+        "We need examples and discussion — not just numbers."
+      ]);
+    }
+    function bridgingTeacherUtter(reg, mapCap){
+      if (reg === "restricted") {
+        return pick([
+          "I’ll keep it simple: follow the steps and record the indicators.",
+          "Let’s translate your work into a small set of measurable features.",
+          "We can do this with a checklist so it stays consistent."
+        ]) + ` (mapping=${mapCap.toFixed(2)})`;
+      }
+      return pick([
+        "Let’s interpret the numbers inside the subject’s meanings and constraints.",
+        "We’ll widen the language: what does the metric miss, and why?",
+        "We’ll map indicators to examples, explanations, and disciplinary judgment."
+      ]) + ` (mapping=${mapCap.toFixed(2)})`;
+    }
+
+    const logEl = $("log");
+    function appendMsg(who, text, tag){
+      const div = document.createElement("div");
+      div.className = "msg";
+      const whoLine = document.createElement("div");
+      whoLine.className = "who";
+      whoLine.textContent = who + (tag ? (" • " + tag) : "");
+      const body = document.createElement("div");
+      body.textContent = text;
+      div.appendChild(whoLine);
+      div.appendChild(body);
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    /* ---- Canvas ---- */
+    const plot = $("plot");
+    const trend = $("trend");
+    const pctx = plot.getContext("2d");
+    const tctx = trend.getContext("2d");
+
+    function resizeCanvasToDisplaySize(canvas) {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.max(1, Math.round(rect.width * dpr));
+      const h = Math.max(1, Math.round(rect.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    }
+
+    /* ---- Mapping capacity ----
+       If teacher sigma is below nuanceThreshold, they cannot "carry" nuanced meanings.
+       Capacity ramps from 0 to 1 as teacher.sigma passes threshold.
+       MappingDifficulty makes the ramp steeper/harder.
+    */
+    function mappingCapacity(teacherSigma, nuanceThreshold, mappingDifficulty) {
+      const x = (teacherSigma - nuanceThreshold);
+      const k = 2.2 + 2.0 * mappingDifficulty; // steepness
+      // logistic
+      const cap = 1 / (1 + Math.exp(-k * x));
+      return clamp(cap, 0, 1);
+    }
+
+    /* ---- Rendering ---- */
+    function redraw(){
+      resizeCanvasToDisplaySize(plot);
+      const W = plot.width, H = plot.height;
+      pctx.clearRect(0,0,W,H);
+
+      const pad = { l:52, r:18, t:18, b:40 };
+      const plotW = W - pad.l - pad.r;
+      const plotH = H - pad.t - pad.b;
+
+      const toX = x => pad.l + (x - X.min) / (X.max - X.min) * plotW;
+
+      const A = state.agenda, T = state.teacher, ST = state.subjTeacher, S = state.students;
+
+      const yMax = Math.max(
+        gaussian(A.mu,A.mu,A.sigma),
+        gaussian(T.mu,T.mu,T.sigma),
+        gaussian(ST.mu,ST.mu,ST.sigma),
+        gaussian(S.mu,S.mu,S.sigma)
+      ) * 1.25;
+      const toY = y => pad.t + (1 - y / yMax) * plotH;
+
+      // axes
+      pctx.strokeStyle = "#2a3350";
+      pctx.lineWidth = 1;
+      pctx.beginPath();
+      pctx.moveTo(pad.l, pad.t);
+      pctx.lineTo(pad.l, pad.t + plotH);
+      pctx.lineTo(pad.l + plotW, pad.t + plotH);
+      pctx.stroke();
+
+      // ticks
+      pctx.fillStyle = "#a8b0c0";
+      pctx.font = "12px system-ui";
+      for (let x=-5;x<=5;x++){
+        const px = toX(x);
+        pctx.strokeStyle = "rgba(42,51,80,0.60)";
+        pctx.beginPath();
+        pctx.moveTo(px, pad.t + plotH);
+        pctx.lineTo(px, pad.t + plotH + 6);
+        pctx.stroke();
+        pctx.fillText(String(x), px - 4, pad.t + plotH + 22);
+      }
+      pctx.fillText("Utterance-space (restricted agenda ←→ nuanced subject/students)", pad.l, H - 10);
+
+      const N = 950;
+      const xs = new Array(N);
+      for (let i=0;i<N;i++) xs[i] = X.min + (X.max - X.min) * i / (N-1);
+
+      const yA  = xs.map(x => gaussian(x, A.mu, A.sigma));
+      const yT  = xs.map(x => gaussian(x, T.mu, T.sigma));
+      const yST = xs.map(x => gaussian(x, ST.mu, ST.sigma));
+      const yS  = xs.map(x => gaussian(x, S.mu, S.sigma));
+
+      // overlaps (teacher with each)
+      shadeMin(xs, yT, yA,  hexToRgba(COLORS.agenda, 0.18));
+      shadeMin(xs, yT, yST, hexToRgba(COLORS.subjT,  0.16));
+      shadeMin(xs, yT, yS,  hexToRgba(COLORS.studs,  0.14));
+
+      // curves
+      stroke(xs, yA,  COLORS.agenda, 2.5);
+      stroke(xs, yST, COLORS.subjT,  2.5);
+      stroke(xs, yS,  COLORS.studs,  2.5);
+      stroke(xs, yT,  COLORS.teacher,2.9);
+
+      // mean markers
+      meanMarker(A.mu,  COLORS.agenda, "μ agenda");
+      meanMarker(T.mu,  COLORS.teacher,"μ teacher");
+      meanMarker(ST.mu, COLORS.subjT,  "μ subj-teacher");
+      meanMarker(S.mu,  COLORS.studs,  "μ students");
+
+      const ovTA  = overlapArea(T.mu,T.sigma,A.mu,A.sigma);
+      const ovTST = overlapArea(T.mu,T.sigma,ST.mu,ST.sigma);
+      const ovTS  = overlapArea(T.mu,T.sigma,S.mu,S.sigma);
+
+      const p = params();
+      const mapCap = mappingCapacity(T.sigma, p.nuanceThreshold, p.mappingDifficulty);
+
+      $("turnKpi").textContent = String(state.turn);
+      $("oscKpi").textContent = String(state.switches);
+      $("ovTAKpi").textContent = ovTA.toFixed(2);
+      $("ovTTKpi").textContent = ovTST.toFixed(2);
+      $("ovTSKpi").textContent = ovTS.toFixed(2);
+      $("mapKpi").textContent = mapCap.toFixed(2);
+
+      $("statusPill").textContent = state.running ? "Running…" : "Paused";
+      $("modePill").textContent = `Teacher register: ${state.register} (σ=${T.sigma.toFixed(2)})`;
+
+      pctx.fillStyle = "#a8b0c0";
+      pctx.font = "12px system-ui";
+      pctx.fillText(
+        `Overlaps: T↔Agenda=${ovTA.toFixed(2)}  T↔SubjTeacher=${ovTST.toFixed(2)}  T↔Students=${ovTS.toFixed(2)}   |  mapping=${mapCap.toFixed(2)}`,
+        pad.l, pad.t + 14
+      );
+
+      function stroke(xarr, yarr, color, lw){
+        pctx.strokeStyle = color; pctx.lineWidth = lw;
+        pctx.beginPath();
+        pctx.moveTo(toX(xarr[0]), toY(yarr[0]));
+        for (let i=1;i<xarr.length;i++) pctx.lineTo(toX(xarr[i]), toY(yarr[i]));
+        pctx.stroke();
+      }
+      function shadeMin(xarr, a, b, fill){
+        pctx.fillStyle = fill;
+        pctx.beginPath();
+        pctx.moveTo(toX(xarr[0]), toY(0));
+        for (let i=0;i<xarr.length;i++){
+          pctx.lineTo(toX(xarr[i]), toY(Math.min(a[i], b[i])));
+        }
+        pctx.lineTo(toX(xarr[xarr.length-1]), toY(0));
+        pctx.closePath();
+        pctx.fill();
+      }
+      function meanMarker(mu, color, label){
+        const x = toX(mu);
+        pctx.strokeStyle = color; pctx.lineWidth = 1.25;
+        pctx.beginPath();
+        pctx.moveTo(x, pad.t);
+        pctx.lineTo(x, pad.t + plotH);
+        pctx.stroke();
+        pctx.fillStyle = color;
+        pctx.font = "11px system-ui";
+        pctx.fillText(label, x + 6, pad.t + plotH - 8);
+      }
+
+      drawTrend();
+    }
+
+    function drawTrend(){
+      resizeCanvasToDisplaySize(trend);
+      const W = trend.width, H = trend.height;
+      tctx.clearRect(0,0,W,H);
+
+      const pad = { l:52, r:18, t:18, b:28 };
+      const w = W - pad.l - pad.r;
+      const h = H - pad.t - pad.b;
+
+      // axes
+      tctx.strokeStyle = "#2a3350";
+      tctx.lineWidth = 1;
+      tctx.beginPath();
+      tctx.moveTo(pad.l, pad.t);
+      tctx.lineTo(pad.l, pad.t + h);
+      tctx.lineTo(pad.l + w, pad.t + h);
+      tctx.stroke();
+
+      tctx.fillStyle = "#a8b0c0";
+      tctx.font = "12px system-ui";
+      tctx.fillText("σ over time (complexity)", pad.l, pad.t - 2);
+
+      const hist = state.hist;
+      const n = hist.a.length;
+      if (n < 2) return;
+
+      const all = [...hist.a, ...hist.t, ...hist.st, ...hist.ss];
+      const sMin = Math.min(...all, 0.45);
+      const sMax = Math.max(...all, 2.40);
+
+      const toX = i => pad.l + (i/(n-1))*w;
+      const toY = s => pad.t + (1 - (s - sMin)/(sMax - sMin + 1e-9))*h;
+
+      // guides
+      tctx.strokeStyle = "rgba(42,51,80,0.50)";
+      tctx.lineWidth = 1;
+      for (let k=0;k<=3;k++){
+        const yy = pad.t + (k/3)*h;
+        tctx.beginPath();
+        tctx.moveTo(pad.l, yy);
+        tctx.lineTo(pad.l + w, yy);
+        tctx.stroke();
+      }
+
+      line(hist.a,  "#8fd3ff");
+      line(hist.t,  "#ffffff");
+      line(hist.st, "#ffd36a");
+      line(hist.ss, "#ff8ab1");
+
+      tctx.fillStyle = "#a8b0c0";
+      tctx.font = "11px system-ui";
+      tctx.fillText(`min=${sMin.toFixed(2)} max=${sMax.toFixed(2)}`, pad.l, pad.t + h + 22);
+
+      function line(arr, color){
+        tctx.strokeStyle = color; tctx.lineWidth = 2;
+        tctx.beginPath();
+        tctx.moveTo(toX(0), toY(arr[0]));
+        for (let i=1;i<arr.length;i++) tctx.lineTo(toX(i), toY(arr[i]));
+        tctx.stroke();
+      }
+    }
+
+    /* ---- Dynamics: oscillation between agenda and learners, driven by mapping bottleneck ---- */
+    function stepModel(){
+      const p = params();
+      const A = state.agenda, ST = state.subjTeacher, S = state.students, T = state.teacher;
+
+      // 1) Agenda simplifies (σ↓) and stays left / drifts slightly left
+      const aTargetSigma = 0.45;
+      A.sigma += (aTargetSigma - A.sigma) * (0.02 + 0.09*p.agendaSimplify);
+      A.mu    += (-3.95 - A.mu) * (0.01 + 0.02*p.agendaSimplify);
+      A.sigma = clamp(A.sigma, 0.45, 1.10);
+      A.mu    = clamp(A.mu, X.min+0.6, X.max-0.6);
+
+      // 2) Subject teacher + students complexify (σ↑), drift slightly right (richer framing)
+      const stTarget = 1.55;
+      const sTarget  = 2.15;
+      ST.sigma += (stTarget - ST.sigma) * (0.02 + 0.07*p.subjectComplexify);
+      S.sigma  += (sTarget  - S.sigma)  * (0.02 + 0.08*p.subjectComplexify);
+      ST.mu    += (2.45 - ST.mu) * (0.008 + 0.016*p.subjectComplexify);
+      S.mu     += (3.75 - S.mu)  * (0.008 + 0.018*p.subjectComplexify);
+      ST.sigma = clamp(ST.sigma, 0.75, 1.90);
+      S.sigma  = clamp(S.sigma,  0.95, 2.40);
+      ST.mu    = clamp(ST.mu, X.min+0.6, X.max-0.6);
+      S.mu     = clamp(S.mu,  X.min+0.6, X.max-0.6);
+
+      // 3) Mapping capacity (teacher needs nuance σ to map right side)
+      const mapCap = mappingCapacity(T.sigma, p.nuanceThreshold, p.mappingDifficulty);
+
+      // 4) Compute overlaps (true)
+      const ovTA  = overlapArea(T.mu,T.sigma,A.mu,A.sigma);
+      const ovTST = overlapArea(T.mu,T.sigma,ST.mu,ST.sigma);
+      const ovTS  = overlapArea(T.mu,T.sigma,S.mu,S.sigma);
+
+      // Effective "reach" to the right is throttled by mapping capacity
+      const effRight = (0.55*ovTST + 0.45*ovTS) * (0.15 + 0.85*mapCap);
+      const effLeft  = ovTA;
+
+      // 5) Decide teacher register:
+      // If right-reach is worse than left-reach, teacher becomes nuanced; if left-reach is worse, teacher becomes restricted.
+      // But institutionPressure biases toward restricted, learnerNeed biases toward nuanced.
+      const bias = (p.learnerNeed - p.institutionPressure) * 0.12;
+      const noisyDelta = (effRight - effLeft) + bias + randn()*0.05*p.interactionNoise;
+
+      const prev = state.register;
+      const thresh = 0.05; // stable-ish switching
+      if (noisyDelta < -thresh) state.register = "restricted";
+      else if (noisyDelta > thresh) state.register = "nuanced";
+      if (state.register !== prev) state.switches++;
+
+      // 6) Teacher targets:
+      // - In restricted register: match agenda position and narrow σ
+      // - In nuanced register: move toward a learner-space compromise (between subject teacher and students) and broaden σ
+      const learnerMu = 0.55*ST.mu + 0.45*S.mu;
+      const targetMu = (state.register === "restricted") ? A.mu : learnerMu;
+
+      // Pull strengths:
+      // Institution pull increases when teacher deviates from agenda and when agenda overlap falls.
+      // Learner pull increases when teacher is far from learnerMu and right reach is poor.
+      const instPull = p.institutionPressure * (0.40 + 0.80*(1 - effLeft));
+      const learnPull = p.learnerNeed * (0.40 + 0.80*(1 - effRight));
+
+      // Mode weight: which pull is "active" depends on register, but both are present.
+      const wInst = (state.register === "restricted") ? 0.85 : 0.35;
+      const wLearn= (state.register === "nuanced")    ? 0.85 : 0.35;
+
+      // Damped second-order movement (velocity + damping)
+      const damping = clamp(0.12 + 0.65*p.teacherDamping, 0.12, 0.90);
+      const accel = ((targetMu - T.mu) * 0.22) +
+                    (A.mu - T.mu) * 0.05 * instPull * wInst +
+                    (learnerMu - T.mu) * 0.05 * learnPull * wLearn +
+                    randn()*0.012*p.interactionNoise;
+
+      state.vTeacher = (state.vTeacher + accel) * (1 - damping);
+      T.mu += state.vTeacher;
+
+      // Teacher sigma targets by register:
+      // - restricted: align with agenda-like compression
+      // - nuanced: broaden toward teacherNuancedSigma, but mapping capacity improves only if σ crosses threshold
+      const restrictedSigmaTarget = 0.78;
+      const nuancedSigmaTarget = p.teacherNuancedSigma;
+
+      const sigmaTarget = (state.register === "restricted") ? restrictedSigmaTarget : nuancedSigmaTarget;
+
+      // But: if teacher is trying to be nuanced yet still below threshold, sigma rises faster (struggling to map)
+      const strugglingBoost = (state.register === "nuanced" && mapCap < 0.55) ? 1.6 : 1.0;
+      T.sigma += (sigmaTarget - T.sigma) * 0.10 * strugglingBoost;
+
+      // Clamp
+      T.mu = clamp(T.mu, X.min+0.6, X.max-0.6);
+      T.sigma = clamp(T.sigma, 0.55, 2.40);
+
+      // 7) Conversation trace
+      appendMsg("Agenda", agendaUtter(), `μ=${A.mu.toFixed(2)} σ=${A.sigma.toFixed(2)} (restricted)`);
+      appendMsg("Subject teacher", subjTeacherUtter(), `μ=${ST.mu.toFixed(2)} σ=${ST.sigma.toFixed(2)} (nuanced↑)`);
+      appendMsg("Students", studentsUtter(), `μ=${S.mu.toFixed(2)} σ=${S.sigma.toFixed(2)} (nuanced↑)`);
+      appendMsg("Bridging teacher", bridgingTeacherUtter(state.register, mapCap),
+        `reg=${state.register} μ=${T.mu.toFixed(2)} σ=${T.sigma.toFixed(2)} ov(T,A)=${ovTA.toFixed(2)} ov(T,ST)=${ovTST.toFixed(2)} ov(T,S)=${ovTS.toFixed(2)}`
+      );
+
+      // 8) History for trend chart
+      state.hist.a.push(A.sigma);
+      state.hist.t.push(T.sigma);
+      state.hist.st.push(ST.sigma);
+      state.hist.ss.push(S.sigma);
+
+      const cap = 140;
+      for (const k of Object.keys(state.hist)) {
+        if (state.hist[k].length > cap) state.hist[k].shift();
+      }
+
+      state.turn++;
+      redraw();
+    }
+
+    /* ---- Controls ---- */
+    function play(){
+      if (state.running) return;
+      state.running = true;
+      $("playBtn").textContent = "Pause";
+      state.timer = setInterval(stepModel, 760);
+      redraw();
+    }
+    function pause(){
+      state.running = false;
+      $("playBtn").textContent = "Play";
+      if (state.timer) clearInterval(state.timer);
+      state.timer = null;
+      redraw();
+    }
+    function togglePlay(){ state.running ? pause() : play(); }
+
+    function resetAll(){
+      pause();
+      state.turn = 0;
+      state.switches = 0;
+      state.register = "restricted";
+      state.vTeacher = 0;
+      state.hist = { a:[], t:[], st:[], ss:[] };
+
+      state.agenda.mu = -3.7;       state.agenda.sigma = 0.80;
+      state.subjTeacher.mu = 2.2;   state.subjTeacher.sigma = 1.10;
+      state.students.mu = 3.4;      state.students.sigma = 1.55;
+      state.teacher.mu = -0.8;      state.teacher.sigma = 0.90;
+
+      logEl.innerHTML = "";
+      appendMsg("System",
+        "Reset. Agenda simplifies (σ↓). Subject teacher + students complexify (σ↑). Bridging teacher oscillates: restricted register fits agenda but can’t map nuance; nuanced register reaches learners but loses agenda overlap.",
+        "reset"
+      );
+
+      state.hist.a.push(state.agenda.sigma);
+      state.hist.t.push(state.teacher.sigma);
+      state.hist.st.push(state.subjTeacher.sigma);
+      state.hist.ss.push(state.students.sigma);
+
+      redraw();
+    }
+
+    $("playBtn").addEventListener("click", togglePlay);
+    $("stepBtn").addEventListener("click", () => { if (!state.running) stepModel(); });
+    $("resetBtn").addEventListener("click", resetAll);
+
+    ["institutionPressure","learnerNeed","agendaSimplify","subjectComplexify","nuanceThreshold",
+     "mappingDifficulty","teacherDamping","interactionNoise","teacherNuancedSigma"
+    ].forEach(id => {
+      const el = $(id);
+      el.addEventListener("input", redraw);
+      el.addEventListener("change", redraw);
+    });
+
+    window.addEventListener("resize", redraw);
+
+    // boot
+    resetAll();
+
+  } catch(e) {
+    showErr(e);
+  }
+});
+</script>
+</body>
+</html>
