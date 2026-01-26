@@ -3,70 +3,54 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dynamic Bridging with Knowledge + New Noisy Group Spawning (Fixed)</title>
+  <title>Multi-Group Learning — Teacher-Mediated Gaussian Overlap</title>
   <style>
     :root { --bg:#0b0d12; --panel:#121624; --ink:#e9ecf1; --muted:#a8b0c0; --line:#2a3350; }
     html,body { height:100%; margin:0; background:var(--bg); color:var(--ink);
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
-    .wrap { max-width:1200px; margin:0 auto; padding:18px; display:grid; gap:14px; grid-template-columns: 1.2fr 0.8fr; }
+    .wrap { max-width:1200px; margin:0 auto; padding:18px; display:grid; gap:14px; grid-template-columns: 1.25fr 0.75fr; }
     header { grid-column:1 / -1; display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
     h1 { margin:0; font-size:18px; letter-spacing:.2px; }
-    .sub { color:var(--muted); font-size:13px; margin-top:6px; line-height:1.35; max-width: 920px; }
+    .sub { color:var(--muted); font-size:13px; margin-top:6px; line-height:1.35; }
     .card { background:var(--panel); border:1px solid #1c2340; border-radius:16px;
       box-shadow: 0 10px 26px rgba(0,0,0,.35); overflow:hidden; }
     .card .hd { padding:12px 14px; border-bottom:1px solid #1c2340; display:flex; align-items:center; justify-content:space-between; gap:10px; }
     .card .bd { padding:14px; }
-    canvas { width:100%; height:410px; background:
+    canvas { width:100%; height:380px; background:
       radial-gradient(1200px 460px at 20% 0%, rgba(120,140,255,.10), transparent 55%),
       radial-gradient(900px 420px at 80% 0%, rgba(255,160,120,.08), transparent 60%);
       border-radius:14px; border:1px solid #1c2340; display:block; }
-
     .legend { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     .pill { display:inline-flex; gap:6px; align-items:center; padding:4px 8px; border-radius:999px;
       border:1px solid #2a3350; font-size:11px; color:var(--muted); }
     .sw { width:10px; height:10px; border-radius:999px; display:inline-block; }
-
     .btns { display:flex; gap:8px; flex-wrap:wrap; }
     button {
       background:#1b2340; color:var(--ink); border:1px solid #2a3350;
-      border-radius:12px; padding:9px 10px; font-weight:800; cursor:pointer;
+      border-radius:12px; padding:9px 10px; font-weight:700; cursor:pointer;
     }
     button:hover { filter: brightness(1.08); }
     button:active { transform: translateY(1px); }
     button.primary { background:#2a3cff; border-color:#3b4cff; }
     button.warn { background:#3a1f29; border-color:#6a2a3d; }
-
     .kpi { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     .kpi .box { border:1px solid #1c2340; border-radius:14px; padding:10px; background: rgba(255,255,255,.02); }
     .k { font-size:11px; color:var(--muted); }
     .v { font-size:16px; font-weight:900; margin-top:4px; }
-
     .row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px dashed #212a45; }
     .row:last-child { border-bottom:none; }
     label { font-size:12px; color:var(--muted); }
-    input[type="range"] { width: 240px; }
+    input[type="range"] { width: 230px; }
     .note { color:var(--muted); font-size:12px; line-height:1.45; }
-
-    .bars { display:flex; flex-direction:column; gap:10px; margin-top:10px; }
-    .barRow { border:1px solid #1c2340; border-radius:14px; padding:10px; background: rgba(255,255,255,.02); }
-    .barTop { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
-    .name { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:8px; }
-    .val { font-size:12px; color:var(--ink); font-weight:800; text-align:right; }
-    .meter { height:10px; border-radius:999px; background:#0f1320; border:1px solid #1c2340; overflow:hidden; }
-    .fill { height:100%; width:0%; background:#ffffff; }
-    .small { font-size:11px; color:var(--muted); margin-top:6px; line-height:1.35; }
-
-    .log { height:250px; overflow:auto; padding-right:6px; margin-top:10px; }
+    .log { height:260px; overflow:auto; padding-right:6px; }
     .msg { border:1px solid #1c2340; border-radius:14px; padding:10px; margin:10px 0; background: rgba(255,255,255,.02); }
     .msg .who { font-size:11px; color:var(--muted); margin-bottom:6px; }
-
     .err {
       position: fixed; left: 14px; right: 14px; bottom: 14px;
       background: rgba(80, 18, 26, 0.92); border: 1px solid #6a2a3d; color: #ffd6dc;
       padding: 10px 12px; border-radius: 14px; font-size: 12px; display:none; z-index: 9999;
       white-space: pre-wrap;
     }
-
     @media (max-width: 980px) {
       .wrap { grid-template-columns:1fr; }
       canvas { height:340px; }
@@ -78,32 +62,38 @@
   <div class="wrap">
     <header>
       <div>
-        <h1>Dynamic Bridging (Fixed): Knowledge Enables Mobility + New Noisy Group Spawning</h1>
+        <h1>Teacher-Mediated Learning Across Multiple Groups</h1>
         <div class="sub">
-          Curves are action/utterance distributions (μ, σ). Knowledge K (bars) is separate and grants mobility.
-          When learners become broadly aligned, a new broad noisy group appears on the far right and high-K actors shift to bridge.
-          Aligned curves are pruned to keep the display readable.
+          Each group has a Gaussian (μ, σ) over “utterance-space.”
+          The teacher starts on the left (technical precision, low σ) and moves right,
+          shifting tone/σ to bridge groups and increase both teacher-group overlap and inter-group overlap.
         </div>
       </div>
-      <div class="legend" id="legend"></div>
+      <div class="legend">
+        <span class="pill"><span class="sw" style="background:#ffffff"></span>Teacher</span>
+        <span class="pill"><span class="sw" style="background:#7aa2ff"></span>Technical (left)</span>
+        <span class="pill"><span class="sw" style="background:#ffd36a"></span>Adaptive (middle)</span>
+        <span class="pill"><span class="sw" style="background:#ff8ab1"></span>Philosophical (right)</span>
+      </div>
     </header>
 
     <div class="card">
       <div class="hd">
-        <strong>Distributions + overlap shading (primary bridger vs others)</strong>
-        <span class="pill" id="bridgePill">Bridging: …</span>
+        <strong>Distributions + overlap (teacher shading shows mediated attention)</strong>
+        <span class="pill" id="teacherModePill">Teacher mode: …</span>
       </div>
       <div class="bd">
         <canvas id="plot"></canvas>
         <div class="note" style="margin-top:10px;">
-          Cycle: align → spawn noisy right-hand group → bridge again → prune most-aligned curves.
+          Narrow σ = more constrained/precise utterances. Wider σ = more exploratory/reflective talk.
+          Overlap ≈ shared constraint/meaning. Teacher increases inter-group overlap by “bridging” when they overlap with multiple groups.
         </div>
       </div>
     </div>
 
     <div class="card">
       <div class="hd">
-        <strong>Controls & Knowledge</strong>
+        <strong>Controls</strong>
         <div class="btns">
           <button class="primary" id="playBtn" type="button">Play</button>
           <button id="stepBtn" type="button">Step</button>
@@ -113,60 +103,82 @@
       <div class="bd">
         <div class="kpi">
           <div class="box"><div class="k">Turn</div><div class="v" id="turnKpi">0</div></div>
-          <div class="box"><div class="k">Avg learner overlap</div><div class="v" id="avgKpi">0.00</div></div>
-          <div class="box"><div class="k">Weakest learner pair</div><div class="v" id="weakKpi">—</div></div>
-          <div class="box"><div class="k">Spawn status</div><div class="v" id="spawnKpi">—</div></div>
+          <div class="box"><div class="k">Avg inter-group overlap</div><div class="v" id="avgGroupKpi">0.00</div></div>
+          <div class="box"><div class="k">Teacher position (μ)</div><div class="v" id="teacherMuKpi">—</div></div>
+          <div class="box"><div class="k">Teacher breadth (σ)</div><div class="v" id="teacherSigmaKpi">—</div></div>
         </div>
 
         <div class="row" style="margin-top:10px;">
           <div>
-            <label for="learnRate">Learning rate (bridger → learners)</label>
-            <div class="note">Knowledge increases with overlap to the primary bridger.</div>
+            <label for="teacherMove">Teacher movement speed</label>
+            <div class="note">Higher = teacher traverses the space faster.</div>
           </div>
-          <input id="learnRate" type="range" min="0" max="2.0" step="0.01" value="1.00" />
+          <input id="teacherMove" type="range" min="0.05" max="1.2" step="0.01" value="0.40" />
         </div>
 
         <div class="row">
           <div>
-            <label for="peerRate">Peer learning rate (learner ↔ learner)</label>
-            <div class="note">Knowledge also grows from learner-learner overlap.</div>
+            <label for="bridgeStrength">Bridging strength (teacher helps groups overlap)</label>
+            <div class="note">Higher = stronger “mediated coupling” between groups when teacher overlaps with both.</div>
           </div>
-          <input id="peerRate" type="range" min="0" max="2.0" step="0.01" value="0.70" />
+          <input id="bridgeStrength" type="range" min="0" max="1.5" step="0.01" value="0.75" />
         </div>
 
         <div class="row">
           <div>
-            <label for="bridgeIntent">Bridging intent (help weakest pair)</label>
+            <label for="globalPace">Global learning pace</label>
+            <div class="note">Higher = groups adjust μ/σ faster under teacher influence.</div>
           </div>
-          <input id="bridgeIntent" type="range" min="0" max="2.0" step="0.01" value="1.10" />
+          <input id="globalPace" type="range" min="0.2" max="2.5" step="0.05" value="1.0" />
         </div>
 
         <div class="row">
           <div>
-            <label for="mobilityGain">Mobility gain from knowledge</label>
-            <div class="note">Higher makes K translate into freer movement.</div>
+            <label>Group noise levels</label>
+            <div class="note">Noise increases drift and slows tightening.</div>
           </div>
-          <input id="mobilityGain" type="range" min="0.2" max="2.5" step="0.01" value="1.20" />
+          <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span class="pill" title="Technical noise"><span class="sw" style="background:#7aa2ff"></span>T</span>
+              <input id="noiseTech" type="range" min="0" max="1" step="0.01" value="0.20" />
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span class="pill" title="Adaptive noise"><span class="sw" style="background:#ffd36a"></span>A</span>
+              <input id="noiseMid" type="range" min="0" max="1" step="0.01" value="0.35" />
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span class="pill" title="Philosophical noise"><span class="sw" style="background:#ff8ab1"></span>P</span>
+              <input id="noisePhil" type="range" min="0" max="1" step="0.01" value="0.45" />
+            </div>
+          </div>
         </div>
 
         <div class="row">
           <div>
-            <label for="noise">Interaction noise</label>
-            <div class="note">Adds jitter and slows stabilization.</div>
+            <label for="autoTarget">Teacher targets lowest overlap group</label>
+            <div class="note">When on, teacher moves toward the group with the least teacher-group overlap.</div>
           </div>
-          <input id="noise" type="range" min="0" max="1.0" step="0.01" value="0.22" />
+          <input id="autoTarget" type="checkbox" checked />
         </div>
 
-        <div class="row">
-          <div>
-            <label for="spawnThreshold">Alignment threshold to spawn new noisy group</label>
-            <div class="note">When avg learner overlap exceeds this, spawn occurs (with cooldown).</div>
-          </div>
-          <input id="spawnThreshold" type="range" min="0.35" max="0.80" step="0.01" value="0.58" />
+        <div class="note" style="margin-top:8px;">
+          Tip: set philosophical noise high + bridging high to see the teacher broaden (σ↑) to “hold” the right-side talk,
+          then translate it back toward middle/left.
         </div>
+      </div>
+    </div>
 
-        <div class="bars" id="bars"></div>
+    <div class="card" style="grid-column:1 / -1;">
+      <div class="hd">
+        <strong>Teacher & group utterances</strong>
+        <span class="pill" id="statusPill">…</span>
+      </div>
+      <div class="bd">
         <div class="log" id="log"></div>
+        <div class="note">
+          Utterances shift from technical (precise definitions) → adaptive (examples/analogies) → philosophical (reflective reframing),
+          as the teacher moves across and “translates” between groups.
+        </div>
       </div>
     </div>
   </div>
@@ -184,190 +196,280 @@ window.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("unhandledrejection", (ev) => showErr(ev.reason));
 
   try {
-    const $ = (id) => document.getElementById(id);
-    const clamp = (v,a,b) => Math.max(a, Math.min(b,v));
-
     /* ---------- Math ---------- */
     function gaussian(x, mu, sigma) {
       const z = (x - mu) / sigma;
-      return Math.exp(-0.5*z*z) / (sigma * Math.sqrt(2*Math.PI));
+      return Math.exp(-0.5 * z * z) / (sigma * Math.sqrt(2 * Math.PI));
     }
     function overlapArea(mu1, s1, mu2, s2) {
       const lo = Math.min(mu1 - 6*s1, mu2 - 6*s2);
       const hi = Math.max(mu1 + 6*s1, mu2 + 6*s2);
-      const steps = 1300;
+      const steps = 1500;
       const dx = (hi - lo) / steps;
       let area = 0;
-      for (let i=0;i<=steps;i++){
-        const x = lo + i*dx;
-        area += Math.min(gaussian(x,mu1,s1), gaussian(x,mu2,s2)) * dx;
+      for (let i = 0; i <= steps; i++) {
+        const x = lo + i * dx;
+        area += Math.min(gaussian(x, mu1, s1), gaussian(x, mu2, s2)) * dx;
       }
-      return clamp(area, 0, 1);
+      return Math.max(0, Math.min(1, area));
     }
-    function randn(){
-      let u=0,v=0; while(u===0) u=Math.random(); while(v===0) v=Math.random();
-      return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
-    }
-    function hexToRgba(hex, a) {
-      const h = hex.replace("#","");
-      const r = parseInt(h.slice(0,2),16);
-      const g = parseInt(h.slice(2,4),16);
-      const b = parseInt(h.slice(4,6),16);
-      return `rgba(${r},${g},${b},${a})`;
-    }
+    function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+    function lerp(a, b, t) { return a + (b - a) * t; }
 
-    /* ---------- Params ---------- */
-    function params(){
+    /* ---------- Params (UI) ---------- */
+    const $ = (id) => document.getElementById(id);
+
+    function getParams() {
       return {
-        learnRate: parseFloat($("learnRate").value),
-        peerRate: parseFloat($("peerRate").value),
-        bridgeIntent: parseFloat($("bridgeIntent").value),
-        mobilityGain: parseFloat($("mobilityGain").value),
-        noise: parseFloat($("noise").value),
-        spawnThreshold: parseFloat($("spawnThreshold").value),
+        teacherMove: parseFloat($("teacherMove").value),
+        bridgeStrength: parseFloat($("bridgeStrength").value),
+        globalPace: parseFloat($("globalPace").value),
+        autoTarget: $("autoTarget").checked,
+        noiseTech: parseFloat($("noiseTech").value),
+        noiseMid: parseFloat($("noiseMid").value),
+        noisePhil: parseFloat($("noisePhil").value),
       };
     }
 
-    /* ---------- Domain & palette ---------- */
-    const X = { min:-5.2, max: 5.2 };
-    const teacherColor = "#ffffff";
-    const palette = ["#7aa2ff", "#ffd36a", "#ff8ab1", "#8bffb4", "#c7a6ff", "#ffb37a", "#7affd7"];
-    function colorForIndex(i){ return palette[i % palette.length]; }
+    /* ---------- Model ---------- */
+    const COLORS = {
+      teacher: "#ffffff",
+      tech:   "#7aa2ff",
+      mid:    "#ffd36a",
+      phil:   "#ff8ab1",
+    };
 
-    /* ---------- State ---------- */
-    const MAX_LEARNERS = 4;
-    const SPAWN_COOLDOWN_TURNS = 10;
+    const X = { min: -5.2, max: 5.2 };
 
     const state = {
       turn: 0,
       running: false,
-      timer: null,
-      spawnCooldown: 0,
-      nextGroupNum: 4, // IMPORTANT: start after g1..g3 to avoid duplicates
-      agents: [],
+      // teacher starts left: technical style
+      teacher: { mu: -3.4, sigma: 0.55 },
+      // groups: initial positions & breadths
+      groups: [
+        { id:"tech", name:"Technical learners", mu:-3.0, sigma:0.65, color:COLORS.tech,  noise:0.20 },
+        { id:"mid",  name:"Adaptive learners",  mu:-0.2, sigma:1.15, color:COLORS.mid,   noise:0.35 },
+        { id:"phil", name:"Philosophical learners", mu: 3.0, sigma:1.55, color:COLORS.phil, noise:0.45 },
+      ],
+      lastTargetId: "tech",
+      timer: null
     };
 
-    function makeInitial(){
-      state.spawnCooldown = 0;
-      state.nextGroupNum = 4; // g1..g3 exist initially
-      state.agents = [
-        { id:"teacher", name:"Teacher", color:teacherColor, mu:-3.2, sigma:0.75, K:0.90, baseSigma:0.75, kind:"teacher" },
-        { id:"g1", name:"Technical learners",     color:colorForIndex(0), mu:-3.0, sigma:0.70, K:0.35, baseSigma:0.70, kind:"learner" },
-        { id:"g2", name:"Adaptive learners",      color:colorForIndex(1), mu:-0.2, sigma:1.10, K:0.25, baseSigma:1.10, kind:"learner" },
-        { id:"g3", name:"Philosophical learners", color:colorForIndex(2), mu: 3.0, sigma:1.55, K:0.30, baseSigma:1.55, kind:"learner" },
+    /* ---------- Utterance generator ---------- */
+    function teacherModeFromMu(mu) {
+      // left -> technical, middle -> adaptive, right -> philosophical
+      if (mu < -1.6) return "technical";
+      if (mu >  1.6) return "philosophical";
+      return "adaptive";
+    }
+
+    function teacherUtterance(mode, targetName) {
+      const tech = [
+        `Let’s define it precisely: what observable feature distinguishes this case?`,
+        `We can reduce ambiguity: name the constraint, then verify against an example.`,
+        `State the rule in one sentence; then test it on a counterexample.`
       ];
+      const mid = [
+        `Let’s connect this to a familiar example—what’s the closest analogy you already trust?`,
+        `Try a worked example: we’ll translate the rule into a concrete situation.`,
+        `If we reframe it as a process: step 1, step 2, step 3—where does it break?`
+      ];
+      const phil = [
+        `What assumption is doing the most work here, and what happens if we loosen it?`,
+        `What is the *meaning* of this distinction in practice—why does it matter?`,
+        `Let’s hold multiple interpretations briefly; what stays invariant across them?`
+      ];
+      const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+      const base = mode === "technical" ? pick(tech) : mode === "adaptive" ? pick(mid) : pick(phil);
+      return `To ${targetName}: ${base}`;
     }
 
-    function learners(){ return state.agents.filter(a => a.kind === "learner"); }
-
-    /* ---------- Safe bridger selection ---------- */
-    function chooseBridger(){
-      if (!state.agents || state.agents.length === 0) return null;
-      // start with teacher if present
-      let best = state.agents.find(a => a.kind === "teacher") || state.agents[0];
-      for (const a of state.agents) {
-        if (a && typeof a.K === "number" && a.K > best.K) best = a;
+    function groupUtterance(groupId, overlapTG, mode) {
+      const r = Math.random();
+      if (groupId === "tech") {
+        if (overlapTG > 0.55) return r < 0.5 ? `OK—rule accepted. Here’s a clean test case.` : `We can compress this into an algorithmic checklist.`;
+        return r < 0.5 ? `Define terms—what exactly counts as evidence?` : `This is underspecified. Can we formalize it?`;
       }
-      return best || null;
+      if (groupId === "mid") {
+        if (overlapTG > 0.55) return r < 0.5 ? `I can translate that into a worked example.` : `Let’s bridge: here’s the same idea in another context.`;
+        return r < 0.5 ? `I’m halfway there—can you show one concrete instance?` : `Maybe an analogy would stabilize this.`;
+      }
+      // phil
+      if (overlapTG > 0.55) return r < 0.5 ? `That resonates—now what does it imply about our assumptions?` : `So the concept is relational, not fixed—interesting.`;
+      return r < 0.5 ? `I’m not convinced the categories are stable—what are we privileging?` : `Let’s question the frame before we name within it.`;
     }
 
-    /* ---------- Pairs among learners ---------- */
-    function learnerPairs(){
-      const L = learners();
-      const pairs = [];
-      for (let i=0;i<L.length;i++){
-        for (let j=i+1;j<L.length;j++){
-          const a=L[i], b=L[j];
-          pairs.push({ a,b, ov: overlapArea(a.mu,a.sigma,b.mu,b.sigma) });
+    /* ---------- Canvas setup ---------- */
+    const canvas = $("plot");
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvasToDisplaySize() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.max(1, Math.round(rect.width * dpr));
+      const h = Math.max(1, Math.round(rect.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+    }
+
+    /* ---------- Rendering ---------- */
+    function redraw() {
+      resizeCanvasToDisplaySize();
+
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      const pad = { l: 52, r: 18, t: 18, b: 40 };
+      const plotW = W - pad.l - pad.r;
+      const plotH = H - pad.t - pad.b;
+
+      const toX = x => pad.l + (x - X.min) / (X.max - X.min) * plotW;
+
+      // yMax based on narrowest sigma among all
+      const all = [state.teacher, ...state.groups()];
+      let yMax = 0;
+      for (const d of all) yMax = Math.max(yMax, gaussian(d.mu, d.mu, d.sigma));
+      yMax *= 1.25;
+      const toY = y => pad.t + (1 - y / yMax) * plotH;
+
+      // axes
+      ctx.strokeStyle = "#2a3350";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pad.l, pad.t);
+      ctx.lineTo(pad.l, pad.t + plotH);
+      ctx.lineTo(pad.l + plotW, pad.t + plotH);
+      ctx.stroke();
+
+      // x ticks
+      ctx.fillStyle = "#a8b0c0";
+      ctx.font = "12px system-ui";
+      for (let x = -5; x <= 5; x += 1) {
+        const px = toX(x);
+        ctx.strokeStyle = "rgba(42,51,80,0.60)";
+        ctx.beginPath();
+        ctx.moveTo(px, pad.t + plotH);
+        ctx.lineTo(px, pad.t + plotH + 6);
+        ctx.stroke();
+        ctx.fillText(String(x), px - 4, pad.t + plotH + 22);
+      }
+      ctx.fillText("Utterance-space (technical ←→ philosophical)", pad.l, H - 10);
+
+      // build series arrays
+      const N = 950;
+      const xs = new Array(N);
+      for (let i = 0; i < N; i++) xs[i] = X.min + (X.max - X.min) * i / (N - 1);
+
+      const teacherY = xs.map(x => gaussian(x, state.teacher.mu, state.teacher.sigma));
+      const groupYs = state.groups().map(g => xs.map(x => gaussian(x, g.mu, g.sigma)));
+
+      // teacher-group overlap shading (tinted by group color)
+      for (let gi = 0; gi < state.groups().length; gi++) {
+        const g = state.groups()[gi];
+        ctx.fillStyle = hexToRgba(g.color, 0.16);
+        ctx.beginPath();
+        ctx.moveTo(toX(xs[0]), toY(0));
+        for (let i = 0; i < N; i++) {
+          const y = Math.min(teacherY[i], groupYs[gi][i]);
+          ctx.lineTo(toX(xs[i]), toY(y));
         }
+        ctx.lineTo(toX(xs[N-1]), toY(0));
+        ctx.closePath();
+        ctx.fill();
       }
-      return pairs;
-    }
-    function avgLearnerOverlap(){
-      const ps = learnerPairs();
-      if (!ps.length) return 0;
-      return ps.reduce((s,p)=>s+p.ov,0) / ps.length;
-    }
-    function weakestLearnerPair(){
-      const ps = learnerPairs();
-      if (!ps.length) return null;
-      ps.sort((x,y)=>x.ov-y.ov);
-      return ps[0];
-    }
-    function strongestLearnerPair(){
-      const ps = learnerPairs();
-      if (!ps.length) return null;
-      ps.sort((x,y)=>y.ov-x.ov);
-      return ps[0];
-    }
 
-    /* ---------- UI: legend, bars ---------- */
-    const legendEl = $("legend");
-    function renderLegend(){
-      legendEl.innerHTML = "";
-      for (const a of state.agents) {
-        const pill = document.createElement("span");
-        pill.className = "pill";
-        const sw = document.createElement("span");
-        sw.className = "sw";
-        sw.style.background = a.color;
-        pill.appendChild(sw);
-        pill.appendChild(document.createTextNode(a.name));
-        legendEl.appendChild(pill);
+      // group curves
+      for (let gi = 0; gi < state.groups().length; gi++) {
+        const g = state.groups()[gi];
+        strokeCurve(xs, groupYs[gi], g.color, 2.5);
       }
-    }
 
-    const barsEl = $("bars");
-    function mobility(agent){
-      const p = params();
-      const base = agent.kind === "teacher" ? 0.60 : 0.18;
-      return base + p.mobilityGain * agent.K;
-    }
-    function renderBars(){
-      barsEl.innerHTML = "";
-      for (const a of state.agents) {
-        const row = document.createElement("div");
-        row.className = "barRow";
+      // teacher curve on top
+      strokeCurve(xs, teacherY, COLORS.teacher, 2.9);
 
-        const top = document.createElement("div");
-        top.className = "barTop";
+      // mean markers
+      drawMeanMarker(state.teacher.mu, COLORS.teacher, "μ teacher");
+      for (const g of state.groups()) drawMeanMarker(g.mu, g.color, `μ ${g.id}`);
 
-        const left = document.createElement("div");
-        left.className = "name";
-        const sw = document.createElement("span");
-        sw.className = "sw";
-        sw.style.background = a.color;
-        left.appendChild(sw);
-        left.appendChild(document.createTextNode(a.name));
+      // title line
+      const ovT = teacherOverlaps();
+      const avgInter = avgInterGroupOverlap();
+      ctx.fillStyle = "#a8b0c0";
+      ctx.font = "12px system-ui";
+      ctx.fillText(
+        `Teacher overlaps: T=${ovT.tech.toFixed(2)}  A=${ovT.mid.toFixed(2)}  P=${ovT.phil.toFixed(2)}  |  Avg inter-group=${avgInter.toFixed(2)}`,
+        pad.l, pad.t + 14
+      );
 
-        const right = document.createElement("div");
-        right.className = "val";
-        right.textContent = `K=${a.K.toFixed(2)} | mobility=${mobility(a).toFixed(2)}`;
+      // KPI updates
+      $("turnKpi").textContent = String(state.turn);
+      $("avgGroupKpi").textContent = avgInter.toFixed(2);
+      $("teacherMuKpi").textContent = state.teacher.mu.toFixed(2);
+      $("teacherSigmaKpi").textContent = state.teacher.sigma.toFixed(2);
 
-        top.appendChild(left); top.appendChild(right);
+      const mode = teacherModeFromMu(state.teacher.mu);
+      $("teacherModePill").textContent = `Teacher mode: ${mode}`;
+      $("statusPill").textContent = state.running ? "Running…" : "Paused";
 
-        const meter = document.createElement("div");
-        meter.className = "meter";
-        const fill = document.createElement("div");
-        fill.className = "fill";
-        fill.style.background = a.color;
-        fill.style.width = `${(a.K*100).toFixed(1)}%`;
-        meter.appendChild(fill);
+      function strokeCurve(xarr, yarr, color, lw) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lw;
+        ctx.beginPath();
+        ctx.moveTo(toX(xarr[0]), toY(yarr[0]));
+        for (let i = 1; i < xarr.length; i++) ctx.lineTo(toX(xarr[i]), toY(yarr[i]));
+        ctx.stroke();
+      }
 
-        const small = document.createElement("div");
-        small.className = "small";
-        small.textContent = `μ=${a.mu.toFixed(2)}  σ=${a.sigma.toFixed(2)}  (${a.kind})`;
-
-        row.appendChild(top);
-        row.appendChild(meter);
-        row.appendChild(small);
-        barsEl.appendChild(row);
+      function drawMeanMarker(mu, color, label) {
+        const x = toX(mu);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.moveTo(x, pad.t);
+        ctx.lineTo(x, pad.t + plotH);
+        ctx.stroke();
+        ctx.fillStyle = color;
+        ctx.font = "11px system-ui";
+        ctx.fillText(label, x + 6, pad.t + plotH - 8);
       }
     }
 
-    /* ---------- Log ---------- */
+    function hexToRgba(hex, a) {
+      const h = hex.replace("#", "");
+      const r = parseInt(h.slice(0,2), 16);
+      const g = parseInt(h.slice(2,4), 16);
+      const b = parseInt(h.slice(4,6), 16);
+      return `rgba(${r},${g},${b},${a})`;
+    }
+
+    /* ---------- Overlaps ---------- */
+    function teacherOverlaps() {
+      const gT = state.groups().find(g => g.id === "tech");
+      const gM = state.groups().find(g => g.id === "mid");
+      const gP = state.groups().find(g => g.id === "phil");
+      return {
+        tech: overlapArea(state.teacher.mu, state.teacher.sigma, gT.mu, gT.sigma),
+        mid:  overlapArea(state.teacher.mu, state.teacher.sigma, gM.mu, gM.sigma),
+        phil: overlapArea(state.teacher.mu, state.teacher.sigma, gP.mu, gP.sigma),
+      };
+    }
+
+    function avgInterGroupOverlap() {
+      const gs = state.groups();
+      const pairs = [
+        overlapArea(gs[0].mu, gs[0].sigma, gs[1].mu, gs[1].sigma),
+        overlapArea(gs[0].mu, gs[0].sigma, gs[2].mu, gs[2].sigma),
+        overlapArea(gs[1].mu, gs[1].sigma, gs[2].mu, gs[2].sigma),
+      ];
+      return (pairs[0] + pairs[1] + pairs[2]) / 3;
+    }
+
+    /* ---------- Conversation log ---------- */
     const logEl = $("log");
-    function appendMsg(who, text, tag){
+    function appendMsg(who, text, tag) {
       const div = document.createElement("div");
       div.className = "msg";
       const whoLine = document.createElement("div");
@@ -381,283 +483,164 @@ window.addEventListener("DOMContentLoaded", () => {
       logEl.scrollTop = logEl.scrollHeight;
     }
 
-    /* ---------- Spawn + prune ---------- */
-    function spawnNoisyRightGroup(){
-      const id = `g${state.nextGroupNum++}`;
-      const name = `New noisy group ${id.toUpperCase()}`;
-      const color = colorForIndex(state.nextGroupNum + 2);
+    /* ---------- Step dynamics ---------- */
+    function stepModel() {
+      // update group noises from UI
+      const p = getParams();
+      const gTech = state.groups().find(g => g.id === "tech"); gTech.noise = p.noiseTech;
+      const gMid  = state.groups().find(g => g.id === "mid");  gMid.noise  = p.noiseMid;
+      const gPhil = state.groups().find(g => g.id === "phil"); gPhil.noise = p.noisePhil;
 
-      const mu = 4.1 + randn()*0.15;
-      const sigma = 2.05 + Math.random()*0.25;
-      const K = 0.10 + Math.random()*0.10;
+      // compute teacher-group overlaps
+      const ovs = state.groups().map(g => ({
+        id: g.id,
+        name: g.name,
+        ov: overlapArea(state.teacher.mu, state.teacher.sigma, g.mu, g.sigma),
+        mu: g.mu,
+        sigma: g.sigma,
+        noise: g.noise
+      }));
 
-      const g = { id, name, color, mu, sigma, K, baseSigma:sigma, kind:"learner", spawnedAt: state.turn };
-      state.agents.push(g);
-
-      appendMsg("System",
-        `Alignment reached. Spawned ${name} on the far right (μ≈${mu.toFixed(2)}, σ≈${sigma.toFixed(2)}).`,
-        "spawn"
-      );
-    }
-
-    function pruneMostAligned(){
-      // never prune below 2 learners (keeps the dynamic meaningful)
-      while (learners().length > MAX_LEARNERS && learners().length > 2) {
-        const bestPair = strongestLearnerPair();
-        if (!bestPair) break;
-        const remove = (bestPair.a.K <= bestPair.b.K) ? bestPair.a : bestPair.b;
-        state.agents = state.agents.filter(x => x.id !== remove.id);
-        appendMsg("System",
-          `Pruned aligned curve: removed ${remove.name} (strongest pair overlap=${bestPair.ov.toFixed(2)}).`,
-          "prune"
-        );
-      }
-    }
-
-    /* ---------- Canvas ---------- */
-    const canvas = $("plot");
-    const ctx = canvas.getContext("2d");
-
-    function resizeCanvasToDisplaySize(){
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      const w = Math.max(1, Math.round(rect.width * dpr));
-      const h = Math.max(1, Math.round(rect.height * dpr));
-      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
-    }
-
-    function redraw(){
-      resizeCanvasToDisplaySize();
-      const W = canvas.width, H = canvas.height;
-      ctx.clearRect(0,0,W,H);
-
-      const pad = { l:52, r:18, t:18, b:40 };
-      const plotW = W - pad.l - pad.r;
-      const plotH = H - pad.t - pad.b;
-
-      const toX = x => pad.l + (x - X.min)/(X.max - X.min) * plotW;
-
-      let yMax = 0;
-      for (const a of state.agents) yMax = Math.max(yMax, gaussian(a.mu,a.mu,a.sigma));
-      yMax = Math.max(yMax, 1e-6) * 1.25; // safety
-      const toY = y => pad.t + (1 - y/yMax) * plotH;
-
-      // axes
-      ctx.strokeStyle = "#2a3350"; ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(pad.l, pad.t);
-      ctx.lineTo(pad.l, pad.t + plotH);
-      ctx.lineTo(pad.l + plotW, pad.t + plotH);
-      ctx.stroke();
-
-      // ticks
-      ctx.fillStyle = "#a8b0c0";
-      ctx.font = "12px system-ui";
-      for (let x=-5;x<=5;x++){
-        const px = toX(x);
-        ctx.strokeStyle = "rgba(42,51,80,0.60)";
-        ctx.beginPath();
-        ctx.moveTo(px, pad.t + plotH);
-        ctx.lineTo(px, pad.t + plotH + 6);
-        ctx.stroke();
-        ctx.fillText(String(x), px - 4, pad.t + plotH + 22);
-      }
-      ctx.fillText("Utterance-space (technical ←→ philosophical / new noisy groups spawn far right)", pad.l, H - 10);
-
-      const N=900;
-      const xs = new Array(N);
-      for (let i=0;i<N;i++) xs[i] = X.min + (X.max-X.min)*i/(N-1);
-
-      const ys = new Map();
-      for (const a of state.agents) ys.set(a.id, xs.map(x=>gaussian(x,a.mu,a.sigma)));
-
-      const bridger = chooseBridger();
-
-      // shading (guarded)
-      if (bridger && bridger.id && ys.has(bridger.id)) {
-        const yB = ys.get(bridger.id);
-        for (const a of state.agents) {
-          if (!a || a.id === bridger.id) continue;
-          const yA = ys.get(a.id);
-          if (!yA) continue;
-          ctx.fillStyle = hexToRgba(a.color, 0.14);
-          ctx.beginPath();
-          ctx.moveTo(toX(xs[0]), toY(0));
-          for (let i=0;i<N;i++){
-            ctx.lineTo(toX(xs[i]), toY(Math.min(yB[i], yA[i])));
-          }
-          ctx.lineTo(toX(xs[N-1]), toY(0));
-          ctx.closePath();
-          ctx.fill();
-        }
-      }
-
-      // curves
-      for (const a of state.agents) {
-        const y = ys.get(a.id);
-        if (!y) continue;
-        ctx.strokeStyle = a.color;
-        ctx.lineWidth = (a.kind === "teacher") ? 3.1 : 2.5;
-        ctx.beginPath();
-        ctx.moveTo(toX(xs[0]), toY(y[0]));
-        for (let i=1;i<N;i++) ctx.lineTo(toX(xs[i]), toY(y[i]));
-        ctx.stroke();
-      }
-
-      // mean markers
-      for (const a of state.agents) {
-        const x = toX(a.mu);
-        ctx.strokeStyle = a.color;
-        ctx.lineWidth = 1.15;
-        ctx.beginPath();
-        ctx.moveTo(x, pad.t);
-        ctx.lineTo(x, pad.t + plotH);
-        ctx.stroke();
-        ctx.fillStyle = a.color;
-        ctx.font = "11px system-ui";
-        ctx.fillText(`μ ${a.id}`, x + 6, pad.t + plotH - 8);
-      }
-
-      // KPIs
-      const avg = avgLearnerOverlap();
-      const weak = weakestLearnerPair();
-      $("turnKpi").textContent = String(state.turn);
-      $("avgKpi").textContent = avg.toFixed(2);
-      $("weakKpi").textContent = weak ? `${weak.a.id}↔${weak.b.id} = ${weak.ov.toFixed(2)}` : "—";
-
-      const p = params();
-      const spawnState = state.spawnCooldown > 0
-        ? `cooldown ${state.spawnCooldown}`
-        : `ready (thr ${p.spawnThreshold.toFixed(2)})`;
-      $("spawnKpi").textContent = spawnState;
-
-      $("bridgePill").textContent = bridger
-        ? `Primary bridger: ${bridger.name} (K=${bridger.K.toFixed(2)})`
-        : `Primary bridger: —`;
-
-      renderLegend();
-      renderBars();
-    }
-
-    /* ---------- Dynamics ---------- */
-    function stepModel(){
-      const p = params();
-      const bridger = chooseBridger();
-      if (!bridger) return;
-
-      const L = learners();
-
-      // knowledge via bridger overlap
-      for (const g of L) {
-        const ov = overlapArea(bridger.mu, bridger.sigma, g.mu, g.sigma);
-        const gain = (0.010 + 0.022*p.learnRate) * ov * (1 - g.K);
-        const jitterLoss = Math.max(0, randn()) * 0.004 * p.noise;
-        g.K = clamp(g.K + gain - jitterLoss, 0, 1);
-      }
-
-      // peer learning
-      for (const pr of learnerPairs()) {
-        const a = pr.a, b = pr.b;
-        const gainA = (0.007 + 0.016*p.peerRate) * pr.ov * (1 - a.K);
-        const gainB = (0.007 + 0.016*p.peerRate) * pr.ov * (1 - b.K);
-        a.K = clamp(a.K + gainA, 0, 1);
-        b.K = clamp(b.K + gainB, 0, 1);
-      }
-
-      // teacher stays high
-      const teacher = state.agents.find(a => a.kind === "teacher");
-      if (teacher) teacher.K = clamp(teacher.K - 0.001*p.noise + 0.0008, 0.78, 1.0);
-
-      // weakest pair and midpoint
-      const weak = weakestLearnerPair();
-      const targetMid = weak ? ((weak.a.mu + weak.b.mu)/2) : 0;
-
-      // bridger movement
-      const mob = mobility(bridger);
-      const moveStep = (0.05 + 0.18*mob) * p.bridgeIntent;
-
-      bridger.mu += (targetMid - bridger.mu) * moveStep;
-      bridger.mu += randn() * 0.03 * p.noise * (1 - bridger.K);
-      bridger.mu = clamp(bridger.mu, X.min+0.6, X.max-0.6);
-
-      // sigma adapts: widen if weak overlap low
-      const weakOv = weak ? weak.ov : 0.5;
-      const widen = clamp((0.38 - weakOv) * 1.4, 0, 0.45);
-      const sigmaGoal = clamp(bridger.baseSigma + widen * (0.55 + bridger.K), 0.55, 2.4);
-      bridger.sigma += (sigmaGoal - bridger.sigma) * (0.06 + 0.10*bridger.K);
-
-      // learners self-adjust with knowledge
-      for (const g of L) {
-        const mobG = mobility(g);
-        const others = L.filter(x => x.id !== g.id);
-        const peerMu = others.length ? others.reduce((s,x)=>s+x.mu,0)/others.length : g.mu;
-
-        const towardBridger = (bridger.mu - g.mu) * (0.008 + 0.030*mobG) * (0.30 + 0.70*g.K);
-        const towardPeers   = (peerMu - g.mu)    * (0.006 + 0.022*mobG) * (0.25 + 0.75*g.K);
-
-        g.mu += towardBridger + towardPeers;
-        g.mu += randn() * 0.02 * p.noise * (1 - g.K);
-        g.mu = clamp(g.mu, X.min+0.6, X.max-0.6);
-
-        const desired = clamp(g.baseSigma * (1.12 - 0.35*g.K), 0.55, 2.4);
-        const widenIfWeak = (weak && (g.id===weak.a.id || g.id===weak.b.id)) ? (0.10*(0.3+g.K)) : 0;
-        const sigmaGoalG = clamp(desired + widenIfWeak, 0.55, 2.4);
-        g.sigma += (sigmaGoalG - g.sigma) * (0.03 + 0.06*g.K);
-      }
-
-      // spawn rule
-      const avg = avgLearnerOverlap();
-      if (state.spawnCooldown > 0) state.spawnCooldown--;
-
-      if (avg >= p.spawnThreshold && state.spawnCooldown === 0) {
-        spawnNoisyRightGroup();
-        state.spawnCooldown = SPAWN_COOLDOWN_TURNS;
-        pruneMostAligned();
-      }
-
-      // log
-      if (weak) {
-        appendMsg("System",
-          `${bridger.name} (K=${bridger.K.toFixed(2)}) bridges ${weak.a.id}↔${weak.b.id} (ov=${weak.ov.toFixed(2)}), target μ≈${targetMid.toFixed(2)}. Avg overlap=${avg.toFixed(2)}.`,
-          `turn ${state.turn+1}`
-        );
+      // choose target group
+      let target = ovs[0];
+      if (p.autoTarget) {
+        // lowest overlap gets targeted
+        target = ovs.reduce((best, cur) => cur.ov < best.ov ? cur : best, ovs[0]);
       } else {
-        appendMsg("System",
-          `${bridger.name} (K=${bridger.K.toFixed(2)}) bridges. Avg overlap=${avg.toFixed(2)}.`,
-          `turn ${state.turn+1}`
-        );
+        // else: cycle
+        const order = ["tech","mid","phil"];
+        const idx = order.indexOf(state.lastTargetId);
+        const next = order[(idx + 1) % order.length];
+        target = ovs.find(o => o.id === next);
       }
+      state.lastTargetId = target.id;
+
+      // teacher mode/voice depends on current position & target
+      const mode = teacherModeFromMu(state.teacher.mu);
+
+      // teacher moves toward target (with some “resistance” from noise)
+      const moveRate = p.teacherMove * (0.65 + 0.35 * p.globalPace);
+      const noiseDrag = 1 - Math.min(0.55, target.noise * 0.45);
+      const desiredMu = target.mu;
+      state.teacher.mu += (desiredMu - state.teacher.mu) * moveRate * noiseDrag;
+
+      // teacher broadens when nearer the right; narrows when left (tone shift)
+      const t = clamp((state.teacher.mu - X.min) / (X.max - X.min), 0, 1);
+      const desiredSigma = lerp(0.50, 1.40, t);
+      // but also broaden slightly if targeting philosophical; narrow if targeting technical
+      const bump = (target.id === "phil") ? 0.20 : (target.id === "tech") ? -0.10 : 0.00;
+      state.teacher.sigma += (clamp(desiredSigma + bump, 0.45, 1.65) - state.teacher.sigma) * 0.30;
+
+      // teacher utterance
+      appendMsg("Teacher", teacherUtterance(mode, target.name), `target=${target.id}, mode=${mode}`);
+
+      // group updates (teacher influence)
+      for (const g of state.groups()) {
+        const ovTG = overlapArea(state.teacher.mu, state.teacher.sigma, g.mu, g.sigma);
+
+        // assimilation strength: target group gets more direct alignment
+        const isTarget = g.id === target.id;
+        const baseAlign = isTarget ? 0.20 : 0.08;
+        const baseTighten = isTarget ? 0.16 : 0.06;
+
+        const pace = p.globalPace;
+        const noise = g.noise;
+
+        // μ alignment toward teacher, damped by noise (and boosted by overlap)
+        const alignRate = baseAlign * pace * (0.55 + 0.75 * ovTG) * (1 - 0.55 * noise);
+        const drift = (Math.random() - 0.5) * 2 * (0.10 + 0.45 * noise); // noise drift
+        g.mu += (state.teacher.mu - g.mu) * alignRate + drift * 0.03;
+
+        // σ tightening toward a regime dependent on where teacher is:
+        // left talk tends to tighten (precision); right talk tends to keep more breadth (reflection)
+        const teacherBreadth = state.teacher.sigma;
+        const sigmaTarget =
+          (g.id === "tech") ? clamp(0.55 + 0.20 * teacherBreadth, 0.55, 1.05) :
+          (g.id === "mid")  ? clamp(0.85 + 0.25 * teacherBreadth, 0.70, 1.35) :
+                              clamp(1.20 + 0.20 * teacherBreadth, 1.05, 1.70);
+
+        const tightenRate = baseTighten * pace * (0.45 + 0.85 * ovTG) * (1 - 0.60 * noise);
+        g.sigma += (sigmaTarget - g.sigma) * tightenRate;
+
+        // guardrails
+        g.mu = clamp(g.mu, X.min + 0.4, X.max - 0.4);
+        g.sigma = clamp(g.sigma, 0.50, 2.20);
+
+        // group response utterance
+        appendMsg(g.name, groupUtterance(g.id, ovTG, mode), `overlapWithTeacher=${ovTG.toFixed(2)}`);
+      }
+
+      // Bridging: if teacher overlaps with two groups at once, nudge their μ toward each other
+      // coupling strength is proportional to min(overlap(teacher,gi), overlap(teacher,gj))
+      const gs = state.groups();
+      const ovMap = new Map(gs.map(g => [g.id, overlapArea(state.teacher.mu, state.teacher.sigma, g.mu, g.sigma)]));
+      const pairs = [[0,1],[1,2],[0,2]];
+
+      for (const [i,j] of pairs) {
+        const a = gs[i], b = gs[j];
+        const bridge = Math.min(ovMap.get(a.id), ovMap.get(b.id)); // teacher holds both
+        const strength = p.bridgeStrength * p.globalPace * bridge;
+
+        // if both are held by teacher, translate between them:
+        const mid = (a.mu + b.mu) / 2;
+        a.mu += (mid - a.mu) * strength * 0.06 * (1 - 0.45 * a.noise);
+        b.mu += (mid - b.mu) * strength * 0.06 * (1 - 0.45 * b.noise);
+
+        // and a small mutual tightening if bridge is strong
+        const tighten = strength * 0.03;
+        a.sigma += (a.sigma * (1 - tighten) - a.sigma) * 0; // no-op structure (kept explicit)
+        b.sigma += (b.sigma * (1 - tighten) - b.sigma) * 0; // (we keep σ control mostly through teacher)
+      }
+
+      // optional: a small global “coherence” pull to keep middle from drifting too far
+      const midG = gs.find(g => g.id === "mid");
+      midG.mu += (state.teacher.mu - midG.mu) * 0.01 * p.globalPace;
 
       state.turn++;
       redraw();
     }
 
     /* ---------- Controls ---------- */
-    function play(){
+    function play() {
       if (state.running) return;
       state.running = true;
       $("playBtn").textContent = "Pause";
-      state.timer = setInterval(stepModel, 760);
+      state.timer = setInterval(stepModel, 700);
       redraw();
     }
-    function pause(){
+    function pause() {
       state.running = false;
       $("playBtn").textContent = "Play";
       if (state.timer) clearInterval(state.timer);
       state.timer = null;
       redraw();
     }
-    function togglePlay(){ state.running ? pause() : play(); }
+    function togglePlay() { state.running ? pause() : play(); }
 
-    function resetAll(){
+    function resetAll() {
       pause();
       state.turn = 0;
+      state.teacher.mu = -3.4;
+      state.teacher.sigma = 0.55;
+
+      state.groups = () => ([
+        { id:"tech", name:"Technical learners", mu:-3.0, sigma:0.65, color:COLORS.tech,  noise:parseFloat($("noiseTech").value) },
+        { id:"mid",  name:"Adaptive learners",  mu:-0.2, sigma:1.15, color:COLORS.mid,   noise:parseFloat($("noiseMid").value) },
+        { id:"phil", name:"Philosophical learners", mu: 3.0, sigma:1.55, color:COLORS.phil, noise:parseFloat($("noisePhil").value) },
+      ]);
+      // store as a function to simplify “re-init” without forgetting references
+      // then immediately materialize once:
+      const init = state.groups();
+      state.groups = () => init;
+
+      state.lastTargetId = "tech";
       logEl.innerHTML = "";
-      makeInitial();
+
       appendMsg("System",
-        "Reset. When learners align (avg overlap exceeds threshold), a new broad noisy group appears on the far right; high-K agents bridge; aligned curves are pruned.",
+        "Reset. Teacher begins in technical mode (left, narrow σ). Teacher targets the group with lowest overlap and bridges groups by translating across the space.",
         "reset"
       );
+
       redraw();
     }
 
@@ -665,7 +648,7 @@ window.addEventListener("DOMContentLoaded", () => {
     $("stepBtn").addEventListener("click", () => { if (!state.running) stepModel(); });
     $("resetBtn").addEventListener("click", resetAll);
 
-    ["learnRate","peerRate","bridgeIntent","mobilityGain","noise","spawnThreshold"].forEach(id => {
+    ["teacherMove","bridgeStrength","globalPace","noiseTech","noiseMid","noisePhil","autoTarget"].forEach(id => {
       const el = $(id);
       el.addEventListener("input", redraw);
       el.addEventListener("change", redraw);
@@ -676,7 +659,7 @@ window.addEventListener("DOMContentLoaded", () => {
     // boot
     resetAll();
 
-  } catch(e) {
+  } catch (e) {
     showErr(e);
   }
 });
