@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Papert & Flower-Name Knowers — Gaussian Overlap Learning Simulator</title>
+  <style>
+    :root { --bg:#0b0d12; --panel:#121624; --ink:#e9ecf1; --muted:#a8b0c0; --line:#2a3350; }
+    html,body { height:100%; margin:0; background:var(--bg); color:var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    .wrap { max-width:1100px; margin:0 auto; padding:18px; display:grid; gap:14px; grid-template-columns: 1.2fr 0.8fr; }
+    header { grid-column:1 / -1; display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
+    h1 { margin:0; font-size:18px; letter-spacing:.2px; }
+    .sub { color:var(--muted); font-size:13px; margin-top:6px; }
+    .card { background:var(--panel); border:1px solid #1c2340; border-radius:16px;
+      box-shadow: 0 10px 26px rgba(0,0,0,.35); overflow:hidden; }
+    .card .hd { padding:12px 14px; border-bottom:1px solid #1c2340; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .card .bd { padding:14px; }
+    canvas { width:100%; height:340px; background:
+      radial-gradient(1200px 420px at 20% 0%, rgba(120,140,255,.10), transparent 55%),
+      radial-gradient(900px 360px at 80% 0%, rgba(255,160,120,.08), transparent 60%);
+      border-radius:14px; border:1px solid #1c2340; display:block; }
+    .row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px dashed #212a45; }
+    .row:last-child { border-bottom:none; }
+    label { font-size:12px; color:var(--muted); }
+    input[type="range"] { width: 220px; }
+    .btns { display:flex; gap:8px; flex-wrap:wrap; }
+    button {
+      background:#1b2340; color:var(--ink); border:1px solid #2a3350;
+      border-radius:12px; padding:9px 10px; font-weight:600; cursor:pointer;
+    }
+    button:hover { filter: brightness(1.08); }
+    button:active { transform: translateY(1px); }
+    button.primary { background:#2a3cff; border-color:#3b4cff; }
+    button.warn { background:#3a1f29; border-color:#6a2a3d; }
+    .kpi { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .kpi .box { border:1px solid #1c2340; border-radius:14px; padding:10px; background: rgba(255,255,255,.02); }
+    .k { font-size:11px; color:var(--muted); }
+    .v { font-size:18px; font-weight:800; margin-top:4px; }
+    .log { height:250px; overflow:auto; padding-right:6px; }
+    .msg { border:1px solid #1c2340; border-radius:14px; padding:10px; margin:10px 0; background: rgba(255,255,255,.02); }
+    .msg .who { font-size:11px; color:var(--muted); margin-bottom:6px; }
+    .pill { display:inline-flex; gap:6px; align-items:center; padding:4px 8px; border-radius:999px;
+      border:1px solid #2a3350; font-size:11px; color:var(--muted); }
+    .legend { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .sw { width:10px; height:10px; border-radius:999px; display:inline-block; }
+    .note { color:var(--muted); font-size:12px; line-height:1.45; }
+    .err {
+      position: fixed; left: 14px; right: 14px; bottom: 14px;
+      background: rgba(80, 18, 26, 0.92); border: 1px solid #6a2a3d; color: #ffd6dc;
+      padding: 10px 12px; border-radius: 14px; font-size: 12px; display:none; z-index: 9999;
+      white-space: pre-wrap;
+    }
+    @media (max-width: 920px) {
+      .wrap { grid-template-columns:1fr; }
+      canvas { height:320px; }
+      input[type="range"] { width: 180px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Papert & Flower-Name Knowers — Learning as Overlap of Constraints</h1>
+        <div class="sub">Papert’s distribution tightens + aligns via a discovered heuristic (etymology), shown as increasing overlap.</div>
+      </div>
+      <div class="legend">
+        <span class="pill"><span class="sw" style="background:#7aa2ff"></span>Experts</span>
+        <span class="pill"><span class="sw" style="background:#ffb07a"></span>Papert</span>
+        <span class="pill"><span class="sw" style="background:#b9ff8a"></span>Overlap</span>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="hd">
+        <strong>Gaussian overlap visualization</strong>
+        <span class="pill" id="phasePill">Phase: …</span>
+      </div>
+      <div class="bd">
+        <canvas id="plot" width="980" height="360"></canvas>
+        <div class="note" style="margin-top:10px;">
+          Narrower σ = more regular/constraint-driven utterances; closer μ = better alignment; overlap ≈ shared constraint.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hd">
+        <strong>Controls</strong>
+        <div class="btns">
+          <button class="primary" id="playBtn" type="button">Play</button>
+          <button id="stepBtn" type="button">Step</button>
+          <button class="warn" id="resetBtn" type="button">Reset</button>
+        </div>
+      </div>
+      <div class="bd">
+        <div class="kpi">
+          <div class="box"><div class="k">Turn</div><div class="v" id="turnKpi">0</div></div>
+          <div class="box"><div class="k">Overlap (0–1)</div><div class="v" id="overlapKpi">0.00</div></div>
+          <div class="box"><div class="k">Papert σ</div><div class="v" id="sigmaKpi">—</div></div>
+          <div class="box"><div class="k">Papert μ</div><div class="v" id="muKpi">—</div></div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <div>
+            <label for="envNoise">Environment noise</label>
+            <div class="note">Higher = more drift + slower convergence.</div>
+          </div>
+          <input id="envNoise" type="range" min="0" max="1" step="0.01" value="0.35" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="pace">Learning pace</label>
+            <div class="note">Higher = faster tightening (σ↓) and alignment (μ→expert).</div>
+          </div>
+          <input id="pace" type="range" min="0.2" max="2.5" step="0.05" value="1.0" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="autoHeuristic">Auto-discover heuristic</label>
+            <div class="note">Heuristic activates once overlap crosses threshold.</div>
+          </div>
+          <input id="autoHeuristic" type="checkbox" checked />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="threshold">Heuristic trigger threshold</label>
+          </div>
+          <input id="threshold" type="range" min="0.10" max="0.85" step="0.01" value="0.42" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="grid-column:1 / -1;">
+      <div class="hd">
+        <strong>Conversation</strong>
+        <span class="pill" id="statusPill">…</span>
+      </div>
+      <div class="bd">
+        <div class="log" id="log"></div>
+        <div class="note">
+          Pre-heuristic: talk can “work” socially, but σ shrinks slowly. Heuristic: etymology increases constraint → faster σ↓ and μ alignment.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="err" class="err"></div>
+
+<script>
+window.addEventListener("DOMContentLoaded", () => {
+  const errEl = document.getElementById("err");
+  function showErr(e) {
+    errEl.style.display = "block";
+    errEl.textContent =
+      "Runtime error:\n" +
+      (e && e.stack ? e.stack : String(e)) +
+      "\n\nTip: open DevTools Console for more detail.";
+  }
+  window.addEventListener("error", (ev) => showErr(ev.error || ev.message));
+  window.addEventListener("unhandledrejection", (ev) => showErr(ev.reason));
+
+  try {
+    /* ---------------------------
+       Core math: Gaussian + overlap
+    ---------------------------- */
+    function gaussian(x, mu, sigma) {
+      const z = (x - mu) / sigma;
+      return Math.exp(-0.5 * z * z) / (sigma * Math.sqrt(2 * Math.PI));
+    }
+
+    function overlapArea(mu1, s1, mu2, s2) {
+      const lo = Math.min(mu1 - 6*s1, mu2 - 6*s2);
+      const hi = Math.max(mu1 + 6*s1, mu2 + 6*s2);
+      const steps = 1400;
+      const dx = (hi - lo) / steps;
+      let area = 0;
+      for (let i = 0; i <= steps; i++) {
+        const x = lo + i * dx;
+        const p = gaussian(x, mu1, s1);
+        const q = gaussian(x, mu2, s2);
+        area += Math.min(p, q) * dx;
+      }
+      return Math.max(0, Math.min(1, area));
+    }
+
+    /* ---------------------------
+       Model + narrative
+    ---------------------------- */
+    const EXPERT = { mu: 0.0, sigma: 0.55 };
+
+    const state = {
+      turn: 0,
+      running: false,
+      heuristic: false,
+      papert: { mu: 2.2, sigma: 1.9 },
+      stageIndex: 0,
+      lastOverlap: 0
+    };
+
+    const beats = [
+      { who:"Papert", text:"I can’t remember flower names. What’s this one called?", tag:"query" },
+      { who:"Knower", text:"That’s Campanula (bellflower).", tag:"label" },
+      { who:"Papert", text:"So… it’s like a little bell? I’ll remember ‘bell’… maybe.", tag:"rhetorical trick" },
+      { who:"Knower", text:"Sure, but the name is still Campanula.", tag:"constraint" },
+      { who:"Papert", text:"If I ask about the leaf shape, you’ll basically tell me the name again, right?", tag:"deflection" },
+      { who:"Knower", text:"Often, yes. But the task is: identify and name it.", tag:"discipline grammar" },
+      { who:"Papert", text:"I’m collecting workarounds… but it’s not sticking.", tag:"noise acknowledged" },
+      { who:"Knower", text:"Try repetition; the patterns will settle.", tag:"redundancy/repetition" },
+      { who:"Papert", text:"Wait—Campanula… campana = bell (Latin). Etymology!", tag:"heuristic spark", heuristic:true },
+      { who:"Papert", text:"If I anchor names to roots, I can generate memory hooks.", tag:"mathetic rule" },
+      { who:"Knower", text:"Now your distinctions match ours more often.", tag:"overlap grows" },
+      { who:"Papert", text:"Name, root, feature, confirm. That’s my routine.", tag:"regularity" }
+    ];
+
+    function currentParams() {
+      return {
+        envNoise: parseFloat(document.getElementById("envNoise").value),
+        pace: parseFloat(document.getElementById("pace").value),
+        threshold: parseFloat(document.getElementById("threshold").value),
+        auto: document.getElementById("autoHeuristic").checked
+      };
+    }
+
+    /* ---------------------------
+       Rendering (with HiDPI scaling)
+    ---------------------------- */
+    const canvas = document.getElementById("plot");
+    if (!canvas) throw new Error("Canvas #plot not found.");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("2D canvas context not available.");
+
+    function resizeCanvasToDisplaySize() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.max(1, Math.round(rect.width * dpr));
+      const h = Math.max(1, Math.round(rect.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+    }
+
+    function redraw() {
+      resizeCanvasToDisplaySize();
+
+      // KPIs
+      document.getElementById("turnKpi").textContent = String(state.turn);
+      const ov = overlapArea(EXPERT.mu, EXPERT.sigma, state.papert.mu, state.papert.sigma);
+      document.getElementById("overlapKpi").textContent = ov.toFixed(2);
+      document.getElementById("sigmaKpi").textContent = state.papert.sigma.toFixed(2);
+      document.getElementById("muKpi").textContent = state.papert.mu.toFixed(2);
+
+      document.getElementById("phasePill").textContent =
+        "Phase: " + (state.heuristic ? "heuristic active" : "pre-heuristic");
+      document.getElementById("statusPill").textContent =
+        state.running ? "Running…" : "Paused";
+
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      const pad = { l: 52, r: 18, t: 18, b: 40 };
+      const plotW = W - pad.l - pad.r;
+      const plotH = H - pad.t - pad.b;
+
+      const xMin = -4.2, xMax = 4.2;
+      const toX = x => pad.l + (x - xMin) / (xMax - xMin) * plotW;
+
+      const yMax = Math.max(
+        gaussian(EXPERT.mu, EXPERT.mu, EXPERT.sigma),
+        gaussian(state.papert.mu, state.papert.mu, state.papert.sigma)
+      ) * 1.25;
+      const toY = y => pad.t + (1 - y / yMax) * plotH;
+
+      // axes
+      ctx.strokeStyle = "#2a3350";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pad.l, pad.t);
+      ctx.lineTo(pad.l, pad.t + plotH);
+      ctx.lineTo(pad.l + plotW, pad.t + plotH);
+      ctx.stroke();
+
+      // x ticks + labels
+      ctx.fillStyle = "#a8b0c0";
+      ctx.font = "12px system-ui";
+      for (let x = -4; x <= 4; x += 1) {
+        const px = toX(x);
+        ctx.strokeStyle = "rgba(42,51,80,0.65)";
+        ctx.beginPath();
+        ctx.moveTo(px, pad.t + plotH);
+        ctx.lineTo(px, pad.t + plotH + 6);
+        ctx.stroke();
+        ctx.fillText(String(x), px - 4, pad.t + plotH + 22);
+      }
+      ctx.fillText("Utterance-space (alignment with expert distinctions)", pad.l, H - 10);
+
+      // curves
+      const N = 900;
+      const xs = new Array(N), exp = new Array(N), pap = new Array(N);
+      for (let i = 0; i < N; i++) {
+        const x = xMin + (xMax - xMin) * i / (N - 1);
+        xs[i] = x;
+        exp[i] = gaussian(x, EXPERT.mu, EXPERT.sigma);
+        pap[i] = gaussian(x, state.papert.mu, state.papert.sigma);
+      }
+
+      // overlap fill
+      ctx.fillStyle = "rgba(185,255,138,0.20)";
+      ctx.beginPath();
+      ctx.moveTo(toX(xs[0]), toY(0));
+      for (let i = 0; i < N; i++) {
+        const y = Math.min(exp[i], pap[i]);
+        ctx.lineTo(toX(xs[i]), toY(y));
+      }
+      ctx.lineTo(toX(xs[N-1]), toY(0));
+      ctx.closePath();
+      ctx.fill();
+
+      strokeCurve(xs, exp, "#7aa2ff", 2.5);
+      strokeCurve(xs, pap, "#ffb07a", 2.5);
+
+      drawMeanMarker(EXPERT.mu, "#7aa2ff", "μ expert");
+      drawMeanMarker(state.papert.mu, "#ffb07a", "μ Papert");
+
+      ctx.fillStyle = "#a8b0c0";
+      ctx.font = "12px system-ui";
+      ctx.fillText(
+        `Overlap ≈ ${ov.toFixed(2)}   |   σ=${state.papert.sigma.toFixed(2)}   μ=${state.papert.mu.toFixed(2)}`,
+        pad.l, pad.t + 14
+      );
+
+      function strokeCurve(xarr, yarr, color, lw) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lw;
+        ctx.beginPath();
+        ctx.moveTo(toX(xarr[0]), toY(yarr[0]));
+        for (let i = 1; i < xarr.length; i++) ctx.lineTo(toX(xarr[i]), toY(yarr[i]));
+        ctx.stroke();
+      }
+
+      function drawMeanMarker(mu, color, label) {
+        const x = toX(mu);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(x, pad.t);
+        ctx.lineTo(x, pad.t + plotH);
+        ctx.stroke();
+        ctx.fillStyle = color;
+        ctx.font = "11px system-ui";
+        ctx.fillText(label, x + 6, pad.t + plotH - 8);
+      }
+    }
+
+    /* ---------------------------
+       Conversation log
+    ---------------------------- */
+    const logEl = document.getElementById("log");
+    function appendMsg(who, text, tag) {
+      const div = document.createElement("div");
+      div.className = "msg";
+      const whoLine = document.createElement("div");
+      whoLine.className = "who";
+      whoLine.textContent = who + (tag ? (" • " + tag) : "");
+      const body = document.createElement("div");
+      body.textContent = text;
+      div.appendChild(whoLine);
+      div.appendChild(body);
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function appendBeat(beat) {
+      appendMsg(beat.who, beat.text, beat.tag);
+    }
+
+    /* ---------------------------
+       Simulation step
+    ---------------------------- */
+    function stepModel() {
+      const { envNoise, pace, threshold, auto } = currentParams();
+
+      const ov = overlapArea(EXPERT.mu, EXPERT.sigma, state.papert.mu, state.papert.sigma);
+      state.lastOverlap = ov;
+
+      if (!state.heuristic && auto && ov >= threshold) {
+        state.heuristic = true;
+        appendMsg("System", "Heuristic discovered: etymology anchors names → stronger constraint on selection.", "heuristic on");
+      }
+
+      const beat = beats[state.stageIndex % beats.length];
+      if (beat.heuristic && !state.heuristic) {
+        state.heuristic = true;
+        appendMsg("System", "Narrative event: etymology ‘aha’ → accelerated convergence.", "heuristic on");
+      }
+
+      const regime = state.heuristic ? {
+        muRate: 0.23 * pace,
+        sigmaRate: 0.20 * pace,
+        jitter: 0.08 + 0.20 * envNoise
+      } : {
+        muRate: 0.10 * pace,
+        sigmaRate: 0.06 * pace,
+        jitter: 0.14 + 0.35 * envNoise
+      };
+
+      const muDelta = (EXPERT.mu - state.papert.mu) * regime.muRate;
+      const sigmaTarget = EXPERT.sigma * (state.heuristic ? 1.05 : 1.30);
+      const sigmaDelta = (sigmaTarget - state.papert.sigma) * regime.sigmaRate;
+
+      const drift = (Math.random() - 0.5) * 2 * regime.jitter;
+      const sigmaNoiseBrake = 1 - Math.min(0.65, envNoise * 0.6);
+
+      state.papert.mu += muDelta + drift;
+      state.papert.sigma += sigmaDelta * sigmaNoiseBrake;
+
+      state.papert.sigma = Math.max(EXPERT.sigma, Math.min(3.2, state.papert.sigma));
+      state.papert.mu = Math.max(-3.6, Math.min(3.6, state.papert.mu));
+
+      appendBeat(beat);
+      state.stageIndex++;
+      state.turn++;
+
+      redraw();
+    }
+
+    /* ---------------------------
+       Controls
+    ---------------------------- */
+    let timer = null;
+
+    function play() {
+      if (state.running) return;
+      state.running = true;
+      document.getElementById("playBtn").textContent = "Pause";
+      timer = setInterval(stepModel, 650);
+      redraw();
+    }
+
+    function pause() {
+      state.running = false;
+      document.getElementById("playBtn").textContent = "Play";
+      if (timer) clearInterval(timer);
+      timer = null;
+      redraw();
+    }
+
+    function togglePlay() { state.running ? pause() : play(); }
+
+    function resetAll() {
+      pause();
+      state.turn = 0;
+      state.heuristic = false;
+      state.stageIndex = 0;
+      state.papert.mu = 2.2;
+      state.papert.sigma = 1.9;
+      state.lastOverlap = 0;
+      logEl.innerHTML = "";
+      appendMsg("System", "Reset. Papert begins with broad, noisy utterances (high σ) and misaligned distinctions (μ offset).", "reset");
+      redraw();
+    }
+
+    document.getElementById("playBtn").addEventListener("click", togglePlay);
+    document.getElementById("stepBtn").addEventListener("click", () => { if (!state.running) stepModel(); });
+    document.getElementById("resetBtn").addEventListener("click", resetAll);
+
+    ["envNoise","pace","threshold","autoHeuristic"].forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener("input", redraw);
+      el.addEventListener("change", redraw);
+    });
+
+    window.addEventListener("resize", redraw);
+
+    // boot
+    resetAll();
+
+  } catch (e) {
+    showErr(e);
+  }
+});
+</script>
+</body>
+</html>
