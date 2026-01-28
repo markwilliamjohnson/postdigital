@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Digitalisation Lecture (Chemistry) → Disaggregation → Subgroup Transformation</title>
+  <title>Digitalisation (Chemistry): gradual disaggregation → reciprocal engagement (tethered teacher)</title>
   <style>
     :root { --bg:#0b0d12; --panel:#121624; --ink:#e9ecf1; --muted:#a8b0c0; --line:#2a3350; }
     html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);
@@ -69,11 +69,11 @@
 <div class="wrap">
   <header>
     <div>
-      <h1>Digitalisation lecture & initiative (Chemistry): constrained lecture → gradual disaggregation → subgroup engagement</h1>
+      <h1>Digitalisation lecture (Chemistry): gradual disaggregation → reciprocal engagement (teacher stays tethered to agenda)</h1>
       <div class="sub">
-        Teacher begins locked into a lecture format aligned with a narrow digitalisation agenda (left). A small subgroup disaggregates gradually from the chemistry cohort.
-        The main lecture group drifts away (alienation) as overlap stays low. Only once the subgroup is large enough can the teacher move into it and transform it
-        (overlap↑, subgroup σ↓, subgroup μ shifts). Teacher σ stays stable.
+        Teacher starts lecture-constrained near the digitalisation agenda. A small subgroup disaggregates gradually from the main chemistry cohort.
+        Main cohort drifts away (alienation). Once the subgroup is large enough, teacher and subgroup move toward each other (reciprocal engagement),
+        while the teacher remains continuously pulled back to the digitalisation agenda—bringing the subgroup in.
       </div>
     </div>
     <div class="legend" id="legend"></div>
@@ -88,7 +88,7 @@
       <canvas id="plot"></canvas>
       <canvas id="trend"></canvas>
       <div class="note" style="margin-top:10px;">
-        Shaded overlaps: Teacher↔Main Cohort (blue) and Teacher↔Subgroup (green). Trend shows overlaps plus subgroup size (disaggregation).
+        Shaded overlaps: Teacher↔Main Cohort (blue) and Teacher↔Subgroup (green). Trend: overlaps + subgroup size.
       </div>
     </div>
   </div>
@@ -117,15 +117,15 @@
       <div class="row" style="margin-top:10px;">
         <div>
           <label for="lectureConstraint">Lecture constraint</label>
-          <div class="note">Higher = teacher movement is strongly restricted until subgroup is large enough.</div>
+          <div class="note">Higher = teacher movement strongly restricted until subgroup is sufficiently formed.</div>
         </div>
-        <input id="lectureConstraint" type="range" min="0" max="2.0" step="0.01" value="1.55" />
+        <input id="lectureConstraint" type="range" min="0" max="2.0" step="0.01" value="1.60" />
       </div>
 
       <div class="row">
         <div>
           <label for="engageThreshold">Engage threshold (subgroup size)</label>
-          <div class="note">Teacher can only begin moving toward subgroup after it disaggregates beyond this size.</div>
+          <div class="note">Teacher gains mobility toward subgroup only after it exceeds this size.</div>
         </div>
         <input id="engageThreshold" type="range" min="0.05" max="0.45" step="0.01" value="0.20" />
       </div>
@@ -133,31 +133,47 @@
       <div class="row">
         <div>
           <label for="disaggRate">Disaggregation rate</label>
-          <div class="note">How quickly the subgroup peels off (gradually) from the main lecture group.</div>
+          <div class="note">How quickly the subgroup peels off (gradually) from the lecture cohort.</div>
         </div>
-        <input id="disaggRate" type="range" min="0" max="2.0" step="0.01" value="1.00" />
+        <input id="disaggRate" type="range" min="0" max="2.0" step="0.01" value="1.05" />
       </div>
 
       <div class="row">
         <div>
           <label for="alienationRate">Alienation rate (main group drifts away)</label>
-          <div class="note">Higher = the main cohort moves further from the agenda as overlap stays low.</div>
+          <div class="note">Higher = main cohort moves further from the agenda as overlap stays low.</div>
         </div>
         <input id="alienationRate" type="range" min="0" max="2.0" step="0.01" value="1.10" />
       </div>
 
       <div class="row">
         <div>
-          <label for="transformRate">Transformation rate (subgroup)</label>
-          <div class="note">Once engaged, subgroup μ moves toward teacher and σ tightens.</div>
+          <label for="coupling">Reciprocal coupling (teacher ↔ subgroup)</label>
+          <div class="note">Higher = teacher and subgroup move toward each other at similar rates once engaged.</div>
         </div>
-        <input id="transformRate" type="range" min="0" max="2.0" step="0.01" value="1.05" />
+        <input id="coupling" type="range" min="0" max="2.0" step="0.01" value="1.10" />
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="agendaTether">Agenda tether strength</label>
+          <div class="note">Higher = teacher remains more anchored to digitalisation while engaging subgroup (“bringing them in”).</div>
+        </div>
+        <input id="agendaTether" type="range" min="0" max="2.0" step="0.01" value="1.05" />
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="transformRate">Subgroup coherence gain (σ tightening)</label>
+          <div class="note">Once engaged, subgroup becomes more regular/organised in utterance (σ decreases).</div>
+        </div>
+        <input id="transformRate" type="range" min="0" max="2.0" step="0.01" value="1.00" />
       </div>
 
       <div class="row">
         <div>
           <label for="noise">Noise</label>
-          <div class="note">Adds μ jitter and slows effective transformation.</div>
+          <div class="note">Adds μ jitter and reduces effective overlap.</div>
         </div>
         <input id="noise" type="range" min="0" max="1.0" step="0.01" value="0.22" />
       </div>
@@ -165,15 +181,14 @@
       <div class="row">
         <div>
           <label for="teacherSigma">Teacher σ (stable)</label>
-          <div class="note">Teacher’s discriminal dispersion stays similar regardless of noise/position.</div>
+          <div class="note">Teacher discriminal dispersion stays similar regardless of noise/position.</div>
         </div>
         <input id="teacherSigma" type="range" min="0.6" max="2.2" step="0.01" value="1.05" />
       </div>
 
       <div class="note" style="margin-top:12px;">
-        Chemistry students begin with a rich disciplinary discourse (right). The digitalisation initiative is narrower (left).
-        Lecture constraint prevents the teacher from entering the chemistry discourse. The main cohort drifts away (alienation),
-        while a small subgroup gradually disaggregates and becomes reachable for genuine engagement and transformation.
+        Interpretation: once a tutorial-like space exists (subgroup disaggregated), teacher and subgroup “meet each other”
+        while the teacher remains partly in digitalisation, effectively drawing the subgroup toward the agenda without fully abandoning chemistry nuance.
       </div>
     </div>
   </div>
@@ -205,8 +220,7 @@ window.addEventListener("DOMContentLoaded", () => {
       agenda:"#8fd3ff",
       teacher:"#ffffff",
       main:"#7aa2ff",
-      subgroup:"#8bffb4",
-      chem:"#ffd36a"
+      subgroup:"#8bffb4"
     };
 
     // ---- Legend ----
@@ -241,7 +255,7 @@ window.addEventListener("DOMContentLoaded", () => {
     function overlapArea(mu1,s1,mu2,s2){
       const lo=Math.min(mu1-6*s1, mu2-6*s2);
       const hi=Math.max(mu1+6*s1, mu2+6*s2);
-      const steps=1350, dx=(hi-lo)/steps;
+      const steps=1400, dx=(hi-lo)/steps;
       let a=0;
       for(let i=0;i<=steps;i++){
         const x=lo+i*dx;
@@ -262,6 +276,8 @@ window.addEventListener("DOMContentLoaded", () => {
         engageThreshold: parseFloat($("engageThreshold").value),
         disaggRate: parseFloat($("disaggRate").value),
         alienationRate: parseFloat($("alienationRate").value),
+        coupling: parseFloat($("coupling").value),
+        agendaTether: parseFloat($("agendaTether").value),
         transformRate: parseFloat($("transformRate").value),
         noise: parseFloat($("noise").value),
         teacherSigma: parseFloat($("teacherSigma").value),
@@ -275,22 +291,23 @@ window.addEventListener("DOMContentLoaded", () => {
       running:false, timer:null,
       turn:0,
 
-      // Fixed agenda pole (initiative discourse)
       agenda:{ mu:-3.0, sigma:0.70 },
 
-      // Teacher starts aligned with agenda and constrained
+      // Teacher starts near agenda and is constrained by lecture format.
       teacher:{ mu:-2.6, sigma:1.05 },
 
-      // Chemistry cohort starts with rich discourse to the right
+      // Main chemistry cohort is right-shifted and broad.
       main:{ mu: 2.4, sigma:1.70 },
 
-      // Subgroup begins as essentially "not yet separated"
+      // Subgroup begins near main but becomes distinct as it disaggregates.
       subgroup:{ mu: 2.2, sigma:1.55 },
 
-      // Disaggregation proportion (0 → 1). Size = s * sMax
+      // Disaggregation proportion (0..1). size = disagg * sMax
       disagg:0.0,
-      sMax:0.32, // maximum fraction that can peel off
-      hist:{ ovMain:[], ovSub:[], s:[] }
+      sMax:0.32,
+
+      hist:{ ovMain:[], ovSub:[], s:[] },
+      lastEngaged:false
     };
 
     // ---- UI log ----
@@ -318,23 +335,21 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     function subgroupSize(){
-      // size increases gradually as disagg increases, capped by sMax
       return clamp(state.disagg * state.sMax, 0, state.sMax);
     }
 
     function phaseLabel(){
       const p=params();
       const s=subgroupSize();
-      if(s < p.engageThreshold) return "Lecture constraint (subgroup still forming)";
-      return "Post-disaggregation (teacher can engage subgroup)";
+      return (s < p.engageThreshold)
+        ? "Lecture constraint (subgroup still forming)"
+        : "Engagement (teacher tethered to agenda; reciprocal movement)";
     }
 
     function redraw(){
-      const p=params();
       const A=state.agenda, T=state.teacher, M=state.main, G=state.subgroup;
       const s=subgroupSize();
 
-      // Overlaps
       const ovMain = overlapArea(T.mu,T.sigma, M.mu,M.sigma);
       const ovSub  = overlapArea(T.mu,T.sigma, G.mu,G.sigma);
 
@@ -364,7 +379,7 @@ window.addEventListener("DOMContentLoaded", () => {
       yMax*=1.30;
       const toY=y=>pad.t+(1-y/yMax)*PH;
 
-      // Axes
+      // axes
       pctx.strokeStyle="#2a3350"; pctx.lineWidth=1;
       pctx.beginPath();
       pctx.moveTo(pad.l,pad.t);
@@ -372,7 +387,7 @@ window.addEventListener("DOMContentLoaded", () => {
       pctx.lineTo(pad.l+PW,pad.t+PH);
       pctx.stroke();
 
-      // Ticks
+      // ticks
       pctx.fillStyle="#a8b0c0"; pctx.font="12px system-ui";
       for(let x=-5;x<=5;x++){
         const px=toX(x);
@@ -380,9 +395,8 @@ window.addEventListener("DOMContentLoaded", () => {
         pctx.beginPath(); pctx.moveTo(px,pad.t+PH); pctx.lineTo(px,pad.t+PH+6); pctx.stroke();
         pctx.fillText(String(x), px-4, pad.t+PH+22);
       }
-      pctx.fillText("Discourse space (agenda/reduction ←→ chemistry/nuance)", pad.l, H-10);
+      pctx.fillText("Discourse space (digitalisation/reduction ←→ chemistry/nuance)", pad.l, H-10);
 
-      // Sample curves
       const N=900;
       const xs=new Array(N);
       for(let i=0;i<N;i++) xs[i]=X.min+(X.max-X.min)*i/(N-1);
@@ -398,12 +412,11 @@ window.addEventListener("DOMContentLoaded", () => {
       const yM=curve(M.mu,M.sigma);
       const yG=curve(G.mu,G.sigma);
 
-      // Shade overlaps with teacher
+      // overlap shading with teacher
       shadeMin(yM, hexToRgba(COLORS.main,0.15));
-      // subgroup shade intensity scales with subgroup size (so you *see* it emerging)
       shadeMin(yG, hexToRgba(COLORS.subgroup, 0.10 + 0.35*(s/state.sMax)));
 
-      // Draw curves
+      // draw curves
       stroke(yA, COLORS.agenda, 2.6);
       stroke(yM, COLORS.main, 2.6);
       stroke(yG, COLORS.subgroup, 2.6);
@@ -416,7 +429,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
       pctx.fillStyle="#a8b0c0"; pctx.font="12px system-ui";
       pctx.fillText(
-        `Overlap T↔Main=${ovMain.toFixed(2)}  |  Overlap T↔Subgroup=${ovSub.toFixed(2)}  |  Subgroup size s=${s.toFixed(2)}`,
+        `Overlap T↔Main=${overlapArea(T.mu,T.sigma, M.mu,M.sigma).toFixed(2)}  |  Overlap T↔Sub=${overlapArea(T.mu,T.sigma, G.mu,G.sigma).toFixed(2)}  |  s=${s.toFixed(2)}`,
         pad.l, pad.t+14
       );
 
@@ -431,9 +444,7 @@ window.addEventListener("DOMContentLoaded", () => {
         pctx.fillStyle=fill;
         pctx.beginPath();
         pctx.moveTo(toX(xs[0]), toY(0));
-        for(let i=0;i<N;i++){
-          pctx.lineTo(toX(xs[i]), toY(Math.min(yT[i], yOther[i])));
-        }
+        for(let i=0;i<N;i++) pctx.lineTo(toX(xs[i]), toY(Math.min(yT[i], yOther[i])));
         pctx.lineTo(toX(xs[N-1]), toY(0));
         pctx.closePath();
         pctx.fill();
@@ -469,16 +480,15 @@ window.addEventListener("DOMContentLoaded", () => {
         const toTX=i=>tpad.l+(i/(n-1))*w;
         const toTY=v=>tpad.t+(1-v)*h;
 
-        // guide lines
         tctx.strokeStyle="rgba(42,51,80,0.50)";
         for(let k=0;k<=4;k++){
           const yy=tpad.t+(k/4)*h;
           tctx.beginPath(); tctx.moveTo(tpad.l,yy); tctx.lineTo(tpad.l+w,yy); tctx.stroke();
         }
 
-        line(state.hist.ovMain, COLORS.main);      // overlap main
-        line(state.hist.ovSub,  COLORS.subgroup);  // overlap subgroup
-        line(state.hist.s.map(v => v/state.sMax), "#ffffff"); // subgroup size normalized
+        line(state.hist.ovMain, COLORS.main);
+        line(state.hist.ovSub,  COLORS.subgroup);
+        line(state.hist.s.map(v => v/state.sMax), "#ffffff");
 
         function line(arr,color){
           tctx.strokeStyle=color; tctx.lineWidth=2;
@@ -495,112 +505,124 @@ window.addEventListener("DOMContentLoaded", () => {
       const A=state.agenda, T=state.teacher, M=state.main, G=state.subgroup;
       const noise=p.noise;
 
-      // Keep teacher sigma stable
+      // teacher sigma stable
       T.sigma += (p.teacherSigma - T.sigma) * 0.16;
       T.sigma = clamp(T.sigma + randn()*0.002, 0.55, 2.6);
 
-      // Compute overlaps (for disaggregation + alienation feedback)
-      const ovMain = overlapArea(T.mu,T.sigma, M.mu,M.sigma);
-      const ovSub  = overlapArea(T.mu,T.sigma, G.mu,G.sigma);
+      // overlaps for feedback
+      const ovMain0 = overlapArea(T.mu,T.sigma, M.mu,M.sigma);
+      const lowOverlap = clamp(0.65 - ovMain0, 0, 1);
 
-      // --- 1) Gradual disaggregation of subgroup from main ---
-      // Disaggregation grows when overlap with main is low and time passes.
-      // This represents a subset peeling off to pursue meaning elsewhere (initiative group).
-      const lowOverlap = clamp(0.65 - ovMain, 0, 1);
-      const grow = (0.0035 + 0.0080*p.disaggRate) * (0.35 + 0.85*lowOverlap) * (1 - state.disagg);
+      // 1) gradual disaggregation: grows when main overlap is low
+      const grow = (0.0035 + 0.0085*p.disaggRate) * (0.35 + 0.85*lowOverlap) * (1 - state.disagg);
       state.disagg = clamp(state.disagg + grow - (0.0006*noise), 0, 1);
 
       const s = subgroupSize();
       const engaged = s >= p.engageThreshold;
 
-      // --- 2) Alienation: main cohort drifts away as overlap stays low ---
-      // They move right (away from teacher/agenda), and get broader/noisier.
+      // 2) main cohort alienation: drifts away and broadens as overlap stays low
       const alien = (0.0025 + 0.010*p.alienationRate) * lowOverlap * (0.45 + 0.55*(1 - s/state.sMax));
       M.mu += alien + randn()*0.012*noise;
       M.sigma = clamp(M.sigma + (0.0010 + 0.006*noise)*lowOverlap, 1.10, 2.60);
 
-      // --- 3) Subgroup emergence: it separates from main gradually ---
-      // As disaggregation rises, subgroup becomes more distinct and slightly less alienated than the main cohort.
-      // Its starting position is near main, but with a tendency to stabilise (less drift) as it forms.
+      // 3) subgroup formation: becomes distinct gradually
       const sep = (s/state.sMax); // 0..1
-      // pull subgroup a bit left relative to main as it becomes "initiative-focused"
       const subgroupPullLeft = 0.0025 * sep;
-      // subgroup still experiences some drift but less than main
       const subgroupDrift = 0.35 * alien * (1 - 0.45*sep);
-
       G.mu += subgroupDrift - subgroupPullLeft + randn()*0.010*noise;
-      // subgroup initially broad, but as it consolidates it stops widening (stabilises)
+
       const sigmaTarget = clamp(1.55 - 0.35*sep, 0.85, 2.40);
       G.sigma += (sigmaTarget - G.sigma) * 0.03;
       G.sigma = clamp(G.sigma, 0.75, 2.50);
 
-      // Boundaries
+      // bounds
       for(const a of [T,M,G]){
         a.mu = clamp(a.mu, X.min+0.8, X.max-0.8);
       }
 
-      // --- 4) Teacher movement ---
-      // (a) While not engaged: lecture constraint keeps teacher near agenda.
-      // (b) Once engaged: teacher can move toward subgroup and transform it.
+      // 4) engagement dynamics
       if(!engaged){
+        // lecture constraint: teacher remains near agenda; minimal movement
         const constraint = clamp(p.lectureConstraint, 0, 2.0);
-        const mobility = 0.020 / (1 + 2.2*constraint); // extremely constrained
-        const target = (0.85*A.mu + 0.15*T.mu); // stay agenda-aligned
+        const mobility = 0.020 / (1 + 2.3*constraint);
+        const target = A.mu; // lecture: agenda-aligned delivery
         T.mu += (target - T.mu) * (0.10 + mobility) + randn()*0.008*noise;
       } else {
-        // When subgroup is sufficiently disaggregated, teacher can shift attention.
+        // Engagement: reciprocal coupling + agenda tether
         const constraint = clamp(p.lectureConstraint, 0, 2.0);
+
+        // availability grows as subgroup grows beyond threshold
         const release = clamp((s - p.engageThreshold) / (state.sMax - p.engageThreshold + 1e-6), 0, 1);
-        const mobility = (0.10 + 0.22*release) * (1 - 0.25*constraint);
 
-        // teacher targets subgroup but remains pulled by agenda obligation
-        const agendaPull = 0.20*(1 - release); // decreases as subgroup becomes fully available
-        const target = agendaPull*A.mu + (1 - agendaPull)*G.mu;
+        // teacher never fully leaves agenda; tether decreases only slightly with release
+        const tether = clamp(0.30 + 0.35*p.agendaTether, 0, 1.2); // base tether strength
+        const tetherWeight = clamp(0.55 * tether * (0.75 - 0.35*release), 0.05, 0.65);
 
-        T.mu += (target - T.mu) * mobility + randn()*0.014*noise;
+        // coupling weights (teacher ↔ subgroup) scale with release and overlap
+        const ovSub0 = overlapArea(T.mu,T.sigma, G.mu,G.sigma);
+        const couple = clamp(p.coupling, 0, 2.0);
+        const coupleStrength = (0.06 + 0.14*couple) * (0.35 + 0.65*release) * (0.55 + 0.45*ovSub0);
 
-        // --- 5) Transformation of subgroup once engaged ---
-        const ov = overlapArea(T.mu,T.sigma, G.mu,G.sigma);
-        const tr = (0.006 + 0.020*p.transformRate) * ov * (0.55 + 0.45*release) * (1 - 0.65*noise);
+        // Teacher target is a blend: mostly subgroup, but always pulled to agenda
+        const targetT = tetherWeight*A.mu + (1 - tetherWeight)*G.mu;
 
-        // subgroup moves toward teacher and tightens (less dispersion = more regularity)
-        G.mu += tr * (T.mu - G.mu);
-        const tightenTarget = clamp(0.85 + 0.25*(1-release), 0.75, 1.25);
+        // Teacher step (still somewhat constrained structurally)
+        const mobilityT = (0.08 + 0.12*release) * (1 - 0.25*constraint);
+        T.mu += (targetT - T.mu) * mobilityT + randn()*0.012*noise;
+
+        // Subgroup target is the teacher (primary) but also slightly toward agenda via teacher tether:
+        // "teacher stays in touch with agenda and brings subgroup in"
+        const bringIn = clamp(0.10 + 0.25*p.agendaTether, 0, 0.55);
+        const targetG = (1 - bringIn)*T.mu + bringIn*A.mu;
+
+        // Reciprocal subgroup motion: *comparable magnitude* to teacher motion
+        // Use same coupleStrength order so it moves as much as the teacher toward them.
+        const mobilityG = (0.08 + 0.14*couple) * (0.35 + 0.65*release);
+        G.mu += (targetG - G.mu) * mobilityG + randn()*0.012*noise*(1 - 0.5*release);
+
+        // Tightening (coherence gain) as overlap increases
+        const ovSub1 = overlapArea(T.mu,T.sigma, G.mu,G.sigma);
+        const tr = (0.010 + 0.020*p.transformRate) * ovSub1 * (0.55 + 0.45*release) * (1 - 0.65*noise);
+
+        // Subgroup σ tightens toward a moderately narrower discourse (not fully agenda-narrow)
+        const tightenTarget = clamp(1.05 - 0.25*release, 0.70, 1.30);
         G.sigma += tr * (tightenTarget - G.sigma);
         G.sigma = clamp(G.sigma, 0.65, 2.50);
 
-        // mild "teacher effect" can spread back to main cohort only when subgroup is strong
-        const spill = 0.0015 * release * ov * (1 - 0.8*noise);
+        // Small spillback to main only when subgroup is strong and overlap is high
+        const spill = 0.0015 * release * ovSub1 * (1 - 0.8*noise);
         M.mu += spill * (G.mu - M.mu);
       }
 
       T.mu = clamp(T.mu, X.min+0.8, X.max-0.8);
+      G.mu = clamp(G.mu, X.min+0.8, X.max-0.8);
 
-      // --- Record history ---
-      const ovMain2 = overlapArea(T.mu,T.sigma, M.mu,M.sigma);
-      const ovSub2  = overlapArea(T.mu,T.sigma, G.mu,G.sigma);
-
-      state.hist.ovMain.push(ovMain2);
-      state.hist.ovSub.push(ovSub2);
+      // record history
+      const ovMain = overlapArea(T.mu,T.sigma, M.mu,M.sigma);
+      const ovSub  = overlapArea(T.mu,T.sigma, G.mu,G.sigma);
+      state.hist.ovMain.push(ovMain);
+      state.hist.ovSub.push(ovSub);
       state.hist.s.push(s);
 
-      const cap=190;
+      const cap=200;
       for(const k of Object.keys(state.hist)){
         if(state.hist[k].length>cap) state.hist[k].shift();
       }
 
-      // Log occasionally + when phase flips
-      if(state.turn===0){
-        appendMsg("System","Start: teacher constrained by lecture; subgroup not yet disaggregated; main chemistry cohort already rich and right-shifted.","init");
-      }
-      if(state.turn % 8 === 0){
+      // logging: threshold crossing
+      if(!state.lastEngaged && engaged){
         appendMsg("System",
-          `s=${s.toFixed(2)} (engage≥${p.engageThreshold.toFixed(2)}=${engaged}); ovMain=${ovMain2.toFixed(2)} ovSub=${ovSub2.toFixed(2)}; main μ=${M.mu.toFixed(2)}; subgroup μ=${G.mu.toFixed(2)}.`,
-          `turn ${state.turn}`
+          `Subgroup has disaggregated to s=${s.toFixed(2)} (≥${p.engageThreshold.toFixed(2)}). Reciprocal engagement begins; teacher remains tethered to agenda.`,
+          "threshold"
         );
       }
-      if(state.turn>0 && subgroupSize() < p.engageThreshold && (subgroupSize()+0.0001) >= p.engageThreshold){
-        appendMsg("System","Threshold reached: subgroup sufficiently disaggregated; teacher can now move into the subgroup.","threshold");
+      state.lastEngaged = engaged;
+
+      if(state.turn % 8 === 0){
+        appendMsg("System",
+          `Phase=${phaseLabel()}; s=${s.toFixed(2)}; ovMain=${ovMain.toFixed(2)} ovSub=${ovSub.toFixed(2)}; teacher μ=${T.mu.toFixed(2)}; subgroup μ=${G.mu.toFixed(2)}.`,
+          `turn ${state.turn}`
+        );
       }
 
       state.turn++;
@@ -611,6 +633,7 @@ window.addEventListener("DOMContentLoaded", () => {
       pause();
       const p=params();
       state.turn=0;
+      state.lastEngaged=false;
 
       state.agenda={ mu:-3.0, sigma:0.70 };
       state.teacher={ mu:-2.6, sigma:p.teacherSigma };
@@ -624,11 +647,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
       logEl.innerHTML="";
       appendMsg("System",
-        "Reset: Teacher is lecture-constrained near the digitalisation agenda. A small subgroup disaggregates gradually from the main chemistry cohort. Main cohort drifts away via alienation. Teacher can only move after subgroup exceeds the engage threshold, then transforms it.",
+        "Reset: teacher is lecture-constrained near digitalisation agenda. A subgroup gradually disaggregates from the main chemistry cohort. Main cohort drifts away (alienation). Once subgroup is large enough, teacher and subgroup move toward each other while teacher stays tethered to agenda (bringing subgroup in).",
         "reset"
       );
 
-      // seed
       state.hist.ovMain.push(overlapArea(state.teacher.mu,state.teacher.sigma, state.main.mu,state.main.sigma));
       state.hist.ovSub.push(overlapArea(state.teacher.mu,state.teacher.sigma, state.subgroup.mu,state.subgroup.sigma));
       state.hist.s.push(subgroupSize());
@@ -655,7 +677,7 @@ window.addEventListener("DOMContentLoaded", () => {
     $("stepBtn").addEventListener("click", ()=>{ if(!state.running) stepModel(); });
     $("resetBtn").addEventListener("click", resetAll);
 
-    ["lectureConstraint","engageThreshold","disaggRate","alienationRate","transformRate","noise","teacherSigma"].forEach(id=>{
+    ["lectureConstraint","engageThreshold","disaggRate","alienationRate","coupling","agendaTether","transformRate","noise","teacherSigma"].forEach(id=>{
       $(id).addEventListener("input", redraw);
       $(id).addEventListener("change", redraw);
     });
