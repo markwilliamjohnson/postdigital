@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Papert & Flower-Knowers: Lecture → Split → Small-group Transformation</title>
+  <style>
+    :root { --bg:#0b0d12; --panel:#121624; --ink:#e9ecf1; --muted:#a8b0c0; --line:#2a3350; }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;}
+    .wrap{max-width:1220px;margin:0 auto;padding:18px;display:grid;gap:14px;grid-template-columns: 1.25fr 0.75fr;}
+    header{grid-column:1/-1;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+    h1{margin:0;font-size:18px;letter-spacing:.2px}
+    .sub{color:var(--muted);font-size:13px;margin-top:6px;line-height:1.35;max-width:980px}
+
+    .card{background:var(--panel);border:1px solid #1c2340;border-radius:16px;
+      box-shadow:0 10px 26px rgba(0,0,0,.35);overflow:hidden}
+    .hd{padding:12px 14px;border-bottom:1px solid #1c2340;display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .bd{padding:14px}
+
+    canvas{width:100%;background:
+      radial-gradient(1200px 460px at 20% 0%, rgba(120,140,255,.10), transparent 55%),
+      radial-gradient(900px 420px at 80% 0%, rgba(255,160,120,.08), transparent 60%);
+      border-radius:14px;border:1px solid #1c2340;display:block}
+    #plot{height:380px}
+    #trend{height:140px;margin-top:10px}
+
+    .legend{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .pill{display:inline-flex;gap:6px;align-items:center;padding:4px 8px;border-radius:999px;
+      border:1px solid #2a3350;font-size:11px;color:var(--muted)}
+    .sw{width:10px;height:10px;border-radius:999px;display:inline-block}
+
+    .btns{display:flex;gap:8px;flex-wrap:wrap}
+    button{background:#1b2340;color:var(--ink);border:1px solid #2a3350;border-radius:12px;
+      padding:9px 10px;font-weight:800;cursor:pointer}
+    button:hover{filter:brightness(1.08)}
+    button:active{transform:translateY(1px)}
+    button.primary{background:#2a3cff;border-color:#3b4cff}
+    button.warn{background:#3a1f29;border-color:#6a2a3d}
+
+    .kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .kpi .box{border:1px solid #1c2340;border-radius:14px;padding:10px;background:rgba(255,255,255,.02)}
+    .k{font-size:11px;color:var(--muted)}
+    .v{font-size:16px;font-weight:900;margin-top:4px}
+
+    .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px dashed #212a45}
+    .row:last-child{border-bottom:none}
+    label{font-size:12px;color:var(--muted)}
+    input[type="range"]{width:250px}
+    .note{color:var(--muted);font-size:12px;line-height:1.45}
+
+    .log{height:260px;overflow:auto;padding-right:6px}
+    .msg{border:1px solid #1c2340;border-radius:14px;padding:10px;margin:10px 0;background:rgba(255,255,255,.02)}
+    .msg .who{font-size:11px;color:var(--muted);margin-bottom:6px}
+
+    .err{
+      position:fixed;left:14px;right:14px;bottom:14px;
+      background:rgba(80,18,26,.92);border:1px solid #6a2a3d;color:#ffd6dc;
+      padding:10px 12px;border-radius:14px;font-size:12px;display:none;z-index:9999;white-space:pre-wrap;
+    }
+    @media (max-width:980px){
+      .wrap{grid-template-columns:1fr}
+      #plot{height:340px}
+      input[type="range"]{width:190px}
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Papert & Flower-name Knowers: Lecture constraint → group split → small-group transformation</h1>
+      <div class="sub">
+        Phase 1: teacher addresses a large cohort via lecture (mobility constrained, weak transformation).
+        Phase 2: cohort splits into multiple discourse groups. A small tutorial subset becomes reachable.
+        Phase 3: teacher moves into the reachable subset and transforms it (overlap↑, σ↓, μ shifts), while the main cohort changes only weakly.
+      </div>
+    </div>
+    <div class="legend" id="legend"></div>
+  </header>
+
+  <div class="card">
+    <div class="hd">
+      <strong>Gaussian discourse fields + overlap shading</strong>
+      <span class="pill" id="phasePill">…</span>
+    </div>
+    <div class="bd">
+      <canvas id="plot"></canvas>
+      <canvas id="trend"></canvas>
+      <div class="note" style="margin-top:10px;">
+        Shaded area = overlap between teacher and the currently engaged small group (if any).
+        Trend shows overlap with whole cohort vs engaged group, plus transformation index.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="hd">
+      <strong>Controls</strong>
+      <div class="btns">
+        <button class="primary" id="playBtn" type="button">Play</button>
+        <button id="stepBtn" type="button">Step</button>
+        <button class="warn" id="resetBtn" type="button">Reset</button>
+      </div>
+    </div>
+    <div class="bd">
+      <div class="kpi">
+        <div class="box"><div class="k">Turn</div><div class="v" id="turnKpi">0</div></div>
+        <div class="box"><div class="k">Phase</div><div class="v" id="modeKpi">Lecture</div></div>
+        <div class="box"><div class="k">Teacher μ / σ</div><div class="v" id="tKpi">—</div></div>
+        <div class="box"><div class="k">Engaged group</div><div class="v" id="gKpi">—</div></div>
+        <div class="box"><div class="k">Overlap (teacher↔cohort avg)</div><div class="v" id="ovC">0.00</div></div>
+        <div class="box"><div class="k">Overlap (teacher↔engaged)</div><div class="v" id="ovE">0.00</div></div>
+        <div class="box"><div class="k">Transformation index</div><div class="v" id="txKpi">0.00</div></div>
+        <div class="box"><div class="k">Lecture constraint</div><div class="v" id="lcKpi">0.00</div></div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <div>
+          <label for="splitTurn">Split at turn</label>
+          <div class="note">When the large cohort fractures into multiple discourse groups.</div>
+        </div>
+        <input id="splitTurn" type="range" min="10" max="120" step="1" value="45" />
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="lectureConstraint">Lecture constraint strength</label>
+          <div class="note">Higher = teacher mobility is restricted during lecture.</div>
+        </div>
+        <input id="lectureConstraint" type="range" min="0" max="2.0" step="0.01" value="1.30" />
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="noise">Interaction noise</label>
+          <div class="note">Adds μ jitter and slows transformation.</div>
+        </div>
+        <input id="noise" type="range" min="0" max="1.0" step="0.01" value="0.22" />
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="teacherSigma">Teacher σ (stable discriminal dispersion)</label>
+          <div class="note">Held near this value; teacher “style” remains recognisable.</div>
+        </div>
+        <input id="teacherSigma" type="range" min="0.6" max="2.2" step="0.01" value="1.05" />
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="tutorialReach">Tutorial reach</label>
+          <div class="note">Higher = teacher can move into the small subset more effectively post-split.</div>
+        </div>
+        <input id="tutorialReach" type="range" min="0" max="2.0" step="0.01" value="1.15" />
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="transformRate">Transformation rate</label>
+          <div class="note">How strongly the engaged group shifts μ toward teacher and reduces σ.</div>
+        </div>
+        <input id="transformRate" type="range" min="0" max="2.0" step="0.01" value="1.05" />
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="broadcastBack">Broadcast-back influence</label>
+          <div class="note">Weakly affects the larger cohort while teacher works with a small group.</div>
+        </div>
+        <input id="broadcastBack" type="range" min="0" max="2.0" step="0.01" value="0.65" />
+      </div>
+
+      <div class="note" style="margin-top:12px;">
+        Interpretation: in lecture mode, Papert can only “pull” the whole cohort slightly (structure constrains mobility).
+        After the split, small-group interaction enables deeper overlap and transformation for a subset.
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="grid-column:1 / -1;">
+    <div class="hd"><strong>Trace</strong><span class="pill" id="statusPill">…</span></div>
+    <div class="bd"><div class="log" id="log"></div></div>
+  </div>
+</div>
+
+<div id="err" class="err"></div>
+
+<script>
+window.addEventListener("DOMContentLoaded", () => {
+  const errEl = document.getElementById("err");
+  function showErr(e){
+    errEl.style.display="block";
+    errEl.textContent="Runtime error:\n"+(e && e.stack ? e.stack : String(e));
+  }
+  window.addEventListener("error", ev => showErr(ev.error || ev.message));
+  window.addEventListener("unhandledrejection", ev => showErr(ev.reason));
+
+  try{
+    const $ = (id)=>document.getElementById(id);
+    const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+    // ---- Math ----
+    function randn(){
+      let u=0,v=0; while(u===0) u=Math.random(); while(v===0) v=Math.random();
+      return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+    }
+    function gaussian(x,mu,s){
+      const z=(x-mu)/s;
+      return Math.exp(-0.5*z*z)/(s*Math.sqrt(2*Math.PI));
+    }
+    function overlapArea(mu1,s1,mu2,s2){
+      const lo=Math.min(mu1-6*s1, mu2-6*s2);
+      const hi=Math.max(mu1+6*s1, mu2+6*s2);
+      const steps=1300, dx=(hi-lo)/steps;
+      let a=0;
+      for(let i=0;i<=steps;i++){
+        const x=lo+i*dx;
+        a += Math.min(gaussian(x,mu1,s1), gaussian(x,mu2,s2))*dx;
+      }
+      return clamp(a,0,1);
+    }
+    function hexToRgba(hex,a){
+      const h=hex.replace("#","");
+      const r=parseInt(h.slice(0,2),16), g=parseInt(h.slice(2,4),16), b=parseInt(h.slice(4,6),16);
+      return `rgba(${r},${g},${b},${a})`;
+    }
+
+    const X={min:-5.2,max:5.2};
+
+    // ---- Params ----
+    function params(){
+      return {
+        splitTurn: parseInt($("splitTurn").value,10),
+        lectureConstraint: parseFloat($("lectureConstraint").value),
+        noise: parseFloat($("noise").value),
+        teacherSigma: parseFloat($("teacherSigma").value),
+        tutorialReach: parseFloat($("tutorialReach").value),
+        transformRate: parseFloat($("transformRate").value),
+        broadcastBack: parseFloat($("broadcastBack").value),
+      };
+    }
+
+    // ---- Colors ----
+    const COLORS={
+      teacher:"#ffffff",
+      cohort:"#8fd3ff",
+      g1:"#ffd36a",
+      g2:"#ff8ab1",
+      g3:"#8bffb4",
+      g4:"#c7a6ff",
+      engaged:"#ffffff"
+    };
+
+    // ---- Legend ----
+    const legendEl=$("legend");
+    function renderLegend(state){
+      legendEl.innerHTML="";
+      const pills=[];
+      pills.push({name:"Teacher (Papert)", color:COLORS.teacher});
+      if(state.phase==="LECTURE"){
+        pills.push({name:"Large cohort (lecture)", color:COLORS.cohort});
+      } else {
+        for(const g of state.groups){
+          pills.push({name:g.name + (g.reachable?" (reachable)":""),
+            color:g.color});
+        }
+      }
+      for(const p of pills){
+        const pill=document.createElement("span"); pill.className="pill";
+        const sw=document.createElement("span"); sw.className="sw"; sw.style.background=p.color;
+        pill.appendChild(sw);
+        pill.appendChild(document.createTextNode(p.name));
+        legendEl.appendChild(pill);
+      }
+    }
+
+    // ---- Log ----
+    const logEl=$("log");
+    function appendMsg(who,text,tag){
+      const div=document.createElement("div"); div.className="msg";
+      const whoLine=document.createElement("div"); whoLine.className="who";
+      whoLine.textContent=who+(tag?(" • "+tag):"");
+      const body=document.createElement("div"); body.textContent=text;
+      div.appendChild(whoLine); div.appendChild(body);
+      logEl.appendChild(div);
+      logEl.scrollTop=logEl.scrollHeight;
+    }
+
+    // ---- Canvas ----
+    const plot=$("plot"), trend=$("trend");
+    const pctx=plot.getContext("2d"), tctx=trend.getContext("2d");
+
+    function resizeCanvas(c){
+      const dpr=window.devicePixelRatio||1;
+      const r=c.getBoundingClientRect();
+      const w=Math.max(1,Math.round(r.width*dpr));
+      const h=Math.max(1,Math.round(r.height*dpr));
+      if(c.width!==w || c.height!==h){ c.width=w; c.height=h; }
+    }
+
+    // ---- Model state ----
+    const state={
+      running:false, timer:null,
+      turn:0,
+      phase:"LECTURE", // LECTURE -> SPLIT -> TRANSFORM
+      engagedId:null,
+
+      teacher:{ mu:-2.8, sigma:1.05, K:0.80 },
+      cohort:{ mu: 2.6, sigma:1.85, K:0.18 }, // large, noisy discourse
+
+      groups:[], // after split
+      hist:{ ovC:[], ovE:[], tx:[] }
+    };
+
+    function makeGroupsFromCohort(){
+      // Split the cohort into multiple groups:
+      // one reachable small subset (tutorial) + others remain large/noisy.
+      const baseMu=state.cohort.mu, baseSig=state.cohort.sigma;
+
+      const groups=[
+        { id:"g1", name:"Technical learners",  mu: baseMu-1.4, sigma: 1.05, size:0.22, K:0.22, reachable:false, color:COLORS.g1 },
+        { id:"g2", name:"Adaptive middle",     mu: baseMu-0.3, sigma: 1.30, size:0.28, K:0.18, reachable:true,  color:COLORS.g2 }, // reachable subset
+        { id:"g3", name:"Reflective learners", mu: baseMu+1.1, sigma: 1.85, size:0.32, K:0.16, reachable:false, color:COLORS.g3 },
+        { id:"g4", name:"Marginal/noisy edge", mu: baseMu+2.1, sigma: 2.25, size:0.18, K:0.10, reachable:false, color:COLORS.g4 },
+      ];
+
+      // Normalise sizes
+      const s=groups.reduce((a,g)=>a+g.size,0);
+      for(const g of groups){ g.size/=s; g.mu=clamp(g.mu, X.min+0.8, X.max-0.8); g.sigma=clamp(g.sigma,0.65,2.6); }
+
+      state.groups=groups;
+
+      // Choose initial engaged group: the reachable one with highest overlap
+      let best=null, bestOv=-1;
+      for(const g of state.groups){
+        if(!g.reachable) continue;
+        const ov=overlapArea(state.teacher.mu,state.teacher.sigma,g.mu,g.sigma);
+        if(ov>bestOv){ bestOv=ov; best=g; }
+      }
+      state.engagedId = best ? best.id : null;
+    }
+
+    function cohortOverlapAvg(){
+      if(state.phase==="LECTURE"){
+        return overlapArea(state.teacher.mu,state.teacher.sigma, state.cohort.mu,state.cohort.sigma);
+      }
+      // weighted avg overlap with all groups
+      let sum=0;
+      for(const g of state.groups){
+        const ov=overlapArea(state.teacher.mu,state.teacher.sigma,g.mu,g.sigma);
+        sum += g.size * ov;
+      }
+      return clamp(sum,0,1);
+    }
+
+    function engagedGroup(){
+      if(state.phase==="LECTURE") return null;
+      return state.groups.find(g=>g.id===state.engagedId) || null;
+    }
+
+    function transformationIndex(){
+      // Higher when engaged group becomes closer to teacher AND tighter σ AND higher K.
+      const g=engagedGroup();
+      if(!g) return 0;
+      const closeness = 1 - clamp(Math.abs(g.mu - state.teacher.mu)/5.0, 0, 1);
+      const tightness = 1 - clamp((g.sigma-0.7)/2.0, 0, 1);
+      return clamp(0.45*closeness + 0.35*tightness + 0.20*g.K, 0, 1);
+    }
+
+    function redraw(){
+      renderLegend(state);
+
+      const p=params();
+      const T=state.teacher;
+
+      const ovC=cohortOverlapAvg();
+      const g=engagedGroup();
+      const ovE = g ? overlapArea(T.mu,T.sigma,g.mu,g.sigma) : 0;
+      const tx = transformationIndex();
+      const lc = clamp(p.lectureConstraint/2.0, 0, 1);
+
+      $("turnKpi").textContent=String(state.turn);
+      $("modeKpi").textContent = (state.phase==="LECTURE" ? "Lecture" : (state.phase==="SPLIT" ? "Split" : "Small-group transformation"));
+      $("tKpi").textContent = `μ=${T.mu.toFixed(2)} σ=${T.sigma.toFixed(2)}`;
+      $("gKpi").textContent = g ? g.name : (state.phase==="LECTURE" ? "Large cohort" : "—");
+      $("ovC").textContent = ovC.toFixed(2);
+      $("ovE").textContent = ovE.toFixed(2);
+      $("txKpi").textContent = tx.toFixed(2);
+      $("lcKpi").textContent = (state.phase==="LECTURE" ? lc.toFixed(2) : "0.00");
+      $("phasePill").textContent = state.phase==="LECTURE" ? "Phase 1: Lecture constraint" :
+                                  state.phase==="SPLIT"   ? "Phase 2: Cohort splits into discourse groups" :
+                                                           "Phase 3: Teacher transforms reachable subset";
+
+      $("statusPill").textContent = `ovC=${ovC.toFixed(2)} ovE=${ovE.toFixed(2)} tx=${tx.toFixed(2)}`;
+
+      // ---- main plot ----
+      resizeCanvas(plot);
+      const W=plot.width,H=plot.height;
+      pctx.clearRect(0,0,W,H);
+
+      const pad={l:52,r:18,t:18,b:40};
+      const PW=W-pad.l-pad.r, PH=H-pad.t-pad.b;
+      const toX=x=>pad.l+(x-X.min)/(X.max-X.min)*PW;
+
+      // determine yMax across visible curves
+      let yMax=1e-6;
+      yMax=Math.max(yMax, gaussian(T.mu,T.mu,T.sigma));
+      if(state.phase==="LECTURE"){
+        yMax=Math.max(yMax, gaussian(state.cohort.mu,state.cohort.mu,state.cohort.sigma));
+      } else {
+        for(const gg of state.groups) yMax=Math.max(yMax, gaussian(gg.mu,gg.mu,gg.sigma));
+      }
+      yMax*=1.28;
+      const toY=y=>pad.t+(1-y/yMax)*PH;
+
+      // axes
+      pctx.strokeStyle="#2a3350"; pctx.lineWidth=1;
+      pctx.beginPath();
+      pctx.moveTo(pad.l,pad.t);
+      pctx.lineTo(pad.l,pad.t+PH);
+      pctx.lineTo(pad.l+PW,pad.t+PH);
+      pctx.stroke();
+
+      // ticks
+      pctx.fillStyle="#a8b0c0"; pctx.font="12px system-ui";
+      for(let x=-5;x<=5;x++){
+        const px=toX(x);
+        pctx.strokeStyle="rgba(42,51,80,0.60)";
+        pctx.beginPath(); pctx.moveTo(px,pad.t+PH); pctx.lineTo(px,pad.t+PH+6); pctx.stroke();
+        pctx.fillText(String(x), px-4, pad.t+PH+22);
+      }
+      pctx.fillText("Utterance-space (Papert’s discourse ←→ learner discourse field)", pad.l, H-10);
+
+      // samples
+      const N=900;
+      const xs=new Array(N);
+      for(let i=0;i<N;i++) xs[i]=X.min+(X.max-X.min)*i/(N-1);
+
+      function curve(mu,sig){
+        const y=new Array(N);
+        for(let i=0;i<N;i++) y[i]=gaussian(xs[i],mu,sig);
+        return y;
+      }
+
+      const yT=curve(T.mu,T.sigma);
+
+      // overlap shading with engaged group if exists (or cohort in lecture)
+      if(state.phase==="LECTURE"){
+        const yC=curve(state.cohort.mu,state.cohort.sigma);
+        shadeMin(yC, hexToRgba(COLORS.cohort,0.16));
+      } else if(g){
+        const yG=curve(g.mu,g.sigma);
+        shadeMin(yG, hexToRgba(g.color,0.16));
+      }
+
+      // draw cohort/groups
+      if(state.phase==="LECTURE"){
+        stroke(curve(state.cohort.mu,state.cohort.sigma), COLORS.cohort, 2.7);
+        marker(state.cohort.mu, COLORS.cohort, "μ cohort");
+      } else {
+        for(const gg of state.groups){
+          stroke(curve(gg.mu,gg.sigma), gg.color, 2.6);
+          marker(gg.mu, gg.color, `μ ${gg.id}`);
+        }
+      }
+
+      // draw teacher last
+      stroke(yT, COLORS.teacher, 3.2);
+      marker(T.mu, COLORS.teacher, "μ teacher");
+
+      // overlay text
+      pctx.fillStyle="#a8b0c0"; pctx.font="12px system-ui";
+      pctx.fillText(
+        `Overlap (teacher↔cohort avg)=${ovC.toFixed(2)}  |  Overlap (teacher↔engaged)=${ovE.toFixed(2)}  |  Transformation=${tx.toFixed(2)}`,
+        pad.l, pad.t+14
+      );
+
+      function stroke(y,color,lw){
+        pctx.strokeStyle=color; pctx.lineWidth=lw;
+        pctx.beginPath();
+        pctx.moveTo(toX(xs[0]), toY(y[0]));
+        for(let i=1;i<N;i++) pctx.lineTo(toX(xs[i]), toY(y[i]));
+        pctx.stroke();
+      }
+      function shadeMin(yOther, fill){
+        pctx.fillStyle=fill;
+        pctx.beginPath();
+        pctx.moveTo(toX(xs[0]), toY(0));
+        for(let i=0;i<N;i++) pctx.lineTo(toX(xs[i]), toY(Math.min(yT[i], yOther[i])));
+        pctx.lineTo(toX(xs[N-1]), toY(0));
+        pctx.closePath();
+        pctx.fill();
+      }
+      function marker(mu,color,label){
+        const x=toX(mu);
+        pctx.strokeStyle=color; pctx.lineWidth=1.1;
+        pctx.beginPath(); pctx.moveTo(x,pad.t); pctx.lineTo(x,pad.t+PH); pctx.stroke();
+        pctx.fillStyle=color; pctx.font="11px system-ui";
+        pctx.fillText(label, x+6, pad.t+PH-8);
+      }
+
+      // ---- trend chart ----
+      resizeCanvas(trend);
+      const TW=trend.width, TH=trend.height;
+      tctx.clearRect(0,0,TW,TH);
+
+      const tpad={l:52,r:18,t:16,b:26};
+      const w=TW-tpad.l-tpad.r, h=TH-tpad.t-tpad.b;
+
+      tctx.strokeStyle="#2a3350"; tctx.lineWidth=1;
+      tctx.beginPath();
+      tctx.moveTo(tpad.l,tpad.t);
+      tctx.lineTo(tpad.l,tpad.t+h);
+      tctx.lineTo(tpad.l+w,tpad.t+h);
+      tctx.stroke();
+
+      tctx.fillStyle="#a8b0c0"; tctx.font="12px system-ui";
+      tctx.fillText("Trend: overlap with cohort vs engaged group; transformation index", tpad.l, tpad.t-2);
+
+      const n=state.hist.ovC.length;
+      if(n>1){
+        const toTX=i=>tpad.l+(i/(n-1))*w;
+        const toTY=v=>tpad.t+(1-v)*h;
+
+        // guide lines
+        tctx.strokeStyle="rgba(42,51,80,0.50)";
+        for(let k=0;k<=4;k++){
+          const yy=tpad.t+(k/4)*h;
+          tctx.beginPath(); tctx.moveTo(tpad.l,yy); tctx.lineTo(tpad.l+w,yy); tctx.stroke();
+        }
+
+        line(state.hist.ovC, COLORS.cohort);
+        line(state.hist.ovE, COLORS.teacher);
+        line(state.hist.tx,  "#ffb07a"); // neutral highlight
+
+        function line(arr,color){
+          tctx.strokeStyle=color; tctx.lineWidth=2;
+          tctx.beginPath();
+          tctx.moveTo(toTX(0), toTY(arr[0]));
+          for(let i=1;i<arr.length;i++) tctx.lineTo(toTX(i), toTY(arr[i]));
+          tctx.stroke();
+        }
+      }
+    }
+
+    function stepModel(){
+      const p=params();
+      const T=state.teacher;
+
+      // Keep teacher sigma stable (discriminal dispersion)
+      T.sigma += (p.teacherSigma - T.sigma) * 0.18;
+      T.sigma = clamp(T.sigma + randn()*0.002, 0.55, 2.6);
+
+      // Determine phase transitions
+      if(state.phase==="LECTURE" && state.turn >= p.splitTurn){
+        state.phase="SPLIT";
+        makeGroupsFromCohort();
+        appendMsg("System", "The cohort splits into multiple discourse groups. A small reachable subset becomes available for tutorial interaction.", `turn ${state.turn}`);
+      }
+      if(state.phase==="SPLIT" && state.turn >= p.splitTurn + 4){
+        state.phase="TRANSFORM";
+        appendMsg("System", "Teacher begins working closely with a reachable small group (tutorial format).", `turn ${state.turn}`);
+      }
+
+      // --- Dynamics ---
+      const noise = p.noise;
+
+      if(state.phase==="LECTURE"){
+        // Lecture constraint: teacher can only move a little toward cohort, and cohort barely transforms.
+        const constraint = clamp(p.lectureConstraint, 0, 2.0);
+        const mobility = 0.10 / (1 + 1.2*constraint); // strong constraint => small steps
+        const target = state.cohort.mu;
+
+        T.mu += (target - T.mu) * mobility + randn()*0.02*noise;
+        T.mu = clamp(T.mu, X.min+0.8, X.max-0.8);
+
+        // cohort changes only weakly in lecture
+        const ov = overlapArea(T.mu,T.sigma, state.cohort.mu,state.cohort.sigma);
+        const weak = (0.006 * ov) / (1 + 1.4*constraint);
+        state.cohort.mu += weak * (T.mu - state.cohort.mu) + randn()*0.008*noise;
+        state.cohort.sigma = clamp(state.cohort.sigma + 0.001*noise, 1.2, 2.6);
+
+      } else {
+        // Post-split: teacher chooses/keeps an engaged reachable group and can move more freely into it.
+        const groups=state.groups;
+
+        // Ensure engagedId still valid; choose best reachable by overlap
+        let engaged = engagedGroup();
+        if(!engaged || !engaged.reachable){
+          let best=null, bestOv=-1;
+          for(const g of groups){
+            if(!g.reachable) continue;
+            const ov=overlapArea(T.mu,T.sigma,g.mu,g.sigma);
+            if(ov>bestOv){ bestOv=ov; best=g; }
+          }
+          state.engagedId = best ? best.id : null;
+          engaged = engagedGroup();
+        }
+
+        const reach = clamp(p.tutorialReach, 0, 2.0);
+        if(engaged){
+          // Teacher moves into engaged group (tutorial reach amplifies mobility)
+          const mobility = 0.18 + 0.10*reach + 0.08*T.K;
+          const target = engaged.mu;
+          T.mu += (target - T.mu) * mobility + randn()*0.02*noise;
+          T.mu = clamp(T.mu, X.min+0.8, X.max-0.8);
+
+          // Transformation: engaged group shifts toward teacher and tightens σ
+          const ov = overlapArea(T.mu,T.sigma, engaged.mu,engaged.sigma);
+          const tr = (0.010 + 0.020*p.transformRate) * ov * (1 - 0.55*noise);
+          engaged.mu += tr * (T.mu - engaged.mu);
+          engaged.sigma += tr * (Math.max(0.75, engaged.sigma*0.92) - engaged.sigma);
+          engaged.sigma = clamp(engaged.sigma, 0.65, 2.6);
+          engaged.K = clamp(engaged.K + (0.010*ov)*(0.6 + 0.4*p.transformRate), 0, 1);
+
+          // Teacher’s own “heuristic confidence” grows modestly in tutorial mode
+          T.K = clamp(T.K + 0.004*ov - 0.001*noise, 0.75, 1.0);
+
+          // Broadcast-back: weak influence on other groups (lecture effect persists, but weaker)
+          const bb = clamp(p.broadcastBack, 0, 2.0);
+          for(const g of groups){
+            if(g.id===engaged.id) continue;
+            // small drift toward teacher, scaled down by group size and noise
+            const ovG = overlapArea(T.mu,T.sigma,g.mu,g.sigma);
+            const weak = (0.0025 * bb) * ovG * (0.25 + 0.35*T.K) * (1 - 0.8*noise);
+            g.mu += weak * (T.mu - g.mu) + randn()*0.010*noise*(1-g.K);
+            // groups slowly tighten if they gain K; otherwise stay noisy
+            const desired = clamp(g.sigma * (1.01 - 0.15*g.K), 0.65, 2.6);
+            g.sigma += (desired - g.sigma) * 0.010;
+            g.sigma = clamp(g.sigma, 0.65, 2.6);
+            g.K = clamp(g.K + 0.003*ovG*(0.35 + 0.25*bb) - 0.001*noise, 0, 1);
+          }
+        }
+      }
+
+      // ---- Record history ----
+      const ovC = cohortOverlapAvg();
+      const eg = engagedGroup();
+      const ovE = eg ? overlapArea(T.mu,T.sigma, eg.mu,eg.sigma) : 0;
+      const tx = transformationIndex();
+
+      state.hist.ovC.push(ovC);
+      state.hist.ovE.push(ovE);
+      state.hist.tx.push(tx);
+
+      const cap=180;
+      for(const k of Object.keys(state.hist)){
+        if(state.hist[k].length>cap) state.hist[k].shift();
+      }
+
+      // ---- Log ----
+      if(state.turn % 6 === 0){
+        appendMsg("System",
+          `Phase=${state.phase}; teacher μ=${T.mu.toFixed(2)}; overlap cohort=${ovC.toFixed(2)}; overlap engaged=${ovE.toFixed(2)}; transformation=${tx.toFixed(2)}.`,
+          `turn ${state.turn}`
+        );
+      }
+
+      state.turn++;
+      redraw();
+    }
+
+    function resetAll(){
+      pause();
+      const p=params();
+      state.turn=0;
+      state.phase="LECTURE";
+      state.engagedId=null;
+
+      state.teacher={ mu:-2.8, sigma:p.teacherSigma, K:0.80 };
+      state.cohort ={ mu: 2.6, sigma:1.85, K:0.18 };
+      state.groups=[];
+      state.hist={ ovC:[], ovE:[], tx:[] };
+
+      logEl.innerHTML="";
+      appendMsg("System",
+        "Reset: teacher starts constrained by lecture format with a large cohort. At the split turn, the cohort fractures. A reachable subset becomes tutorial-available; teacher can move in and transform it.",
+        "reset"
+      );
+
+      // seed history
+      state.hist.ovC.push(cohortOverlapAvg());
+      state.hist.ovE.push(0);
+      state.hist.tx.push(0);
+
+      redraw();
+    }
+
+    function play(){
+      if(state.running) return;
+      state.running=true;
+      $("playBtn").textContent="Pause";
+      state.timer=setInterval(stepModel, 760);
+      redraw();
+    }
+    function pause(){
+      state.running=false;
+      $("playBtn").textContent="Play";
+      if(state.timer) clearInterval(state.timer);
+      state.timer=null;
+      redraw();
+    }
+    function togglePlay(){ state.running ? pause() : play(); }
+
+    $("playBtn").addEventListener("click", togglePlay);
+    $("stepBtn").addEventListener("click", ()=>{ if(!state.running) stepModel(); });
+    $("resetBtn").addEventListener("click", resetAll);
+
+    ["splitTurn","lectureConstraint","noise","teacherSigma","tutorialReach","transformRate","broadcastBack"]
+      .forEach(id=>{
+        $(id).addEventListener("input", redraw);
+        $(id).addEventListener("change", redraw);
+      });
+
+    window.addEventListener("resize", redraw);
+
+    resetAll();
+
+  }catch(e){ showErr(e); }
+});
+</script>
+</body>
+</html>
