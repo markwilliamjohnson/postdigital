@@ -1,198 +1,769 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<title>Double Bind from Initial Alignment</title>
-<style>
-body{
-  margin:0;
-  background:#0b0d12;
-  color:#e9ecf1;
-  font-family:system-ui;
-}
-.wrap{max-width:1000px;margin:20px auto;padding:20px}
-canvas{width:100%;height:360px;border:1px solid #1c2340;border-radius:12px}
-button{background:#2a3cff;color:white;border:none;
-  border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
-.note{color:#a8b0c0;font-size:13px;margin-top:8px}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>From Double-Bind Oscillation to Collaborative Bridging (Fixed)</title>
+  <style>
+    :root { --bg:#0b0d12; --panel:#121624; --ink:#e9ecf1; --muted:#a8b0c0; --line:#2a3350; }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;}
+    .wrap{max-width:1220px;margin:0 auto;padding:18px;display:grid;gap:14px;grid-template-columns: 1.25fr 0.75fr;}
+    header{grid-column:1/-1;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+    h1{margin:0;font-size:18px;letter-spacing:.2px}
+    .sub{color:var(--muted);font-size:13px;margin-top:6px;line-height:1.35;max-width:980px}
+
+    .card{background:var(--panel);border:1px solid #1c2340;border-radius:16px;
+      box-shadow:0 10px 26px rgba(0,0,0,.35);overflow:hidden}
+    .hd{padding:12px 14px;border-bottom:1px solid #1c2340;display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .bd{padding:14px}
+
+    canvas{width:100%;background:
+      radial-gradient(1200px 460px at 20% 0%, rgba(120,140,255,.10), transparent 55%),
+      radial-gradient(900px 420px at 80% 0%, rgba(255,160,120,.08), transparent 60%);
+      border-radius:14px;border:1px solid #1c2340;display:block}
+    #plot{height:380px}
+    #trend{height:140px;margin-top:10px}
+
+    .legend{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .pill{display:inline-flex;gap:6px;align-items:center;padding:4px 8px;border-radius:999px;
+      border:1px solid #2a3350;font-size:11px;color:var(--muted)}
+    .sw{width:10px;height:10px;border-radius:999px;display:inline-block}
+
+    .btns{display:flex;gap:8px;flex-wrap:wrap}
+    button{background:#1b2340;color:var(--ink);border:1px solid #2a3350;border-radius:12px;
+      padding:9px 10px;font-weight:800;cursor:pointer}
+    button:hover{filter:brightness(1.08)}
+    button:active{transform:translateY(1px)}
+    button.primary{background:#2a3cff;border-color:#3b4cff}
+    button.warn{background:#3a1f29;border-color:#6a2a3d}
+
+    .kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .kpi .box{border:1px solid #1c2340;border-radius:14px;padding:10px;background:rgba(255,255,255,.02)}
+    .k{font-size:11px;color:var(--muted)}
+    .v{font-size:16px;font-weight:900;margin-top:4px}
+
+    .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px dashed #212a45}
+    .row:last-child{border-bottom:none}
+    label{font-size:12px;color:var(--muted)}
+    input[type="range"]{width:250px}
+    .note{color:var(--muted);font-size:12px;line-height:1.45}
+
+    .log{height:260px;overflow:auto;padding-right:6px}
+    .msg{border:1px solid #1c2340;border-radius:14px;padding:10px;margin:10px 0;background:rgba(255,255,255,.02)}
+    .msg .who{font-size:11px;color:var(--muted);margin-bottom:6px}
+
+    .err{
+      position:fixed;left:14px;right:14px;bottom:14px;
+      background:rgba(80,18,26,.92);border:1px solid #6a2a3d;color:#ffd6dc;
+      padding:10px 12px;border-radius:14px;font-size:12px;display:none;z-index:9999;white-space:pre-wrap;
+    }
+    @media (max-width:980px){
+      .wrap{grid-template-columns:1fr}
+      #plot{height:340px}
+      input[type="range"]{width:190px}
+    }
+  </style>
 </head>
 <body>
 <div class="wrap">
-<h2>Double Bind: Initial Alignment → Divergence via Richness</h2>
-<div class="note">
-System begins aligned. Learners elaborate meaning; technical agenda remains reductive.
-Teacher oscillates only after overlap collapses.
+  <header>
+    <div>
+      <h1>Resolving the double bind: oscillation → richer discourse → collaborative bridging (+ new noise)</h1>
+      <div class="sub">
+        Starts with a teacher oscillating between a compressed digitalisation agenda (left) and a nuanced learner field (right).
+        “Institutional dialogue” grows meta-understanding U. As U rises, the system transitions into collaborative bridging across groups.
+        When convergence happens, a new broad noisy actor enters on the right. Teacher σ stays roughly constant irrespective of noise.
+      </div>
+    </div>
+    <div class="legend" id="legend"></div>
+  </header>
+
+  <div class="card">
+    <div class="hd">
+      <strong>Distributions + overlap shading (primary bridger vs others)</strong>
+      <span class="pill" id="modePill">…</span>
+    </div>
+    <div class="bd">
+      <canvas id="plot"></canvas>
+      <canvas id="trend"></canvas>
+      <div class="note" style="margin-top:10px;">
+        Top: curves and overlap shading. Bottom: meta-understanding (U) and average overlap trend.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="hd">
+      <strong>Controls</strong>
+      <div class="btns">
+        <button class="primary" id="playBtn" type="button">Play</button>
+        <button id="stepBtn" type="button">Step</button>
+        <button class="warn" id="resetBtn" type="button">Reset</button>
+      </div>
+    </div>
+    <div class="bd">
+      <div class="kpi">
+        <div class="box"><div class="k">Turn</div><div class="v" id="turnKpi">0</div></div>
+        <div class="box"><div class="k">Meta-understanding U</div><div class="v" id="uKpi">0.00</div></div>
+        <div class="box"><div class="k">Mode blend (osc ↔ collab)</div><div class="v" id="blendKpi">0.00</div></div>
+        <div class="box"><div class="k">Avg overlap (groups)</div><div class="v" id="avgKpi">0.00</div></div>
+        <div class="box"><div class="k">Teacher μ / σ</div><div class="v" id="tKpi">—</div></div>
+        <div class="box"><div class="k">Primary bridger</div><div class="v" id="bKpi">—</div></div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <div>
+          <label for="cycleSpeed">Oscillation speed (early phase)</label>
+        </div>
+        <input id="cycleSpeed" type="range" min="0.3" max="2.6" step="0.01" value="1.05" />
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="learnerDuty">Learner-duty bias (early phase)</label>
+        </div>
+        <input id="learnerDuty" type="range" min="0" max="2.0" step="0.01" value="0.95" />
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="driftRate">Initial domain drift rate</label>
+        </div>
+        <input id="driftRate" type="range" min="0" max="2.0" step="0.01" value="1.00" />
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="metaRate">Meta-discourse growth rate</label>
+        </div>
+        <input id="metaRate" type="range" min="0" max="2.0" step="0.01" value="1.10" />
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="learnRate">Collaborative learning rate (K gain from overlap)</label>
+        </div>
+        <input id="learnRate" type="range" min="0" max="2.0" step="0.01" value="0.95" />
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="bridgeIntent">Collaborative bridging intent</label>
+        </div>
+        <input id="bridgeIntent" type="range" min="0" max="2.0" step="0.01" value="1.10" />
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="noise">Interaction noise</label>
+        </div>
+        <input id="noise" type="range" min="0" max="1.0" step="0.01" value="0.22" />
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="teacherSigma">Teacher σ (discriminal dispersion)</label>
+        </div>
+        <input id="teacherSigma" type="range" min="0.6" max="2.2" step="0.01" value="1.10" />
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="spawnThreshold">Spawn threshold (avg overlap)</label>
+        </div>
+        <input id="spawnThreshold" type="range" min="0.35" max="0.80" step="0.01" value="0.58" />
+      </div>
+
+      <div class="note" style="margin-top:12px;">
+        Resolution is modelled as rising U: shared discourse about tech/digitalisation reduces the bind,
+        enabling coordinated bridging. New noisy actors enter once convergence occurs.
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="grid-column:1 / -1;">
+    <div class="hd">
+      <strong>Trace</strong>
+      <span class="pill" id="statusPill">…</span>
+    </div>
+    <div class="bd">
+      <div class="log" id="log"></div>
+    </div>
+  </div>
 </div>
-<canvas id="plot"></canvas>
-<br>
-<button onclick="play()">Play</button>
-<button onclick="pause()">Pause</button>
-<button onclick="resetAll()">Reset</button>
-</div>
+
+<div id="err" class="err"></div>
 
 <script>
-const canvas = document.getElementById("plot");
-const ctx = canvas.getContext("2d");
-
-function resize(){
-  const dpr=window.devicePixelRatio||1;
-  const r=canvas.getBoundingClientRect();
-  canvas.width=r.width*dpr;
-  canvas.height=r.height*dpr;
-}
-window.onresize=resize;
-resize();
-
-function gaussian(x,mu,s){
-  const z=(x-mu)/s;
-  return Math.exp(-0.5*z*z)/(s*Math.sqrt(2*Math.PI));
-}
-
-const X={min:-6,max:6};
-
-let state={
-  t:0,
-  running:false,
-  timer:null,
-
-  // start aligned
-  agendaMu:0,
-  learnerMu:0,
-  teacherMu:0,
-
-  agendaSigma:0.6,
-  learnerSigma:0.9,
-  teacherSigma:1.0,
-
-  phase:0,
-  oscillating:false
-};
-
-function draw(){
-  resize();
-  const W=canvas.width,H=canvas.height;
-  ctx.clearRect(0,0,W,H);
-
-  const pad={l:50,r:20,t:20,b:40};
-  const PW=W-pad.l-pad.r;
-  const PH=H-pad.t-pad.b;
-
-  const toX=x=>pad.l+(x-X.min)/(X.max-X.min)*PW;
-  const toY=y=>pad.t+(1-y/0.6)*PH;
-
-  // axes
-  ctx.strokeStyle="#2a3350";
-  ctx.beginPath();
-  ctx.moveTo(pad.l,pad.t);
-  ctx.lineTo(pad.l,pad.t+PH);
-  ctx.lineTo(pad.l+PW,pad.t+PH);
-  ctx.stroke();
-
-  const N=800;
-  let xs=[];
-  for(let i=0;i<N;i++)
-    xs.push(X.min+(X.max-X.min)*i/(N-1));
-
-  const yAgenda=xs.map(x=>gaussian(x,state.agendaMu,state.agendaSigma));
-  const yLearner=xs.map(x=>gaussian(x,state.learnerMu,state.learnerSigma));
-  const yTeacher=xs.map(x=>gaussian(x,state.teacherMu,state.teacherSigma));
-
-  // overlaps (teacher)
-  function overlap(yA,color){
-    ctx.fillStyle=color;
-    ctx.beginPath();
-    ctx.moveTo(toX(xs[0]),toY(0));
-    for(let i=0;i<N;i++)
-      ctx.lineTo(toX(xs[i]),toY(Math.min(yTeacher[i],yA[i])));
-    ctx.lineTo(toX(xs[N-1]),toY(0));
-    ctx.closePath();
-    ctx.fill();
+window.addEventListener("DOMContentLoaded", () => {
+  const errEl = document.getElementById("err");
+  function showErr(e){
+    errEl.style.display="block";
+    errEl.textContent="Runtime error:\n"+(e && e.stack ? e.stack : String(e));
   }
+  window.addEventListener("error", ev => showErr(ev.error || ev.message));
+  window.addEventListener("unhandledrejection", ev => showErr(ev.reason));
 
-  overlap(yAgenda,"rgba(120,160,255,0.2)");
-  overlap(yLearner,"rgba(255,160,120,0.2)");
+  try{
+    const $ = (id)=>document.getElementById(id);
+    const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
 
-  function stroke(y,color,w){
-    ctx.strokeStyle=color;
-    ctx.lineWidth=w;
-    ctx.beginPath();
-    ctx.moveTo(toX(xs[0]),toY(y[0]));
-    for(let i=1;i<N;i++)
-      ctx.lineTo(toX(xs[i]),toY(y[i]));
-    ctx.stroke();
-  }
+    function gaussian(x,mu,s){
+      const z=(x-mu)/s;
+      return Math.exp(-0.5*z*z)/(s*Math.sqrt(2*Math.PI));
+    }
+    function overlapArea(mu1,s1,mu2,s2){
+      const lo=Math.min(mu1-6*s1, mu2-6*s2);
+      const hi=Math.max(mu1+6*s1, mu2+6*s2);
+      const steps=1300;
+      const dx=(hi-lo)/steps;
+      let a=0;
+      for(let i=0;i<=steps;i++){
+        const x=lo+i*dx;
+        a += Math.min(gaussian(x,mu1,s1), gaussian(x,mu2,s2))*dx;
+      }
+      return clamp(a,0,1);
+    }
+    function randn(){
+      let u=0,v=0; while(u===0) u=Math.random(); while(v===0) v=Math.random();
+      return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+    }
+    function hexToRgba(hex,a){
+      const h=hex.replace("#","");
+      const r=parseInt(h.slice(0,2),16), g=parseInt(h.slice(2,4),16), b=parseInt(h.slice(4,6),16);
+      return `rgba(${r},${g},${b},${a})`;
+    }
 
-  stroke(yAgenda,"#7aa2ff",2.5);
-  stroke(yLearner,"#ffb07a",2.5);
-  stroke(yTeacher,"#ffffff",3.2);
+    function params(){
+      return {
+        cycleSpeed: parseFloat($("cycleSpeed").value),
+        learnerDuty: parseFloat($("learnerDuty").value),
+        driftRate: parseFloat($("driftRate").value),
+        metaRate: parseFloat($("metaRate").value),
+        learnRate: parseFloat($("learnRate").value),
+        bridgeIntent: parseFloat($("bridgeIntent").value),
+        noise: parseFloat($("noise").value),
+        teacherSigma: parseFloat($("teacherSigma").value),
+        spawnThreshold: parseFloat($("spawnThreshold").value),
+      };
+    }
 
-  ctx.fillStyle="#7aa2ff";
-  ctx.fillText("Digitalisation agenda",toX(state.agendaMu)-40,pad.t+14);
+    const X={min:-5.2,max:5.2};
+    const COLORS={ teacher:"#ffffff", agenda:"#8fd3ff", inst:"#c7a6ff", subj:"#ffd36a", studs:"#ff8ab1", noisy:"#8bffb4" };
 
-  ctx.fillStyle="#ffb07a";
-  ctx.fillText("Learners",toX(state.learnerMu)-20,pad.t+14);
+    // Legend (HARDENED): ignore undefined
+    const legendEl=$("legend");
+    function renderLegend(items){
+      legendEl.innerHTML="";
+      for(const a of items){
+        if(!a || !a.color || !a.name) continue; // <- FIX
+        const pill=document.createElement("span");
+        pill.className="pill";
+        const sw=document.createElement("span");
+        sw.className="sw";
+        sw.style.background=a.color;
+        pill.appendChild(sw);
+        pill.appendChild(document.createTextNode(a.name));
+        legendEl.appendChild(pill);
+      }
+    }
 
-  ctx.fillStyle="#ffffff";
-  ctx.fillText("Teacher",toX(state.teacherMu)-10,pad.t+PH-10);
-}
+    const logEl=$("log");
+    function appendMsg(who,text,tag){
+      const div=document.createElement("div");
+      div.className="msg";
+      const whoLine=document.createElement("div");
+      whoLine.className="who";
+      whoLine.textContent=who+(tag?(" • "+tag):"");
+      const body=document.createElement("div");
+      body.textContent=text;
+      div.appendChild(whoLine); div.appendChild(body);
+      logEl.appendChild(div);
+      logEl.scrollTop=logEl.scrollHeight;
+    }
 
-function step(){
-  state.t++;
+    const MAX_VISIBLE_GROUPS=5;
+    const SPAWN_COOLDOWN_TURNS=10;
 
-  // learners elaborate language (richness grows)
-  state.learnerSigma += 0.002;
-  state.learnerMu += 0.004;
+    const state={
+      turn:0, running:false, timer:null,
+      phase:0, dutyState:0,
+      U:0.05,
+      spawnCooldown:0,
+      nextNoisyId:1,
+      agents:[],
+      hist:{ U:[], avg:[] }
+    };
 
-  // agenda remains narrow and fixed
-  state.agendaSigma += (0.6-state.agendaSigma)*0.01;
+    function makeInitial(){
+      state.turn=0; state.phase=0; state.dutyState=0;
+      state.U=0.05;
+      state.spawnCooldown=0;
+      state.nextNoisyId=1;
+      state.hist={U:[], avg:[]};
 
-  // detect loss of overlap → trigger oscillation
-  const dist = Math.abs(state.learnerMu - state.agendaMu);
-  if(dist > 1.5) state.oscillating=true;
+      const tSig = params().teacherSigma;
+      state.agents = [
+        { id:"teacher", name:"Bridging teacher", kind:"teacher", color:COLORS.teacher, mu:0.0, sigma:tSig, K:0.85, baseSigma:tSig },
+        { id:"agenda", name:"Agenda (restricted)", kind:"group", role:"agenda", color:COLORS.agenda, mu:-3.6, sigma:0.70, K:0.40, baseSigma:0.70 },
+        { id:"inst", name:"Institutional dialogue", kind:"group", role:"inst", color:COLORS.inst, mu:-1.0, sigma:1.05, K:0.35, baseSigma:1.05 },
+        { id:"subj", name:"Subject teacher", kind:"group", role:"subj", color:COLORS.subj, mu:2.0, sigma:1.15, K:0.35, baseSigma:1.15 },
+        { id:"studs", name:"Students", kind:"group", role:"studs", color:COLORS.studs, mu:3.2, sigma:1.60, K:0.30, baseSigma:1.60 },
+      ];
 
-  if(!state.oscillating){
-    // early phase: teacher sits in middle
-    state.teacherMu += (0 - state.teacherMu)*0.02;
-  } else {
-    // late phase: oscillation begins
-    state.phase += 0.05;
-    const mid = (state.agendaMu + state.learnerMu)/2;
-    const amp = (state.learnerMu - state.agendaMu)/2;
-    state.teacherMu = mid + Math.sin(state.phase)*amp*0.9;
-  }
+      logEl.innerHTML="";
+      appendMsg("System",
+        "Reset: starts in oscillation (double bind). As institutional dialogue grows meta-understanding U, the system blends into collaborative bridging. When convergence happens, new noisy actors appear on the right.",
+        "reset"
+      );
+    }
 
-  draw();
-}
+    // SAFE accessors
+    function teacher(){
+      if(!state.agents || !state.agents.length) return null;
+      return state.agents.find(a=>a && a.kind==="teacher") || state.agents[0] || null;
+    }
+    function groups(){
+      return (state.agents || []).filter(a=>a && a.kind==="group");
+    }
+    function role(id){
+      return (state.agents || []).find(a=>a && a.id===id) || null;
+    }
 
-function play(){
-  if(state.running)return;
-  state.running=true;
-  state.timer=setInterval(step,40);
-}
-function pause(){
-  state.running=false;
-  clearInterval(state.timer);
-}
-function resetAll(){
-  pause();
-  state={
-    t:0,
-    running:false,
-    timer:null,
-    agendaMu:0,
-    learnerMu:0,
-    teacherMu:0,
-    agendaSigma:0.6,
-    learnerSigma:0.9,
-    teacherSigma:1.0,
-    phase:0,
-    oscillating:false
-  };
-  draw();
-}
+    function blend(){
+      const u=state.U;
+      const t=clamp((u-0.35)/0.45,0,1);
+      return t*t*(3-2*t);
+    }
 
-resetAll();
+    function dutyWave(phase, dutyBias){
+      const s=Math.sin(phase);
+      const w=Math.tanh(2.0*(s + 0.22*dutyBias));
+      return clamp(w,-1,1);
+    }
+
+    function mobility(agent){
+      const p=params();
+      const base = agent.kind==="teacher" ? 0.60 : 0.16;
+      return base + 1.10*agent.K*(0.65+0.35*p.learnRate);
+    }
+
+    function groupPairs(){
+      const G=groups();
+      const pairs=[];
+      for(let i=0;i<G.length;i++){
+        for(let j=i+1;j<G.length;j++){
+          const a=G[i], b=G[j];
+          pairs.push({a,b, ov: overlapArea(a.mu,a.sigma,b.mu,b.sigma)});
+        }
+      }
+      return pairs;
+    }
+    function avgGroupOverlap(){
+      const ps=groupPairs();
+      if(!ps.length) return 0;
+      return ps.reduce((s,p)=>s+p.ov,0)/ps.length;
+    }
+    function weakestPair(){
+      const ps=groupPairs();
+      if(!ps.length) return null;
+      ps.sort((x,y)=>x.ov-y.ov);
+      return ps[0];
+    }
+    function strongestPair(){
+      const ps=groupPairs();
+      if(!ps.length) return null;
+      ps.sort((x,y)=>y.ov-x.ov);
+      return ps[0];
+    }
+
+    function chooseBridger(){
+      const A=state.agents || [];
+      if(!A.length) return null;
+      let best = teacher() || A[0];
+      for(const a of A){
+        if(a && typeof a.K==="number" && a.K > best.K) best=a;
+      }
+      return best || null;
+    }
+
+    function spawnNoisyRight(){
+      const id=`noisy${state.nextNoisyId++}`;
+      const mu=4.0 + randn()*0.18;
+      const sigma=2.05 + Math.random()*0.30;
+      const g={
+        id, name:`New noisy actor ${state.nextNoisyId-1}`,
+        kind:"group", role:"noisy", color:COLORS.noisy,
+        mu: clamp(mu, X.min+0.8, X.max-0.8),
+        sigma: clamp(sigma, 1.6, 2.5),
+        K: 0.10 + Math.random()*0.10,
+        baseSigma: sigma
+      };
+      state.agents.push(g);
+      appendMsg("System",
+        `Convergence triggered: spawned ${g.name} on the far right (broad/noisy).`,
+        "spawn"
+      );
+    }
+
+    function pruneAligned(){
+      const coreIds=new Set(["agenda","inst","subj","studs"]);
+      while(groups().length > (1 + MAX_VISIBLE_GROUPS)){
+        const extras = groups().filter(g=>!coreIds.has(g.id));
+        let removed=null;
+        if(extras.length){
+          extras.sort((a,b)=>a.K-b.K);
+          removed=extras[0];
+        } else {
+          const sp=strongestPair();
+          if(!sp) break;
+          const cand=[sp.a,sp.b].filter(x=>!coreIds.has(x.id));
+          if(!cand.length) break;
+          cand.sort((a,b)=>a.K-b.K);
+          removed=cand[0];
+        }
+        if(!removed) break;
+        state.agents = state.agents.filter(a=>a && a.id!==removed.id);
+        appendMsg("System", `Pruned curve: removed ${removed.name}.`, "prune");
+      }
+    }
+
+    // Canvas
+    const plot=$("plot"), trend=$("trend");
+    const pctx=plot.getContext("2d");
+    const tctx=trend.getContext("2d");
+
+    function resizeCanvas(c){
+      const dpr=window.devicePixelRatio||1;
+      const r=c.getBoundingClientRect();
+      const w=Math.max(1,Math.round(r.width*dpr));
+      const h=Math.max(1,Math.round(r.height*dpr));
+      if(c.width!==w || c.height!==h){ c.width=w; c.height=h; }
+    }
+
+    function redraw(){
+      const T=teacher();
+      const G=groups();
+      if(!T) return;
+
+      renderLegend([T, ...G]);
+
+      const avg=avgGroupOverlap();
+      const b=chooseBridger();
+      $("turnKpi").textContent=String(state.turn);
+      $("uKpi").textContent=state.U.toFixed(2);
+      $("blendKpi").textContent=blend().toFixed(2);
+      $("avgKpi").textContent=avg.toFixed(2);
+      $("tKpi").textContent=`μ=${T.mu.toFixed(2)} σ=${T.sigma.toFixed(2)}`;
+      $("bKpi").textContent=b ? b.id : "—";
+
+      const mode = blend()<0.45 ? "Oscillation (double bind)" : (blend()<0.85 ? "Blended transition" : "Collaborative bridging");
+      $("modePill").textContent = mode;
+      $("statusPill").textContent = `Groups=${G.length} • Spawn cooldown=${state.spawnCooldown}`;
+
+      // Plot
+      resizeCanvas(plot);
+      const W=plot.width,H=plot.height;
+      pctx.clearRect(0,0,W,H);
+      const pad={l:52,r:18,t:18,b:40};
+      const PW=W-pad.l-pad.r, PH=H-pad.t-pad.b;
+      const toX=x=>pad.l+(x-X.min)/(X.max-X.min)*PW;
+
+      let yMax=1e-6;
+      for(const a of [T,...G]) if(a) yMax=Math.max(yMax, gaussian(a.mu,a.mu,a.sigma));
+      yMax*=1.28;
+      const toY=y=>pad.t+(1-y/yMax)*PH;
+
+      pctx.strokeStyle="#2a3350"; pctx.lineWidth=1;
+      pctx.beginPath();
+      pctx.moveTo(pad.l,pad.t);
+      pctx.lineTo(pad.l,pad.t+PH);
+      pctx.lineTo(pad.l+PW,pad.t+PH);
+      pctx.stroke();
+
+      pctx.fillStyle="#a8b0c0"; pctx.font="12px system-ui";
+      for(let x=-5;x<=5;x++){
+        const px=toX(x);
+        pctx.strokeStyle="rgba(42,51,80,0.60)";
+        pctx.beginPath(); pctx.moveTo(px,pad.t+PH); pctx.lineTo(px,pad.t+PH+6); pctx.stroke();
+        pctx.fillText(String(x), px-4, pad.t+PH+22);
+      }
+      pctx.fillText("Utterance-space (agenda ←→ learner field / noisy entrants on right)", pad.l, H-10);
+
+      const N=900;
+      const xs=new Array(N);
+      for(let i=0;i<N;i++) xs[i]=X.min+(X.max-X.min)*i/(N-1);
+
+      const ys=new Map();
+      for(const a of [T,...G]) if(a) ys.set(a.id, xs.map(x=>gaussian(x,a.mu,a.sigma)));
+
+      const bridger=chooseBridger();
+      if(bridger && ys.has(bridger.id)){
+        const yB=ys.get(bridger.id);
+        for(const a of [T,...G]){
+          if(!a || a.id===bridger.id) continue;
+          const yA=ys.get(a.id); if(!yA) continue;
+          pctx.fillStyle=hexToRgba(a.color, 0.14);
+          pctx.beginPath();
+          pctx.moveTo(toX(xs[0]), toY(0));
+          for(let i=0;i<N;i++) pctx.lineTo(toX(xs[i]), toY(Math.min(yB[i], yA[i])));
+          pctx.lineTo(toX(xs[N-1]), toY(0));
+          pctx.closePath();
+          pctx.fill();
+        }
+      }
+
+      function stroke(id,color,lw){
+        const y=ys.get(id); if(!y) return;
+        pctx.strokeStyle=color; pctx.lineWidth=lw;
+        pctx.beginPath();
+        pctx.moveTo(toX(xs[0]), toY(y[0]));
+        for(let i=1;i<N;i++) pctx.lineTo(toX(xs[i]), toY(y[i]));
+        pctx.stroke();
+      }
+      for(const g of G) if(g) stroke(g.id,g.color,2.6);
+      stroke(T.id,T.color,3.1);
+
+      function marker(a){
+        const x=toX(a.mu);
+        pctx.strokeStyle=a.color; pctx.lineWidth=1.1;
+        pctx.beginPath(); pctx.moveTo(x,pad.t); pctx.lineTo(x,pad.t+PH); pctx.stroke();
+        pctx.fillStyle=a.color; pctx.font="11px system-ui";
+        pctx.fillText(`μ ${a.id}`, x+6, pad.t+PH-8);
+      }
+      for(const g of G) if(g) marker(g);
+      marker(T);
+
+      pctx.fillStyle="#a8b0c0"; pctx.font="12px system-ui";
+      pctx.fillText(`U=${state.U.toFixed(2)} • Blend=${blend().toFixed(2)} • AvgOverlap=${avg.toFixed(2)}`, pad.l, pad.t+14);
+
+      // Trend
+      resizeCanvas(trend);
+      const TW=trend.width, TH=trend.height;
+      tctx.clearRect(0,0,TW,TH);
+      const tpad={l:52,r:18,t:16,b:26};
+      const w=TW-tpad.l-tpad.r, h=TH-tpad.t-tpad.b;
+
+      tctx.strokeStyle="#2a3350"; tctx.lineWidth=1;
+      tctx.beginPath();
+      tctx.moveTo(tpad.l,tpad.t);
+      tctx.lineTo(tpad.l,tpad.t+h);
+      tctx.lineTo(tpad.l+w,tpad.t+h);
+      tctx.stroke();
+
+      tctx.fillStyle="#a8b0c0"; tctx.font="12px system-ui";
+      tctx.fillText("U (meta-understanding) and Avg overlap over time", tpad.l, tpad.t-2);
+
+      const n=state.hist.U.length;
+      if(n>1){
+        const toTX=i=>tpad.l+(i/(n-1))*w;
+        const toTY=v=>tpad.t+(1-v)*h;
+
+        tctx.strokeStyle="rgba(42,51,80,0.50)";
+        for(let k=0;k<=4;k++){
+          const yy=tpad.t+(k/4)*h;
+          tctx.beginPath(); tctx.moveTo(tpad.l,yy); tctx.lineTo(tpad.l+w,yy); tctx.stroke();
+        }
+        function line(arr,color){
+          tctx.strokeStyle=color; tctx.lineWidth=2;
+          tctx.beginPath();
+          tctx.moveTo(toTX(0), toTY(arr[0]));
+          for(let i=1;i<arr.length;i++) tctx.lineTo(toTX(i), toTY(arr[i]));
+          tctx.stroke();
+        }
+        line(state.hist.U, "#ffffff");
+        line(state.hist.avg, "#8fd3ff");
+      }
+    }
+
+    function updateMetaUnderstanding(){
+      const p=params();
+      const T=teacher();
+      const A=role("agenda"), I=role("inst"), ST=role("subj"), S=role("studs");
+      if(!T || !A || !I || !ST || !S) return;
+
+      const learnerMu = 0.55*ST.mu + 0.45*S.mu;
+      const learnerSig= 0.55*ST.sigma + 0.45*S.sigma;
+
+      const ovTA = overlapArea(T.mu,T.sigma, A.mu,A.sigma);
+      const ovTL = overlapArea(T.mu,T.sigma, learnerMu, learnerSig);
+
+      const ovIA = overlapArea(I.mu,I.sigma, A.mu,A.sigma);
+      const ovIL = overlapArea(I.mu,I.sigma, learnerMu, learnerSig);
+
+      const bothSeen = ovTA * ovTL;
+      const gain = (0.010 + 0.020*p.metaRate) * (0.65*bothSeen + 0.35*Math.max(ovIA,ovIL)) * (1 - state.U);
+      const loss = Math.max(0, randn()) * 0.003 * p.noise * (0.6 - state.U);
+
+      state.U = clamp(state.U + gain - loss, 0, 1);
+    }
+
+    function stepModel(){
+      const p=params();
+      const T=teacher();
+      const A=role("agenda"), I=role("inst"), ST=role("subj"), S=role("studs");
+      if(!T || !A || !I || !ST || !S) return;
+
+      updateMetaUnderstanding();
+      const bl=blend();
+
+      const initialDrift = 0.004 * p.driftRate;
+      const drift = initialDrift * (1 - 0.85*state.U);
+
+      A.mu  -= drift * 0.60;
+      ST.mu += drift * 0.40;
+      S.mu  += drift * 0.55;
+
+      A.mu += 0.006 * state.U; // recenter agenda as U rises
+
+      const learnerPole = 0.55*ST.mu + 0.45*S.mu;
+      I.mu += (0.5*(A.mu + learnerPole) - I.mu) * (0.05 + 0.08*state.U);
+      I.mu += randn()*0.02*p.noise*(1 - state.U);
+
+      for(const g of [A,I,ST,S]){
+        g.mu = clamp(g.mu, X.min+0.8, X.max-0.8);
+      }
+
+      const agendaMin=0.45, agendaMax=1.10;
+      const agendaTarget = (1-state.U)*agendaMin + state.U*agendaMax;
+      A.sigma += (agendaTarget - A.sigma) * (0.03 + 0.05*p.metaRate);
+      A.sigma = clamp(A.sigma, 0.45, 1.25);
+
+      const stHi=1.85, stLo=1.25, sHi=2.25, sLo=1.65;
+      const stTarget = (1-state.U)*stHi + state.U*stLo;
+      const sTarget  = (1-state.U)*sHi  + state.U*sLo;
+
+      ST.sigma += (stTarget - ST.sigma) * 0.03;
+      S.sigma  += (sTarget  - S.sigma)  * 0.03;
+      ST.sigma = clamp(ST.sigma, 0.75, 2.30);
+      S.sigma  = clamp(S.sigma,  0.95, 2.50);
+
+      const iTarget = clamp(1.05 + 0.45*state.U, 0.85, 1.70);
+      I.sigma += (iTarget - I.sigma) * 0.04;
+      I.sigma = clamp(I.sigma, 0.75, 2.0);
+
+      // teacher sigma constant-ish
+      const desiredSig=p.teacherSigma;
+      T.sigma += (desiredSig - T.sigma) * 0.14;
+      T.sigma = clamp(T.sigma + randn()*0.002, 0.55, 2.5);
+
+      // teacher movement blended
+      state.phase += 0.055 * p.cycleSpeed;
+      const d = dutyWave(state.phase, p.learnerDuty);
+      state.dutyState = 0.90*state.dutyState + 0.10*d;
+      const u = (state.dutyState + 1)/2;
+
+      const learnerPoleMu = 0.55*ST.mu + 0.45*S.mu;
+      let oscTarget = (1-u)*A.mu + u*learnerPoleMu;
+
+      const w=weakestPair();
+      let collabTarget = oscTarget;
+      if(w) collabTarget = 0.5*(w.a.mu + w.b.mu);
+
+      let targetMu = (1-bl)*oscTarget + bl*collabTarget;
+      targetMu += randn()*0.05*p.noise*(1-0.35*state.U);
+
+      const step = (0.18 + 0.10*p.bridgeIntent) * (0.75 + 0.55*mobility(T));
+      T.mu += (targetMu - T.mu) * (0.10 + 0.06*bl) + (targetMu - T.mu) * step * 0.02;
+      T.mu = clamp(T.mu, X.min+0.8, X.max-0.8);
+
+      // K dynamics
+      T.K = clamp(T.K + 0.002*state.U - 0.001*p.noise, 0.78, 1.0);
+
+      const bridger=chooseBridger();
+      const G=groups();
+      if(bridger){
+        for(const g of G){
+          const ov = overlapArea(bridger.mu,bridger.sigma, g.mu,g.sigma);
+          const gain = (0.006 + 0.020*p.learnRate) * ov * (1 - g.K) * (0.20 + 0.80*bl);
+          const loss = Math.max(0, randn()) * 0.002 * p.noise * (1 - state.U);
+          g.K = clamp(g.K + gain - loss, 0, 1);
+        }
+        for(const g of G){
+          const mob = mobility(g);
+          const others = G.filter(x=>x.id!==g.id);
+          if(!others.length) continue;
+          const peerMu = others.reduce((s,x)=>s+x.mu,0)/others.length;
+
+          const towardPeers = (peerMu - g.mu) * (0.010 + 0.022*mob) * (0.15 + 0.85*g.K) * (0.20 + 0.80*bl);
+          g.mu += towardPeers;
+          g.mu += randn()*0.02*p.noise*(1-g.K);
+          g.mu = clamp(g.mu, X.min+0.8, X.max-0.8);
+
+          const desired = clamp(g.baseSigma * (1.12 - 0.30*g.K), 0.55, 2.50);
+          g.sigma += (desired - g.sigma) * (0.02 + 0.05*g.K) * (0.20 + 0.80*bl);
+          g.sigma = clamp(g.sigma, 0.55, 2.50);
+        }
+      }
+
+      // spawn new noisy group
+      const avg=avgGroupOverlap();
+      if(state.spawnCooldown>0) state.spawnCooldown--;
+
+      if(bl>0.55 && avg>=p.spawnThreshold && state.spawnCooldown===0){
+        spawnNoisyRight();
+        state.spawnCooldown=SPAWN_COOLDOWN_TURNS;
+        pruneAligned();
+      }
+
+      state.hist.U.push(state.U);
+      state.hist.avg.push(avg);
+      const cap=180;
+      if(state.hist.U.length>cap){ state.hist.U.shift(); state.hist.avg.shift(); }
+
+      const mode = bl<0.45 ? "oscillation" : (bl<0.85 ? "transition" : "collaboration");
+      appendMsg("System",
+        `Mode=${mode}; U=${state.U.toFixed(2)}; avgOverlap=${avg.toFixed(2)}; teacher μ=${T.mu.toFixed(2)}.`,
+        `turn ${state.turn+1}`
+      );
+
+      state.turn++;
+      redraw();
+    }
+
+    function play(){
+      if(state.running) return;
+      state.running=true;
+      $("playBtn").textContent="Pause";
+      state.timer=setInterval(stepModel, 760);
+      redraw();
+    }
+    function pause(){
+      state.running=false;
+      $("playBtn").textContent="Play";
+      if(state.timer) clearInterval(state.timer);
+      state.timer=null;
+      redraw();
+    }
+    function togglePlay(){ state.running ? pause() : play(); }
+
+    function resetAll(){
+      pause();
+      makeInitial();
+      state.hist.U.push(state.U);
+      state.hist.avg.push(avgGroupOverlap());
+      redraw();
+    }
+
+    $("playBtn").addEventListener("click", togglePlay);
+    $("stepBtn").addEventListener("click", ()=>{ if(!state.running) stepModel(); });
+    $("resetBtn").addEventListener("click", resetAll);
+
+    ["cycleSpeed","learnerDuty","driftRate","metaRate","learnRate","bridgeIntent","noise","teacherSigma","spawnThreshold"]
+      .forEach(id=>{
+        const el=$(id);
+        el.addEventListener("input", redraw);
+        el.addEventListener("change", redraw);
+      });
+
+    window.addEventListener("resize", redraw);
+
+    // boot
+    resetAll();
+
+  }catch(e){ showErr(e); }
+});
 </script>
 </body>
 </html>
