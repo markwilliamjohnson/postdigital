@@ -1,601 +1,198 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Double-bind: Initial Overlap → Divergence → Oscillation</title>
-  <style>
-    :root { --bg:#0b0d12; --panel:#121624; --ink:#e9ecf1; --muted:#a8b0c0; --line:#2a3350; }
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;}
-    .wrap{max-width:1220px;margin:0 auto;padding:18px;display:grid;gap:14px;grid-template-columns: 1.25fr 0.75fr;}
-    header{grid-column:1/-1;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
-    h1{margin:0;font-size:18px;letter-spacing:.2px}
-    .sub{color:var(--muted);font-size:13px;margin-top:6px;line-height:1.35;max-width:980px}
-
-    .card{background:var(--panel);border:1px solid #1c2340;border-radius:16px;
-      box-shadow:0 10px 26px rgba(0,0,0,.35);overflow:hidden}
-    .hd{padding:12px 14px;border-bottom:1px solid #1c2340;display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .bd{padding:14px}
-
-    canvas{width:100%;background:
-      radial-gradient(1200px 460px at 20% 0%, rgba(120,140,255,.10), transparent 55%),
-      radial-gradient(900px 420px at 80% 0%, rgba(255,160,120,.08), transparent 60%);
-      border-radius:14px;border:1px solid #1c2340;display:block}
-    #plot{height:380px}
-    #trend{height:140px;margin-top:10px}
-
-    .legend{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .pill{display:inline-flex;gap:6px;align-items:center;padding:4px 8px;border-radius:999px;
-      border:1px solid #2a3350;font-size:11px;color:var(--muted)}
-    .sw{width:10px;height:10px;border-radius:999px;display:inline-block}
-
-    .btns{display:flex;gap:8px;flex-wrap:wrap}
-    button{background:#1b2340;color:var(--ink);border:1px solid #2a3350;border-radius:12px;
-      padding:9px 10px;font-weight:800;cursor:pointer}
-    button:hover{filter:brightness(1.08)}
-    button:active{transform:translateY(1px)}
-    button.primary{background:#2a3cff;border-color:#3b4cff}
-    button.warn{background:#3a1f29;border-color:#6a2a3d}
-
-    .kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .kpi .box{border:1px solid #1c2340;border-radius:14px;padding:10px;background:rgba(255,255,255,.02)}
-    .k{font-size:11px;color:var(--muted)}
-    .v{font-size:16px;font-weight:900;margin-top:4px}
-
-    .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px dashed #212a45}
-    .row:last-child{border-bottom:none}
-    label{font-size:12px;color:var(--muted)}
-    input[type="range"]{width:250px}
-    .note{color:var(--muted);font-size:12px;line-height:1.45}
-
-    .log{height:250px;overflow:auto;padding-right:6px}
-    .msg{border:1px solid #1c2340;border-radius:14px;padding:10px;margin:10px 0;background:rgba(255,255,255,.02)}
-    .msg .who{font-size:11px;color:var(--muted);margin-bottom:6px}
-
-    .err{
-      position:fixed;left:14px;right:14px;bottom:14px;
-      background:rgba(80,18,26,.92);border:1px solid #6a2a3d;color:#ffd6dc;
-      padding:10px 12px;border-radius:14px;font-size:12px;display:none;z-index:9999;white-space:pre-wrap;
-    }
-    @media (max-width:980px){
-      .wrap{grid-template-columns:1fr}
-      #plot{height:340px}
-      input[type="range"]{width:190px}
-    }
-  </style>
+<meta charset="utf-8">
+<title>Double Bind from Initial Alignment</title>
+<style>
+body{
+  margin:0;
+  background:#0b0d12;
+  color:#e9ecf1;
+  font-family:system-ui;
+}
+.wrap{max-width:1000px;margin:20px auto;padding:20px}
+canvas{width:100%;height:360px;border:1px solid #1c2340;border-radius:12px}
+button{background:#2a3cff;color:white;border:none;
+  border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
+.note{color:#a8b0c0;font-size:13px;margin-top:8px}
+</style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <div>
-      <h1>Double-bind (corrected): starts aligned, diverges because agenda can’t sustain richness → teacher oscillates</h1>
-      <div class="sub">
-        Initially teacher/agenda/learners overlap strongly. Over time, learners maintain and grow nuanced discourse (σ↑) while the agenda remains reductive (σ stays low).
-        Under noise, overlap collapses asymmetrically; the teacher becomes conflicted and oscillates between agenda and learner field. Teacher σ stays approximately constant.
-      </div>
-    </div>
-    <div class="legend" id="legend"></div>
-  </header>
-
-  <div class="card">
-    <div class="hd">
-      <strong>Curves + overlap shading (teacher vs each)</strong>
-      <span class="pill" id="modePill">…</span>
-    </div>
-    <div class="bd">
-      <canvas id="plot"></canvas>
-      <canvas id="trend"></canvas>
-      <div class="note" style="margin-top:10px;">
-        Shading = overlap (mutual intelligibility) between teacher and each discourse. Trend shows overlaps + a “double-bind pressure” indicator.
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="hd">
-      <strong>Controls</strong>
-      <div class="btns">
-        <button class="primary" id="playBtn" type="button">Play</button>
-        <button id="stepBtn" type="button">Step</button>
-        <button class="warn" id="resetBtn" type="button">Reset</button>
-      </div>
-    </div>
-    <div class="bd">
-      <div class="kpi">
-        <div class="box"><div class="k">Turn</div><div class="v" id="turnKpi">0</div></div>
-        <div class="box"><div class="k">Mode</div><div class="v" id="modeKpi">Aligned</div></div>
-        <div class="box"><div class="k">Teacher μ / σ</div><div class="v" id="tKpi">—</div></div>
-        <div class="box"><div class="k">Learner richness σ</div><div class="v" id="lrKpi">—</div></div>
-        <div class="box"><div class="k">Overlap T↔Agenda</div><div class="v" id="ovTA">0.00</div></div>
-        <div class="box"><div class="k">Overlap T↔Learners</div><div class="v" id="ovTL">0.00</div></div>
-        <div class="box"><div class="k">Double-bind pressure</div><div class="v" id="dbKpi">0.00</div></div>
-        <div class="box"><div class="k">Agenda σ (restricted)</div><div class="v" id="aKpi">—</div></div>
-      </div>
-
-      <div class="row" style="margin-top:10px;">
-        <div><label for="noise">Noise</label><div class="note">μ jitter + misalignment; reduces effective overlap.</div></div>
-        <input id="noise" type="range" min="0" max="1.0" step="0.01" value="0.22" />
-      </div>
-
-      <div class="row">
-        <div><label for="teacherSigma">Teacher σ (constant-ish)</label><div class="note">Held near this value regardless of noise/position.</div></div>
-        <input id="teacherSigma" type="range" min="0.6" max="2.2" step="0.01" value="1.10" />
-      </div>
-
-      <div class="row">
-        <div><label for="learnerRichGrowth">Learner richness growth</label><div class="note">How quickly learners elaborate nuance (σ↑).</div></div>
-        <input id="learnerRichGrowth" type="range" min="0" max="2.0" step="0.01" value="1.05" />
-      </div>
-
-      <div class="row">
-        <div><label for="learnerDrift">Learner drift</label><div class="note">How quickly learner μ moves right (new distinctions/meanings).</div></div>
-        <input id="learnerDrift" type="range" min="0" max="2.0" step="0.01" value="0.85" />
-      </div>
-
-      <div class="row">
-        <div><label for="agendaRigidity">Agenda rigidity</label><div class="note">Higher = agenda stays narrow and refuses nuance (σ stays low, μ resists movement).</div></div>
-        <input id="agendaRigidity" type="range" min="0" max="2.0" step="0.01" value="1.25" />
-      </div>
-
-      <div class="row">
-        <div><label for="oscSpeed">Oscillation speed (after bind forms)</label></div>
-        <input id="oscSpeed" type="range" min="0.3" max="2.6" step="0.01" value="1.05" />
-      </div>
-
-      <div class="row">
-        <div><label for="learnerDuty">Learner-duty bias (after bind forms)</label><div class="note">Higher = teacher spends more of the cycle with learners.</div></div>
-        <input id="learnerDuty" type="range" min="0" max="2.0" step="0.01" value="1.05" />
-      </div>
-
-      <div class="note" style="margin-top:12px;">
-        Oscillation is not “built in” at the start. It is triggered when measured overlaps become mutually unsatisfiable due to richness mismatch under noise.
-      </div>
-    </div>
-  </div>
-
-  <div class="card" style="grid-column:1 / -1;">
-    <div class="hd"><strong>Trace</strong><span class="pill" id="statusPill">…</span></div>
-    <div class="bd"><div class="log" id="log"></div></div>
-  </div>
+<h2>Double Bind: Initial Alignment → Divergence via Richness</h2>
+<div class="note">
+System begins aligned. Learners elaborate meaning; technical agenda remains reductive.
+Teacher oscillates only after overlap collapses.
+</div>
+<canvas id="plot"></canvas>
+<br>
+<button onclick="play()">Play</button>
+<button onclick="pause()">Pause</button>
+<button onclick="resetAll()">Reset</button>
 </div>
 
-<div id="err" class="err"></div>
-
 <script>
-window.addEventListener("DOMContentLoaded", () => {
-  const errEl = document.getElementById("err");
-  function showErr(e){
-    errEl.style.display="block";
-    errEl.textContent="Runtime error:\n"+(e && e.stack ? e.stack : String(e));
+const canvas = document.getElementById("plot");
+const ctx = canvas.getContext("2d");
+
+function resize(){
+  const dpr=window.devicePixelRatio||1;
+  const r=canvas.getBoundingClientRect();
+  canvas.width=r.width*dpr;
+  canvas.height=r.height*dpr;
+}
+window.onresize=resize;
+resize();
+
+function gaussian(x,mu,s){
+  const z=(x-mu)/s;
+  return Math.exp(-0.5*z*z)/(s*Math.sqrt(2*Math.PI));
+}
+
+const X={min:-6,max:6};
+
+let state={
+  t:0,
+  running:false,
+  timer:null,
+
+  // start aligned
+  agendaMu:0,
+  learnerMu:0,
+  teacherMu:0,
+
+  agendaSigma:0.6,
+  learnerSigma:0.9,
+  teacherSigma:1.0,
+
+  phase:0,
+  oscillating:false
+};
+
+function draw(){
+  resize();
+  const W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  const pad={l:50,r:20,t:20,b:40};
+  const PW=W-pad.l-pad.r;
+  const PH=H-pad.t-pad.b;
+
+  const toX=x=>pad.l+(x-X.min)/(X.max-X.min)*PW;
+  const toY=y=>pad.t+(1-y/0.6)*PH;
+
+  // axes
+  ctx.strokeStyle="#2a3350";
+  ctx.beginPath();
+  ctx.moveTo(pad.l,pad.t);
+  ctx.lineTo(pad.l,pad.t+PH);
+  ctx.lineTo(pad.l+PW,pad.t+PH);
+  ctx.stroke();
+
+  const N=800;
+  let xs=[];
+  for(let i=0;i<N;i++)
+    xs.push(X.min+(X.max-X.min)*i/(N-1));
+
+  const yAgenda=xs.map(x=>gaussian(x,state.agendaMu,state.agendaSigma));
+  const yLearner=xs.map(x=>gaussian(x,state.learnerMu,state.learnerSigma));
+  const yTeacher=xs.map(x=>gaussian(x,state.teacherMu,state.teacherSigma));
+
+  // overlaps (teacher)
+  function overlap(yA,color){
+    ctx.fillStyle=color;
+    ctx.beginPath();
+    ctx.moveTo(toX(xs[0]),toY(0));
+    for(let i=0;i<N;i++)
+      ctx.lineTo(toX(xs[i]),toY(Math.min(yTeacher[i],yA[i])));
+    ctx.lineTo(toX(xs[N-1]),toY(0));
+    ctx.closePath();
+    ctx.fill();
   }
-  window.addEventListener("error", ev => showErr(ev.error || ev.message));
-  window.addEventListener("unhandledrejection", ev => showErr(ev.reason));
 
-  try{
-    const $ = (id)=>document.getElementById(id);
-    const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-
-    const COLORS={ teacher:"#ffffff", agenda:"#8fd3ff", learners:"#ff8ab1", subj:"#ffd36a" };
-    const legendEl=$("legend");
-    function legend(){
-      legendEl.innerHTML="";
-      const items=[
-        {name:"Agenda (restricted)", color:COLORS.agenda},
-        {name:"Subject teacher", color:COLORS.subj},
-        {name:"Learners", color:COLORS.learners},
-        {name:"Teacher", color:COLORS.teacher},
-      ];
-      for(const a of items){
-        const pill=document.createElement("span"); pill.className="pill";
-        const sw=document.createElement("span"); sw.className="sw"; sw.style.background=a.color;
-        pill.appendChild(sw); pill.appendChild(document.createTextNode(a.name));
-        legendEl.appendChild(pill);
-      }
-    }
-    legend();
-
-    function params(){
-      return {
-        noise: parseFloat($("noise").value),
-        teacherSigma: parseFloat($("teacherSigma").value),
-        learnerRichGrowth: parseFloat($("learnerRichGrowth").value),
-        learnerDrift: parseFloat($("learnerDrift").value),
-        agendaRigidity: parseFloat($("agendaRigidity").value),
-        oscSpeed: parseFloat($("oscSpeed").value),
-        learnerDuty: parseFloat($("learnerDuty").value),
-      };
-    }
-
-    function randn(){
-      let u=0,v=0; while(u===0) u=Math.random(); while(v===0) v=Math.random();
-      return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
-    }
-    function gaussian(x,mu,s){
-      const z=(x-mu)/s;
-      return Math.exp(-0.5*z*z)/(s*Math.sqrt(2*Math.PI));
-    }
-    function overlapArea(mu1,s1,mu2,s2){
-      const lo=Math.min(mu1-6*s1, mu2-6*s2);
-      const hi=Math.max(mu1+6*s1, mu2+6*s2);
-      const steps=1400, dx=(hi-lo)/steps;
-      let a=0;
-      for(let i=0;i<=steps;i++){
-        const x=lo+i*dx;
-        a += Math.min(gaussian(x,mu1,s1), gaussian(x,mu2,s2))*dx;
-      }
-      return clamp(a,0,1);
-    }
-    function tanh(x){ return Math.tanh(x); }
-    function dutyWave(phase, bias){
-      const s=Math.sin(phase);
-      return clamp(tanh(2.0*(s + 0.22*bias)), -1, 1);
-    }
-
-    const X={min:-5.2,max:5.2};
-
-    const state={
-      running:false, timer:null,
-      turn:0,
-      phase:0,
-      dutyState:0,
-      mode:"Aligned",  // Aligned → Diverging → Oscillating
-      // Start with genuine overlap (close μ, compatible σ)
-      agenda:{ mu:-0.2, sigma:0.85 },
-      subj:  { mu: 0.0, sigma:1.05 },
-      learn: { mu: 0.2, sigma:1.15 },
-      teacher:{ mu:0.0, sigma:1.10 }, // sigma will be held near slider
-      hist:{ ovTA:[], ovTL:[], db:[] }
-    };
-
-    const logEl=$("log");
-    function appendMsg(who,text,tag){
-      const div=document.createElement("div"); div.className="msg";
-      const whoLine=document.createElement("div"); whoLine.className="who";
-      whoLine.textContent=who+(tag?(" • "+tag):"");
-      const body=document.createElement("div"); body.textContent=text;
-      div.appendChild(whoLine); div.appendChild(body);
-      logEl.appendChild(div);
-      logEl.scrollTop=logEl.scrollHeight;
-    }
-
-    const plot=$("plot"), trend=$("trend");
-    const pctx=plot.getContext("2d"), tctx=trend.getContext("2d");
-
-    function resizeCanvas(c){
-      const dpr=window.devicePixelRatio||1;
-      const r=c.getBoundingClientRect();
-      const w=Math.max(1,Math.round(r.width*dpr));
-      const h=Math.max(1,Math.round(r.height*dpr));
-      if(c.width!==w || c.height!==h){ c.width=w; c.height=h; }
-    }
-
-    function redraw(){
-      const A=state.agenda, L=state.learn, S=state.subj, T=state.teacher;
-
-      const learnerPoleMu = 0.55*S.mu + 0.45*L.mu;
-      const learnerPoleSig= 0.55*S.sigma + 0.45*L.sigma;
-
-      const ovTA = overlapArea(T.mu,T.sigma, A.mu,A.sigma);
-      const ovTL = overlapArea(T.mu,T.sigma, learnerPoleMu, learnerPoleSig);
-
-      // “double-bind pressure”: high when teacher cannot keep both overlaps high
-      // pressure increases when one is high and the other low, and when both are low.
-      const db = clamp((1 - (ovTA + ovTL)/2) + 0.35*Math.abs(ovTA - ovTL), 0, 1);
-
-      $("turnKpi").textContent=String(state.turn);
-      $("modeKpi").textContent=state.mode;
-      $("tKpi").textContent=`μ=${T.mu.toFixed(2)} σ=${T.sigma.toFixed(2)}`;
-      $("lrKpi").textContent=(0.55*S.sigma+0.45*L.sigma).toFixed(2);
-      $("aKpi").textContent=A.sigma.toFixed(2);
-      $("ovTA").textContent=ovTA.toFixed(2);
-      $("ovTL").textContent=ovTL.toFixed(2);
-      $("dbKpi").textContent=db.toFixed(2);
-      $("modePill").textContent=`${state.mode} • Uplift mismatch drives divergence`;
-
-      $("statusPill").textContent=`ovTA=${ovTA.toFixed(2)} ovTL=${ovTL.toFixed(2)} db=${db.toFixed(2)}`;
-
-      // --- main plot ---
-      resizeCanvas(plot);
-      const W=plot.width,H=plot.height;
-      pctx.clearRect(0,0,W,H);
-
-      const pad={l:52,r:18,t:18,b:40};
-      const PW=W-pad.l-pad.r, PH=H-pad.t-pad.b;
-      const toX=x=>pad.l+(x-X.min)/(X.max-X.min)*PW;
-
-      // yMax from current peaks
-      let yMax=1e-6;
-      const actors=[{...A},{...S},{...L},{...T}];
-      for(const a of actors) yMax=Math.max(yMax, gaussian(a.mu,a.mu,a.sigma));
-      yMax*=1.28;
-      const toY=y=>pad.t+(1-y/yMax)*PH;
-
-      // axes
-      pctx.strokeStyle="#2a3350"; pctx.lineWidth=1;
-      pctx.beginPath();
-      pctx.moveTo(pad.l,pad.t);
-      pctx.lineTo(pad.l,pad.t+PH);
-      pctx.lineTo(pad.l+PW,pad.t+PH);
-      pctx.stroke();
-
-      // ticks
-      pctx.fillStyle="#a8b0c0"; pctx.font="12px system-ui";
-      for(let x=-5;x<=5;x++){
-        const px=toX(x);
-        pctx.strokeStyle="rgba(42,51,80,0.60)";
-        pctx.beginPath(); pctx.moveTo(px,pad.t+PH); pctx.lineTo(px,pad.t+PH+6); pctx.stroke();
-        pctx.fillText(String(x), px-4, pad.t+PH+22);
-      }
-      pctx.fillText("Utterance-space (restricted agenda ←→ nuanced learner field)", pad.l, H-10);
-
-      // samples
-      const N=900;
-      const xs=new Array(N);
-      for(let i=0;i<N;i++) xs[i]=X.min+(X.max-X.min)*i/(N-1);
-      const yA=xs.map(x=>gaussian(x,A.mu,A.sigma));
-      const yS=xs.map(x=>gaussian(x,S.mu,S.sigma));
-      const yL=xs.map(x=>gaussian(x,L.mu,L.sigma));
-      const yT=xs.map(x=>gaussian(x,T.mu,T.sigma));
-
-      // overlap shading teacher vs agenda, teacher vs learnerPole (use learnerPole curve)
-      const yPole=xs.map(x=>gaussian(x,learnerPoleMu, learnerPoleSig));
-
-      shadeMin(yA, "rgba(120,160,255,0.18)");
-      shadeMin(yPole,"rgba(255,138,177,0.14)");
-
-      stroke(xs,yA,COLORS.agenda,2.6);
-      stroke(xs,yS,COLORS.subj,2.6);
-      stroke(xs,yL,COLORS.learners,2.6);
-      stroke(xs,yT,COLORS.teacher,3.1);
-
-      marker(A.mu,COLORS.agenda,"μ agenda");
-      marker(S.mu,COLORS.subj,"μ subj");
-      marker(L.mu,COLORS.learners,"μ learners");
-      marker(T.mu,COLORS.teacher,"μ teacher");
-
-      pctx.fillStyle="#a8b0c0"; pctx.font="12px system-ui";
-      pctx.fillText(`Overlaps: T↔Agenda=${ovTA.toFixed(2)}  T↔LearnerPole=${ovTL.toFixed(2)}  |  Double-bind pressure=${db.toFixed(2)}`, pad.l, pad.t+14);
-
-      function stroke(xarr,yarr,color,lw){
-        pctx.strokeStyle=color; pctx.lineWidth=lw;
-        pctx.beginPath();
-        pctx.moveTo(toX(xarr[0]), toY(yarr[0]));
-        for(let i=1;i<xarr.length;i++) pctx.lineTo(toX(xarr[i]), toY(yarr[i]));
-        pctx.stroke();
-      }
-      function shadeMin(yOther, fill){
-        pctx.fillStyle=fill;
-        pctx.beginPath();
-        pctx.moveTo(toX(xs[0]), toY(0));
-        for(let i=0;i<N;i++) pctx.lineTo(toX(xs[i]), toY(Math.min(yT[i], yOther[i])));
-        pctx.lineTo(toX(xs[N-1]), toY(0));
-        pctx.closePath();
-        pctx.fill();
-      }
-      function marker(mu,color,label){
-        const x=toX(mu);
-        pctx.strokeStyle=color; pctx.lineWidth=1.1;
-        pctx.beginPath(); pctx.moveTo(x,pad.t); pctx.lineTo(x,pad.t+PH); pctx.stroke();
-        pctx.fillStyle=color; pctx.font="11px system-ui";
-        pctx.fillText(label, x+6, pad.t+PH-8);
-      }
-
-      // --- trend chart ---
-      resizeCanvas(trend);
-      const TW=trend.width, TH=trend.height;
-      tctx.clearRect(0,0,TW,TH);
-      const tpad={l:52,r:18,t:16,b:26};
-      const w=TW-tpad.l-tpad.r, h=TH-tpad.t-tpad.b;
-
-      tctx.strokeStyle="#2a3350"; tctx.lineWidth=1;
-      tctx.beginPath();
-      tctx.moveTo(tpad.l,tpad.t);
-      tctx.lineTo(tpad.l,tpad.t+h);
-      tctx.lineTo(tpad.l+w,tpad.t+h);
-      tctx.stroke();
-
-      tctx.fillStyle="#a8b0c0"; tctx.font="12px system-ui";
-      tctx.fillText("Overlaps and double-bind pressure over time", tpad.l, tpad.t-2);
-
-      const n=state.hist.ovTA.length;
-      if(n>1){
-        const toTX=i=>tpad.l+(i/(n-1))*w;
-        const toTY=v=>tpad.t+(1-v)*h;
-
-        tctx.strokeStyle="rgba(42,51,80,0.50)";
-        for(let k=0;k<=4;k++){
-          const yy=tpad.t+(k/4)*h;
-          tctx.beginPath(); tctx.moveTo(tpad.l,yy); tctx.lineTo(tpad.l+w,yy); tctx.stroke();
-        }
-
-        line(state.hist.ovTA, COLORS.agenda);
-        line(state.hist.ovTL, COLORS.learners);
-        line(state.hist.db,   COLORS.teacher);
-
-        function line(arr,color){
-          tctx.strokeStyle=color; tctx.lineWidth=2;
-          tctx.beginPath();
-          tctx.moveTo(toTX(0), toTY(arr[0]));
-          for(let i=1;i<arr.length;i++) tctx.lineTo(toTX(i), toTY(arr[i]));
-          tctx.stroke();
-        }
-      }
-    }
-
-    function stepModel(){
-      const p=params();
-      const A=state.agenda, L=state.learn, S=state.subj, T=state.teacher;
-
-      // composite learner pole
-      const learnerPoleMu = 0.55*S.mu + 0.45*L.mu;
-      const learnerPoleSig= 0.55*S.sigma + 0.45*L.sigma;
-
-      // measure overlaps BEFORE update (for mode decisions)
-      const ovTA0 = overlapArea(T.mu,T.sigma, A.mu,A.sigma);
-      const ovTL0 = overlapArea(T.mu,T.sigma, learnerPoleMu, learnerPoleSig);
-
-      // DB pressure (pre-update)
-      const db0 = clamp((1 - (ovTA0 + ovTL0)/2) + 0.35*Math.abs(ovTA0 - ovTL0), 0, 1);
-
-      // --- 1) Richness mismatch drives divergence ---
-      // Learners keep richness (σ grows); agenda stays reductive (σ held low).
-      // The key is: as richness mismatch grows, learner μ drifts away faster.
-      const richnessMismatch = clamp((learnerPoleSig - A.sigma) / 1.8, 0, 1);
-
-      // learner richness grows regardless of overlap (they “maintain rich discourse”)
-      const grow = 0.006 * p.learnerRichGrowth;
-      S.sigma = clamp(S.sigma + 0.55*grow, 0.75, 2.40);
-      L.sigma = clamp(L.sigma + 0.85*grow, 0.90, 2.60);
-
-      // agenda rigidity: keep σ low and resist μ movement
-      const targetA = clamp(0.85 - 0.30*p.agendaRigidity, 0.45, 0.95);
-      A.sigma += (targetA - A.sigma) * (0.06 + 0.04*p.agendaRigidity);
-      A.sigma = clamp(A.sigma, 0.45, 0.98);
-
-      // learners drift right: drift accelerates when mismatch is high AND overlap is low
-      // (because the agenda cannot “hold” the rich discourse)
-      const ovAvg = 0.5*(ovTA0 + ovTL0);
-      const release = clamp((0.62 - ovAvg), 0, 1); // when overlap drops, learners “release” away
-      const drift = 0.010 * p.learnerDrift * (0.35 + 0.85*richnessMismatch) * (0.25 + 0.90*release);
-
-      // Subject and learners move together but not identically
-      S.mu += 0.70*drift + randn()*0.015*p.noise;
-      L.mu += 1.00*drift + randn()*0.018*p.noise;
-
-      // agenda resists motion (rigidity), but can wobble with noise
-      A.mu += randn()*0.010*p.noise * (1 - 0.65*p.agendaRigidity);
-
-      // bounds
-      A.mu = clamp(A.mu, X.min+0.8, X.max-0.8);
-      S.mu = clamp(S.mu, X.min+0.8, X.max-0.8);
-      L.mu = clamp(L.mu, X.min+0.8, X.max-0.8);
-
-      // --- 2) Teacher σ constant-ish ---
-      const desiredSig = p.teacherSigma;
-      T.sigma += (desiredSig - T.sigma) * 0.14;
-      T.sigma = clamp(T.sigma + randn()*0.002, 0.55, 2.50);
-
-      // --- 3) Teacher behaviour: stay in shared region while overlap is high; oscillate only when bind forms ---
-      // Recompute pole after drift
-      const learnerPoleMu2 = 0.55*S.mu + 0.45*L.mu;
-      const learnerPoleSig2= 0.55*S.sigma + 0.45*L.sigma;
-
-      const ovTA = overlapArea(T.mu,T.sigma, A.mu,A.sigma);
-      const ovTL = overlapArea(T.mu,T.sigma, learnerPoleMu2, learnerPoleSig2);
-      const db = clamp((1 - (ovTA + ovTL)/2) + 0.35*Math.abs(ovTA - ovTL), 0, 1);
-
-      // Mode logic:
-      // - "Aligned" while both overlaps are decent.
-      // - "Diverging" when avg overlap drops but still not fully unsatisfiable.
-      // - "Oscillating" when double-bind pressure stays high.
-      const avgO = 0.5*(ovTA + ovTL);
-      if(avgO > 0.55 && db < 0.35) state.mode="Aligned";
-      else if(db < 0.55) state.mode="Diverging";
-      else state.mode="Oscillating";
-
-      if(state.mode !== "Oscillating"){
-        // Teacher tries to remain in the shared intelligible region:
-        // aim for midpoint weighted by current overlaps (stay near where overlap is greatest)
-        const wA = ovTA + 0.05;
-        const wL = ovTL + 0.05;
-        const target = (wA*A.mu + wL*learnerPoleMu2) / (wA + wL);
-        T.mu += (target - T.mu) * (0.14 + 0.08*(1-avgO));
-        T.mu += randn()*0.02*p.noise;
-      } else {
-        // Once bind forms, teacher is forced into oscillation (conflicted attention):
-        // duty-cycle between agenda and learner pole.
-        state.phase += 0.055 * p.oscSpeed;
-        const d = dutyWave(state.phase, p.learnerDuty);
-        state.dutyState = 0.90*state.dutyState + 0.10*d;
-        const u = (state.dutyState + 1)/2;
-        let target = (1-u)*A.mu + u*learnerPoleMu2;
-        target += randn()*0.03*p.noise;
-        T.mu += (target - T.mu) * (0.20 + 0.08*p.oscSpeed);
-      }
-
-      T.mu = clamp(T.mu, X.min+0.8, X.max-0.8);
-
-      // --- 4) record history (cap) ---
-      state.hist.ovTA.push(ovTA);
-      state.hist.ovTL.push(ovTL);
-      state.hist.db.push(db);
-      const cap=180;
-      for(const k of Object.keys(state.hist)){
-        if(state.hist[k].length>cap) state.hist[k].shift();
-      }
-
-      // --- 5) log ---
-      appendMsg("System",
-        `Mode=${state.mode}; ovTA=${ovTA.toFixed(2)} ovTL=${ovTL.toFixed(2)}; richnessMismatch=${richnessMismatch.toFixed(2)}; db=${db.toFixed(2)}.`,
-        `turn ${state.turn+1}`
-      );
-
-      state.turn++;
-      redraw();
-    }
-
-    function resetAll(){
-      pause();
-      const tSig = parseFloat($("teacherSigma").value);
-      state.running=false; state.timer=null;
-      state.turn=0; state.phase=0; state.dutyState=0;
-      state.mode="Aligned";
-      // TRUE initial overlap: close μ and compatible σ
-      state.agenda = { mu:-0.2, sigma:0.85 };
-      state.subj   = { mu: 0.0, sigma:1.05 };
-      state.learn  = { mu: 0.2, sigma:1.15 };
-      state.teacher= { mu: 0.0, sigma:tSig };
-      state.hist={ ovTA:[], ovTL:[], db:[] };
-
-      logEl.innerHTML="";
-      appendMsg("System",
-        "Reset: starts with genuine overlap. Learners maintain/grow rich discourse; agenda stays reductive; divergence emerges; teacher oscillates once overlaps become mutually unsatisfiable.",
-        "reset"
-      );
-
-      // seed history
-      const learnerPoleMu = 0.55*state.subj.mu + 0.45*state.learn.mu;
-      const learnerPoleSig= 0.55*state.subj.sigma + 0.45*state.learn.sigma;
-      const ovTA = overlapArea(state.teacher.mu,state.teacher.sigma, state.agenda.mu,state.agenda.sigma);
-      const ovTL = overlapArea(state.teacher.mu,state.teacher.sigma, learnerPoleMu, learnerPoleSig);
-      const db = clamp((1 - (ovTA + ovTL)/2) + 0.35*Math.abs(ovTA - ovTL), 0, 1);
-      state.hist.ovTA.push(ovTA); state.hist.ovTL.push(ovTL); state.hist.db.push(db);
-
-      redraw();
-    }
-
-    function play(){
-      if(state.running) return;
-      state.running=true;
-      $("playBtn").textContent="Pause";
-      state.timer=setInterval(stepModel, 760);
-      redraw();
-    }
-    function pause(){
-      state.running=false;
-      $("playBtn").textContent="Play";
-      if(state.timer) clearInterval(state.timer);
-      state.timer=null;
-      redraw();
-    }
-    function togglePlay(){ state.running ? pause() : play(); }
-
-    $("playBtn").addEventListener("click", togglePlay);
-    $("stepBtn").addEventListener("click", ()=>{ if(!state.running) stepModel(); });
-    $("resetBtn").addEventListener("click", resetAll);
-
-    ["noise","teacherSigma","learnerRichGrowth","learnerDrift","agendaRigidity","oscSpeed","learnerDuty"].forEach(id=>{
-      $(id).addEventListener("input", redraw);
-      $(id).addEventListener("change", redraw);
-    });
-
-    window.addEventListener("resize", redraw);
-
-    resetAll();
-
-  }catch(e){ showErr(e); }
-});
+  overlap(yAgenda,"rgba(120,160,255,0.2)");
+  overlap(yLearner,"rgba(255,160,120,0.2)");
+
+  function stroke(y,color,w){
+    ctx.strokeStyle=color;
+    ctx.lineWidth=w;
+    ctx.beginPath();
+    ctx.moveTo(toX(xs[0]),toY(y[0]));
+    for(let i=1;i<N;i++)
+      ctx.lineTo(toX(xs[i]),toY(y[i]));
+    ctx.stroke();
+  }
+
+  stroke(yAgenda,"#7aa2ff",2.5);
+  stroke(yLearner,"#ffb07a",2.5);
+  stroke(yTeacher,"#ffffff",3.2);
+
+  ctx.fillStyle="#7aa2ff";
+  ctx.fillText("Digitalisation agenda",toX(state.agendaMu)-40,pad.t+14);
+
+  ctx.fillStyle="#ffb07a";
+  ctx.fillText("Learners",toX(state.learnerMu)-20,pad.t+14);
+
+  ctx.fillStyle="#ffffff";
+  ctx.fillText("Teacher",toX(state.teacherMu)-10,pad.t+PH-10);
+}
+
+function step(){
+  state.t++;
+
+  // learners elaborate language (richness grows)
+  state.learnerSigma += 0.002;
+  state.learnerMu += 0.004;
+
+  // agenda remains narrow and fixed
+  state.agendaSigma += (0.6-state.agendaSigma)*0.01;
+
+  // detect loss of overlap → trigger oscillation
+  const dist = Math.abs(state.learnerMu - state.agendaMu);
+  if(dist > 1.5) state.oscillating=true;
+
+  if(!state.oscillating){
+    // early phase: teacher sits in middle
+    state.teacherMu += (0 - state.teacherMu)*0.02;
+  } else {
+    // late phase: oscillation begins
+    state.phase += 0.05;
+    const mid = (state.agendaMu + state.learnerMu)/2;
+    const amp = (state.learnerMu - state.agendaMu)/2;
+    state.teacherMu = mid + Math.sin(state.phase)*amp*0.9;
+  }
+
+  draw();
+}
+
+function play(){
+  if(state.running)return;
+  state.running=true;
+  state.timer=setInterval(step,40);
+}
+function pause(){
+  state.running=false;
+  clearInterval(state.timer);
+}
+function resetAll(){
+  pause();
+  state={
+    t:0,
+    running:false,
+    timer:null,
+    agendaMu:0,
+    learnerMu:0,
+    teacherMu:0,
+    agendaSigma:0.6,
+    learnerSigma:0.9,
+    teacherSigma:1.0,
+    phase:0,
+    oscillating:false
+  };
+  draw();
+}
+
+resetAll();
 </script>
 </body>
 </html>
