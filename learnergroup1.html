@@ -241,20 +241,23 @@ window.addEventListener("DOMContentLoaded", () => {
 
     const X = { min: -5.2, max: 5.2 };
 
+    const initialGroups = [
+      { id:"tech", name:"Technical learners", mu:-3.0, sigma:0.65, color:COLORS.tech,  noise:0.20 },
+      { id:"mid",  name:"Adaptive learners",  mu:-0.2, sigma:1.15, color:COLORS.mid,   noise:0.35 },
+      { id:"phil", name:"Philosophical learners", mu: 3.0, sigma:1.55, color:COLORS.phil, noise:0.45 },
+    ];
+
     const state = {
       turn: 0,
       running: false,
       // teacher starts left: technical style
       teacher: { mu: -3.4, sigma: 0.55 },
-      // groups: initial positions & breadths
-      groups: [
-        { id:"tech", name:"Technical learners", mu:-3.0, sigma:0.65, color:COLORS.tech,  noise:0.20 },
-        { id:"mid",  name:"Adaptive learners",  mu:-0.2, sigma:1.15, color:COLORS.mid,   noise:0.35 },
-        { id:"phil", name:"Philosophical learners", mu: 3.0, sigma:1.55, color:COLORS.phil, noise:0.45 },
-      ],
+      // IMPORTANT: keep this consistently a function everywhere
+      groups: () => initialGroups,
       lastTargetId: "tech",
       timer: null
     };
+
 
     /* ---------- Utterance generator ---------- */
     function teacherModeFromMu(mu) {
