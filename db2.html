@@ -1,0 +1,238 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Double-Blind Oscillation: Teacher Between Incompatible Domains</title>
+<style>
+body {
+  margin:0;
+  background:#0b0d12;
+  color:#e9ecf1;
+  font-family: system-ui, sans-serif;
+}
+.wrap {
+  max-width:1000px;
+  margin:20px auto;
+  padding:20px;
+}
+h1 { font-size:18px; }
+.sub { color:#a8b0c0; font-size:13px; max-width:800px; }
+
+canvas {
+  width:100%;
+  height:360px;
+  border:1px solid #1c2340;
+  border-radius:12px;
+  background:
+    radial-gradient(1000px 400px at 20% 0%, rgba(120,140,255,.10), transparent 55%),
+    radial-gradient(900px 360px at 80% 0%, rgba(255,160,120,.08), transparent 60%);
+}
+
+.controls {
+  margin-top:14px;
+  display:flex;
+  gap:10px;
+}
+button {
+  background:#1b2340;
+  color:white;
+  border:1px solid #2a3350;
+  border-radius:10px;
+  padding:8px 12px;
+  font-weight:700;
+  cursor:pointer;
+}
+button.primary { background:#2a3cff; }
+
+.note {
+  margin-top:10px;
+  font-size:12px;
+  color:#a8b0c0;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Double-Blind Pedagogy: Oscillation Without Convergence</h1>
+  <div class="sub">
+    The teacher oscillates between a restricted technical discourse (digitalisation agenda)
+    and a nuanced learner discourse. The two domains drift apart over time.
+    The teacher never converges: overlap is temporary and structurally unstable.
+  </div>
+
+  <canvas id="plot"></canvas>
+
+  <div class="controls">
+    <button class="primary" onclick="play()">Play</button>
+    <button onclick="pause()">Pause</button>
+    <button onclick="resetAll()">Reset</button>
+  </div>
+
+  <div class="note">
+    This models a *double-bind*: moving toward learners breaks alignment with digitalisation;
+    moving toward digitalisation breaks mapping to learner meaning.
+    The system cannot stabilise.
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById("plot");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  const r = canvas.getBoundingClientRect();
+  canvas.width = r.width * dpr;
+  canvas.height = r.height * dpr;
+}
+window.onresize = resize;
+resize();
+
+function gaussian(x, mu, s) {
+  const z = (x-mu)/s;
+  return Math.exp(-0.5*z*z)/(s*Math.sqrt(2*Math.PI));
+}
+
+const X = {min:-6, max:6};
+
+let state = {
+  t: 0,
+  running:false,
+  timer:null,
+
+  // domains drift apart
+  techMu: -2.5,
+  learnMu:  2.5,
+
+  techSigma: 0.6,
+  learnSigma: 1.6,
+
+  teacherMu: 0,
+  teacherSigma: 1.0,
+
+  phase: 0
+};
+
+function draw() {
+  resize();
+  const W = canvas.width;
+  const H = canvas.height;
+
+  ctx.clearRect(0,0,W,H);
+
+  const pad = {l:50,r:20,t:20,b:40};
+  const PW = W-pad.l-pad.r;
+  const PH = H-pad.t-pad.b;
+
+  const toX = x => pad.l + (x-X.min)/(X.max-X.min)*PW;
+  const toY = y => pad.t + (1-y/0.6)*PH;
+
+  // axes
+  ctx.strokeStyle="#2a3350";
+  ctx.beginPath();
+  ctx.moveTo(pad.l,pad.t);
+  ctx.lineTo(pad.l,pad.t+PH);
+  ctx.lineTo(pad.l+PW,pad.t+PH);
+  ctx.stroke();
+
+  // sample
+  const N=800;
+  let xs=[];
+  for(let i=0;i<N;i++) xs.push(X.min+(X.max-X.min)*i/(N-1));
+
+  const techY = xs.map(x=>gaussian(x,state.techMu,state.techSigma));
+  const learnY = xs.map(x=>gaussian(x,state.learnMu,state.learnSigma));
+  const teachY = xs.map(x=>gaussian(x,state.teacherMu,state.teacherSigma));
+
+  // overlaps (teacher vs each)
+  function fillOverlap(yA, color) {
+    ctx.fillStyle=color;
+    ctx.beginPath();
+    ctx.moveTo(toX(xs[0]),toY(0));
+    for(let i=0;i<N;i++){
+      ctx.lineTo(toX(xs[i]),toY(Math.min(teachY[i],yA[i])));
+    }
+    ctx.lineTo(toX(xs[N-1]),toY(0));
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  fillOverlap(techY,"rgba(120,160,255,0.18)");
+  fillOverlap(learnY,"rgba(255,160,120,0.18)");
+
+  // curves
+  function stroke(y,color,w){
+    ctx.strokeStyle=color;
+    ctx.lineWidth=w;
+    ctx.beginPath();
+    ctx.moveTo(toX(xs[0]),toY(y[0]));
+    for(let i=1;i<N;i++) ctx.lineTo(toX(xs[i]),toY(y[i]));
+    ctx.stroke();
+  }
+
+  stroke(techY,"#7aa2ff",2.5);
+  stroke(learnY,"#ffb07a",2.5);
+  stroke(teachY,"#ffffff",3.2);
+
+  // labels
+  ctx.fillStyle="#7aa2ff";
+  ctx.fillText("Digitalisation agenda", toX(state.techMu)-40, pad.t+14);
+
+  ctx.fillStyle="#ffb07a";
+  ctx.fillText("Learner domain", toX(state.learnMu)-30, pad.t+14);
+
+  ctx.fillStyle="#ffffff";
+  ctx.fillText("Teacher", toX(state.teacherMu)-15, pad.t+PH-10);
+}
+
+function step() {
+  state.t++;
+
+  // domains drift apart
+  state.techMu -= 0.002;
+  state.learnMu += 0.002;
+
+  // teacher oscillates (limit cycle)
+  state.phase += 0.04;
+  const mid = (state.techMu + state.learnMu)/2;
+  const amp = (state.learnMu - state.techMu)/2;
+
+  state.teacherMu = mid + Math.sin(state.phase) * amp * 0.9;
+
+  // sigma tension: becomes broad when in middle, narrow at extremes
+  const norm = Math.abs(Math.sin(state.phase));
+  state.teacherSigma = 0.7 + norm*0.9;
+
+  draw();
+}
+
+function play(){
+  if(state.running) return;
+  state.running=true;
+  state.timer=setInterval(step,40);
+}
+function pause(){
+  state.running=false;
+  clearInterval(state.timer);
+}
+function resetAll(){
+  pause();
+  state={
+    t:0,
+    running:false,
+    timer:null,
+    techMu:-2.5,
+    learnMu:2.5,
+    techSigma:0.6,
+    learnSigma:1.6,
+    teacherMu:0,
+    teacherSigma:1.0,
+    phase:0
+  };
+  draw();
+}
+
+resetAll();
+</script>
+</body>
+</html>
