@@ -270,6 +270,32 @@ window.addEventListener("DOMContentLoaded", () => {
       }
       return best || null;
     }
+/* ---------- Anchor: keep g1 (technical learners) fixed ---------- */
+const ANCHOR_ID = "g1";
+let anchorMu0 = -3.0; // default; overwritten at reset from current g1.mu
+
+function applyAnchorFrame(){
+  const anchor = state.agents.find(a => a.id === ANCHOR_ID);
+  if(!anchor) return;
+
+  // how far the anchor has drifted from its original position
+  const delta = anchor.mu - anchorMu0;
+
+  if (Math.abs(delta) < 1e-9) {
+    // still force exactness
+    anchor.mu = anchorMu0;
+    return;
+  }
+
+  // Shift everyone back by delta so the anchor returns to anchorMu0
+  for(const a of state.agents){
+    a.mu -= delta;
+    a.mu = clamp(a.mu, X.min+0.6, X.max-0.6);
+  }
+
+  // Ensure anchor is exact
+  anchor.mu = anchorMu0;
+}
 
     /* ---------- Pairs among learners ---------- */
     function learnerPairs(){
@@ -627,6 +653,10 @@ window.addEventListener("DOMContentLoaded", () => {
           `turn ${state.turn+1}`
         );
       }
+// lock the technical group and recenter everyone around it
+const g1 = state.agents.find(a => a.id === ANCHOR_ID);
+if (g1) g1.mu = anchorMu0;
+applyAnchorFrame();
 
       state.turn++;
       redraw();
@@ -653,12 +683,18 @@ window.addEventListener("DOMContentLoaded", () => {
       pause();
       state.turn = 0;
       logEl.innerHTML = "";
-      makeInitial();
-      appendMsg("System",
-        "Reset. When learners align (avg overlap exceeds threshold), a new broad noisy group appears on the far right; high-K agents bridge; aligned curves are pruned.",
-        "reset"
-      );
-      redraw();
+makeInitial();
+
+// set anchor baseline from the created g1
+const anchor = state.agents.find(a => a.id === ANCHOR_ID);
+anchorMu0 = anchor ? anchor.mu : anchorMu0;
+
+appendMsg("System",
+  "Reset. When learners align (avg overlap exceeds threshold), a new broad noisy group appears on the far right; high-K agents bridge; aligned curves are pruned.",
+  "reset"
+);
+redraw();
+
     }
 
     $("playBtn").addEventListener("click", togglePlay);
