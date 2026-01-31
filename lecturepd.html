@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Lecture → Emerging Diversity → Selecting Disinterest → Project Support</title>
+  <title>Agenda (fixed) + Teacher + One Cohort → Subgroups → Balkanisation</title>
   <style>
     :root { --bg:#0b0d12; --panel:#121624; --ink:#e9ecf1; --muted:#a8b0c0; --line:#2a3350; }
     html,body { height:100%; margin:0; background:var(--bg); color:var(--ink);
@@ -82,12 +82,12 @@
   <div class="wrap">
     <header>
       <div>
-        <h1>Emerging diversity of response → selecting disinterest → project support</h1>
+        <h1>Fixed agenda + teacher + one learner cohort → subgroups → balkanisation</h1>
         <div class="sub">
-          Start: teacher + one student distribution with marginal overlap. During the lecture, the student distribution
-          gradually differentiates into multiple curves (emerging diversity). End lecture assigns roles: one group remains
-          engaged (slight overlap; small K gain), while others “select disinterest” (moderate σ tightening + drift away in either
-          direction) producing loss of overlap with teacher and with each other. Project support boosts engaged learning strongly.
+          Blue curve = digitalisation agenda (fixed). During the lecture, the learner cohort remains largely stable.
+          Ending the lecture differentiates the cohort: one subgroup overlaps the teacher (engaged), while other subgroups
+          “select disinterest” (moderate σ tightening + drift away) and reduce overlap with each other (balkanisation).
+          Project support boosts engaged knowledge strongly.
         </div>
       </div>
       <div class="legend" id="legend"></div>
@@ -95,13 +95,14 @@
 
     <div class="card">
       <div class="hd">
-        <strong>Distributions + overlap shading (teacher vs cohorts)</strong>
+        <strong>Distributions (weighted) + overlap shading (teacher vs learner components)</strong>
         <span class="pill" id="phasePill">Phase: …</span>
       </div>
       <div class="bd">
         <canvas id="plot"></canvas>
         <div class="note" style="margin-top:10px;">
-          Above each curve: K index (engagement/knowledge potential). “Selecting disinterest” reduces overlap without extreme narrowing or a fixed rightward move.
+          Subgroups “spawn” by weight transferring out of the main learner curve (so the split looks continuous).
+          Labels above learner curves show K (engagement/knowledge potential).
         </div>
       </div>
     </div>
@@ -121,22 +122,14 @@
         <div class="kpi">
           <div class="box"><div class="k">Turn</div><div class="v" id="turnKpi">0</div></div>
           <div class="box"><div class="k">Phase</div><div class="v" id="phaseKpi">lecture</div></div>
-          <div class="box"><div class="k"># cohorts</div><div class="v" id="countKpi">1</div></div>
-          <div class="box"><div class="k">Fragmentation</div><div class="v" id="fragKpi">0.00</div></div>
+          <div class="box"><div class="k"># learner curves</div><div class="v" id="countKpi">1</div></div>
+          <div class="box"><div class="k">Balkanisation</div><div class="v" id="balkanKpi">0.00</div></div>
         </div>
 
         <div class="row" style="margin-top:10px;">
           <div>
-            <label for="emergenceRate">Emergence rate (new curves during lecture)</label>
-            <div class="note">Higher → more rapid differentiation of the main cohort.</div>
-          </div>
-          <input id="emergenceRate" type="range" min="0.0" max="2.0" step="0.01" value="1.00" />
-        </div>
-
-        <div class="row">
-          <div>
-            <label for="teacherConstraint">Teacher constraint</label>
-            <div class="note">Lecture: teacher mostly fixed. Post-lecture: constrained reaching toward engaged cohort.</div>
+            <label for="teacherConstraint">Teacher constraint (movement)</label>
+            <div class="note">After lecture: teacher can reach engaged subgroup but remains constrained.</div>
           </div>
           <input id="teacherConstraint" type="range" min="0.15" max="1.40" step="0.01" value="0.55" />
         </div>
@@ -144,23 +137,23 @@
         <div class="row">
           <div>
             <label for="disinterestStrength">Selecting disinterest strength</label>
-            <div class="note">Higher → quicker loss of overlap (moderate σ tightening + drift away + peer repulsion).</div>
+            <div class="note">Higher → quicker loss of overlap + stronger subgroup separation.</div>
           </div>
           <input id="disinterestStrength" type="range" min="0.0" max="2.0" step="0.01" value="1.05" />
         </div>
 
         <div class="row">
           <div>
-            <label for="sigmaTightenLimit">Minimum σ for disinterested groups</label>
-            <div class="note">Prevents σ from becoming unrealistically narrow.</div>
+            <label for="sigmaFloor">σ floor for disinterested subgroups</label>
+            <div class="note">Prevents unrealistic narrowing while still reducing overlap.</div>
           </div>
-          <input id="sigmaTightenLimit" type="range" min="0.55" max="1.30" step="0.01" value="0.78" />
+          <input id="sigmaFloor" type="range" min="0.70" max="1.40" step="0.01" value="0.92" />
         </div>
 
         <div class="row">
           <div>
             <label for="projectStrength">Project support strength</label>
-            <div class="note">Higher → engaged cohort gains much more knowledge after project support is applied.</div>
+            <div class="note">Higher → engaged subgroup K grows much more with project support.</div>
           </div>
           <input id="projectStrength" type="range" min="0.0" max="2.5" step="0.01" value="1.30" />
         </div>
@@ -203,7 +196,7 @@ window.addEventListener("DOMContentLoaded", () => {
     function overlapArea(mu1, s1, mu2, s2) {
       const lo = Math.min(mu1 - 6*s1, mu2 - 6*s2);
       const hi = Math.max(mu1 + 6*s1, mu2 + 6*s2);
-      const steps = 1100;
+      const steps = 900;
       const dx = (hi - lo) / steps;
       let area = 0;
       for (let i=0;i<=steps;i++){
@@ -227,10 +220,9 @@ window.addEventListener("DOMContentLoaded", () => {
     /* ---------- Params ---------- */
     function params(){
       return {
-        emergenceRate: parseFloat($("emergenceRate").value),
         teacherConstraint: parseFloat($("teacherConstraint").value),
         disinterestStrength: parseFloat($("disinterestStrength").value),
-        sigmaTightenLimit: parseFloat($("sigmaTightenLimit").value),
+        sigmaFloor: parseFloat($("sigmaFloor").value),
         projectStrength: parseFloat($("projectStrength").value),
         noise: parseFloat($("noise").value),
       };
@@ -239,7 +231,9 @@ window.addEventListener("DOMContentLoaded", () => {
     /* ---------- Domain & palette ---------- */
     const X = { min:-5.2, max: 5.2 };
     const teacherColor = "#ffffff";
-    const palette = ["#7aa2ff", "#ffd36a", "#ff8ab1", "#8bffb4", "#c7a6ff", "#ffb37a", "#7affd7"];
+    const agendaColor = "#2a7fff";     // BLUE agenda (fixed)
+    const learnerMainColor = "#ffd36a";
+    const palette = ["#ffd36a", "#ff8ab1", "#8bffb4", "#c7a6ff", "#ffb37a", "#7affd7"];
     function colorForIndex(i){ return palette[i % palette.length]; }
 
     /* ---------- State ---------- */
@@ -247,45 +241,44 @@ window.addEventListener("DOMContentLoaded", () => {
       turn: 0,
       running: false,
       timer: null,
-      phase: "lecture", // lecture | postLecture | project
-      institutionOn: false,
-      nextId: 1,
+      phase: "lecture",        // lecture | postLecture | project
+      projectOn: false,
       agents: [],
+      nextSub: 1,
+      splitInProgress: false,  // used for smoother spawning dynamics after End lecture
     };
 
     function teacher(){ return state.agents.find(a => a.kind==="teacher"); }
-    function cohorts(){ return state.agents.filter(a => a.kind!=="teacher"); }
-    function engaged(){ return state.agents.find(a => a.role==="engaged"); }
-    function disinterested(){ return state.agents.filter(a => a.role==="disinterest"); }
+    function agenda(){ return state.agents.find(a => a.kind==="agenda"); }
+    function learners(){ return state.agents.filter(a => a.kind==="learner"); }
+    function mainLearner(){ return state.agents.find(a => a.kind==="learner" && a.role==="main"); }
+    function engagedSub(){ return state.agents.find(a => a.kind==="learner" && a.role==="engaged"); }
+    function disinterestSubs(){ return state.agents.filter(a => a.kind==="learner" && a.role==="disinterest"); }
 
     function makeInitial(){
       state.turn = 0;
       state.phase = "lecture";
-      state.institutionOn = false;
-      state.nextId = 1;
+      state.projectOn = false;
+      state.nextSub = 1;
+      state.splitInProgress = false;
 
-      const T = { id:"teacher", name:"Teacher", color:teacherColor, mu:-3.0, sigma:0.75, baseSigma:0.75, fixedSigma:true, K:0.90, kind:"teacher" };
+      const T = { id:"teacher", kind:"teacher", name:"Teacher", color:teacherColor,
+        mu:-3.0, sigma:0.75, baseSigma:0.75, fixedSigma:true, K:0.90 };
 
-      // One main student cohort, marginal overlap
-      const main = {
-        id:"c0",
-        name:"Student cohort",
-        color: colorForIndex(0),
-        mu:-0.9,
-        sigma:1.55,
-        baseSigma:1.55,
-        K:0.18,
-        kind:"student",
-        role:"main",
-        bornAt: 0
-      };
+      // Digitalisation agenda (fixed curve, doesn't move)
+      const A = { id:"agenda", kind:"agenda", name:"Digitalisation agenda", color:agendaColor,
+        mu: 1.4, sigma:0.65, baseSigma:0.65, fixedSigma:true };
 
-      state.agents = [T, main];
+      // One learner cohort (main body)
+      const L0 = { id:"L0", kind:"learner", role:"main", name:"Learner cohort", color:learnerMainColor,
+        mu:-0.9, sigma:1.75, baseSigma:1.75, K:0.18, w:1.00, bornAt:0 };
+
+      state.agents = [T, A, L0];
 
       $("endLectureBtn").disabled = false;
       $("projectBtn").disabled = true;
 
-      appendMsg("System", "Reset. Start with teacher + one student cohort; diversity emerges during the lecture.", "reset");
+      appendMsg("System", "Reset. Start with teacher + fixed agenda + one learner cohort.", "reset");
     }
 
     /* ---------- UI ---------- */
@@ -301,8 +294,9 @@ window.addEventListener("DOMContentLoaded", () => {
         pill.appendChild(sw);
 
         let txt = a.name;
-        if (a.role === "engaged") txt += " (engaged)";
-        if (a.role === "disinterest") txt += " (selecting disinterest)";
+        if (a.kind==="learner" && a.role==="engaged") txt += " (overlaps teacher)";
+        if (a.kind==="learner" && a.role==="disinterest") txt += " (selecting disinterest)";
+        if (a.kind==="learner" && a.role==="main" && (learners().length>1)) txt += " (main body)";
         pill.appendChild(document.createTextNode(txt));
 
         legendEl.appendChild(pill);
@@ -329,8 +323,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
         const right = document.createElement("div");
         right.className = "val";
-        if (a.kind === "teacher") right.textContent = `σ fixed | μ=${a.mu.toFixed(2)}`;
-        else right.textContent = `K=${a.K.toFixed(2)} | μ=${a.mu.toFixed(2)} σ=${a.sigma.toFixed(2)}`;
+
+        if (a.kind==="teacher") right.textContent = `μ=${a.mu.toFixed(2)} | σ fixed`;
+        else if (a.kind==="agenda") right.textContent = `μ=${a.mu.toFixed(2)} | fixed agenda`;
+        else right.textContent = `w=${a.w.toFixed(2)} | K=${a.K.toFixed(2)} | μ=${a.mu.toFixed(2)} σ=${a.sigma.toFixed(2)}`;
 
         top.appendChild(left); top.appendChild(right);
 
@@ -339,16 +335,23 @@ window.addEventListener("DOMContentLoaded", () => {
         const fill = document.createElement("div");
         fill.className = "fill";
         fill.style.background = a.color;
-        fill.style.width = `${(a.kind==="teacher" ? 90 : clamp(a.K*100,0,100)).toFixed(1)}%`;
+
+        let pct = 90;
+        if (a.kind==="agenda") pct = 65;
+        if (a.kind==="learner") pct = clamp(a.K*100, 0, 100);
+        fill.style.width = `${pct.toFixed(1)}%`;
         meter.appendChild(fill);
 
         const small = document.createElement("div");
         small.className = "small";
-        if (a.kind==="teacher") {
-          small.textContent = `Teacher coherence: σ remains unchanged while movement is constrained.`;
-        } else {
-          const role = a.role || "cohort";
-          small.textContent = `Role=${role}.`;
+        if (a.kind==="teacher") small.textContent = `Teacher coherent distribution (σ unchanged).`;
+        else if (a.kind==="agenda") small.textContent = `Digitalisation agenda: fixed reference distribution (does not move).`;
+        else {
+          const role = a.role;
+          small.textContent =
+            role==="main" ? "Main learner body (one cohort). Subgroups spawn out of this by weight transfer." :
+            role==="engaged" ? "Engaged subgroup: overlaps teacher; knowledge can grow strongly with project support." :
+            "Selecting disinterest: moderate σ tightening + drift away; overlaps with peers reduce (balkanisation).";
         }
 
         row.appendChild(top);
@@ -374,8 +377,8 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     /* ---------- Metrics ---------- */
-    function avgCohortOverlap(){
-      const S = cohorts();
+    function avgLearnerOverlap(){
+      const S = learners();
       if (S.length < 2) return 0;
       let sum=0, n=0;
       for (let i=0;i<S.length;i++){
@@ -386,9 +389,10 @@ window.addEventListener("DOMContentLoaded", () => {
       }
       return sum / Math.max(1,n);
     }
-    function fragmentation(){
-      // 0 = cohesive; 1 = fragmented (low mutual overlap)
-      return clamp(1 - avgCohortOverlap(), 0, 1);
+    function balkanisation(){
+      // higher when learners overlap less with each other
+      const ov = avgLearnerOverlap();
+      return clamp(1 - ov, 0, 1);
     }
 
     /* ---------- Canvas ---------- */
@@ -449,8 +453,13 @@ window.addEventListener("DOMContentLoaded", () => {
 
       const toX = x => pad.l + (x - X.min)/(X.max - X.min) * plotW;
 
+      // Weighted peaks: learners use w * pdf
       let yMax = 0;
-      for (const a of state.agents) yMax = Math.max(yMax, gaussian(a.mu,a.mu,a.sigma));
+      for (const a of state.agents) {
+        const peak = gaussian(a.mu,a.mu,a.sigma);
+        const weighted = (a.kind==="learner") ? a.w * peak : peak;
+        yMax = Math.max(yMax, weighted);
+      }
       yMax = Math.max(yMax, 1e-6) * 1.25;
       const toY = y => pad.t + (1 - y/yMax) * plotH;
 
@@ -474,28 +483,35 @@ window.addEventListener("DOMContentLoaded", () => {
         ctx.stroke();
         ctx.fillText(String(x), px - 4, pad.t + plotH + 22);
       }
-      ctx.fillText("Discourse space (diversity emerges; selecting disinterest reduces overlap)", pad.l, H - 10);
+      ctx.fillText("Discourse space (blue agenda fixed; subgroups spawn from learner curve; balkanisation reduces mutual overlap)", pad.l, H - 10);
 
-      const N=850;
+      const N=820;
       const xs = new Array(N);
       for (let i=0;i<N;i++) xs[i] = X.min + (X.max-X.min)*i/(N-1);
 
+      // Precompute y arrays
       const ys = new Map();
-      for (const a of state.agents) ys.set(a.id, xs.map(x=>gaussian(x,a.mu,a.sigma)));
+      for (const a of state.agents) {
+        const arr = xs.map(x => {
+          const base = gaussian(x,a.mu,a.sigma);
+          return (a.kind==="learner") ? a.w * base : base;
+        });
+        ys.set(a.id, arr);
+      }
 
       const T = teacher();
       const yT = T ? ys.get(T.id) : null;
 
-      // overlap shading: teacher vs each cohort
+      // overlap shading: teacher vs each learner curve (weighted)
       if (T && yT) {
-        for (const s of cohorts()) {
-          const yS = ys.get(s.id);
-          const alpha = (s.role==="engaged") ? 0.20 : (s.role==="disinterest" ? 0.08 : 0.12);
-          ctx.fillStyle = hexToRgba(s.color, alpha);
+        for (const L of learners()) {
+          const yL = ys.get(L.id);
+          const alpha = (L.role==="engaged") ? 0.22 : (L.role==="disinterest" ? 0.08 : 0.12);
+          ctx.fillStyle = hexToRgba(L.color, alpha);
           ctx.beginPath();
           ctx.moveTo(toX(xs[0]), toY(0));
           for (let i=0;i<N;i++){
-            ctx.lineTo(toX(xs[i]), toY(Math.min(yT[i], yS[i])));
+            ctx.lineTo(toX(xs[i]), toY(Math.min(yT[i], yL[i])));
           }
           ctx.lineTo(toX(xs[N-1]), toY(0));
           ctx.closePath();
@@ -507,7 +523,8 @@ window.addEventListener("DOMContentLoaded", () => {
       for (const a of state.agents) {
         const y = ys.get(a.id);
         ctx.strokeStyle = a.color;
-        ctx.lineWidth = (a.kind==="teacher") ? 3.2 : (a.role==="disinterest" ? 2.8 : 2.5);
+        const baseW = (a.kind==="teacher") ? 3.2 : (a.kind==="agenda") ? 2.8 : (a.role==="disinterest" ? 2.8 : 2.6);
+        ctx.lineWidth = baseW;
         ctx.beginPath();
         ctx.moveTo(toX(xs[0]), toY(y[0]));
         for (let i=1;i<N;i++) ctx.lineTo(toX(xs[i]), toY(y[i]));
@@ -524,132 +541,99 @@ window.addEventListener("DOMContentLoaded", () => {
         ctx.lineTo(px, pad.t + plotH);
         ctx.stroke();
 
-        const peakY = gaussian(a.mu, a.mu, a.sigma);
-        if (a.kind === "teacher") drawLabel(px, toY(peakY), "Teacher", a.color);
+        const peak = gaussian(a.mu,a.mu,a.sigma);
+        const peakY = (a.kind==="learner") ? a.w * peak : peak;
+        if (a.kind==="teacher") drawLabel(px, toY(peakY), "Teacher", a.color);
+        else if (a.kind==="agenda") drawLabel(px, toY(peakY), "Agenda", a.color);
         else drawLabel(px, toY(peakY), `K=${a.K.toFixed(2)}`, a.color);
       }
 
       // KPIs
       $("turnKpi").textContent = String(state.turn);
-      $("phaseKpi").textContent = state.phase;
-      $("phasePill").textContent = `Phase: ${state.phase}${state.institutionOn ? " (project ON)" : ""}`;
-      $("countKpi").textContent = String(cohorts().length);
-      $("fragKpi").textContent = fragmentation().toFixed(2);
+      $("phaseKpi").textContent = state.phase + (state.projectOn ? " (project)" : "");
+      $("phasePill").textContent = `Phase: ${state.phase}${state.projectOn ? " (project support ON)" : ""}`;
+      $("countKpi").textContent = String(learners().length);
+      $("balkanKpi").textContent = balkanisation().toFixed(2);
 
       renderLegend();
       renderBars();
     }
 
-    /* ---------- Emerging diversity during lecture ---------- */
-    function spawnCohortFrom(source){
-      // Create a new cohort that represents an emerging response variant.
-      // Small mean shift, modest sigma variation, similar knowledge.
-      const p = params();
-      const id = `c${++state.nextId}`;
-      const mu = clamp(source.mu + randn()*0.55, X.min+0.7, X.max-0.7);
-      const sigma = clamp(source.sigma * (0.92 + 0.16*Math.random()), 0.75, 2.2);
-      const K = clamp(source.K + randn()*0.03, 0, 1);
-
-      const c = {
-        id,
-        name: `Emergent cohort ${state.nextId}`,
-        color: colorForIndex(state.nextId),
-        mu, sigma,
-        baseSigma: sigma,
-        K,
-        kind: "student",
-        role: "main",
-        bornAt: state.turn
-      };
-      state.agents.push(c);
-
-      // tiny "mass conservation": make the source slightly more specific after splitting (optional)
-      source.sigma = clamp(source.sigma * 0.98, 0.85, 2.4);
-
-      appendMsg("System", `${c.name} appears (emerging diversity of response).`, "emergence");
-    }
-
-    function maybeEmergeDiversity(){
-      const p = params();
-      if (state.phase !== "lecture") return;
-
-      // Cap number of cohorts before lecture ends (keeps readable)
-      const MAX_BEFORE_END = 5;
-
-      // If emergenceRate is 0, never spawn.
-      if (p.emergenceRate <= 0.001) return;
-
-      const S = cohorts();
-      if (S.length >= MAX_BEFORE_END) return;
-
-      // Schedule: every ~6 turns at rate 1.0; faster if >1, slower if <1
-      const interval = Math.max(3, Math.round(6 / clamp(p.emergenceRate, 0.25, 2.0)));
-      if (state.turn > 0 && state.turn % interval === 0) {
-        // Split the largest/oldest “main” cohort (heuristic: highest sigma)
-        const candidates = cohorts().filter(c => c.role === "main");
-        const src = candidates.sort((a,b)=>b.sigma-a.sigma)[0] || cohorts()[0];
-        if (src) spawnCohortFrom(src);
-      }
-    }
-
-    /* ---------- Phase triggers ---------- */
+    /* ---------- Lecture end: spawn subgroups out of main curve via weight transfer ---------- */
     function endLecture(){
       if (state.phase !== "lecture") return;
-
       const T = teacher();
-      if (!T) return;
+      const L0 = mainLearner();
+      if (!T || !L0) return;
 
-      // Ensure we have some diversity by lecture end; if user ends early, force a small split.
-      if (cohorts().length < 2) {
-        spawnCohortFrom(cohorts()[0]);
-      }
-      if (cohorts().length < 3) {
-        spawnCohortFrom(cohorts()[0]);
-      }
+      // Create one engaged subgroup + 3 disinterest subgroups.
+      // They begin EXACTLY on the main curve (same μ, σ) with tiny weights.
+      // Then over subsequent steps they diverge (looks like “splitting”).
+      const totalSpawnW = 0.42;              // how much of the main curve becomes explicit subgroups
+      const engagedW = 0.14;
+      const disW = (totalSpawnW - engagedW) / 3;
 
-      // Choose engaged cohort as the one with highest overlap with teacher
-      const scored = cohorts().map(c => ({ c, ov: overlapArea(T.mu,T.sigma,c.mu,c.sigma) }))
-                             .sort((a,b)=>b.ov-a.ov);
-      const engagedC = scored[0]?.c;
+      const mkSub = (role, name, color, w) => ({
+        id: `S${state.nextSub++}`,
+        kind:"learner",
+        role,
+        name,
+        color,
+        mu: L0.mu,
+        sigma: L0.sigma,
+        baseSigma: L0.sigma,
+        K: clamp(L0.K + (role==="engaged" ? 0.04 : -0.02) + randn()*0.01, 0, 1),
+        w,
+        // hidden targets for post-lecture divergence
+        targetMu: L0.mu,
+        targetSigma: L0.sigma
+      });
 
-      for (const c of cohorts()) {
-        if (c === engagedC) {
-          c.role = "engaged";
-          c.name = "Engaged cohort";
-          // small K bump at end of lecture
-          c.K = clamp(c.K + 0.06, 0, 1);
-          // keep only slight overlap: nudge gently toward teacher without collapsing
-          c.mu = clamp(c.mu + (T.mu - c.mu) * 0.06, X.min+0.7, X.max-0.7);
-          c.sigma = clamp(c.sigma * 0.98, 0.80, 2.2);
-        } else {
-          c.role = "disinterest";
-          c.name = c.name.replace("Emergent", "Disinterested");
-          // selecting disinterest: moderate tightening + mild drift away (not necessarily right)
-          c.baseSigma = c.sigma; // freeze their own “starting point” for tightening dynamics
-        }
-      }
+      const engaged = mkSub("engaged","Overlapping subgroup", colorForIndex(1), engagedW);
+      const d1 = mkSub("disinterest","Disinterest subgroup A", colorForIndex(2), disW);
+      const d2 = mkSub("disinterest","Disinterest subgroup B", colorForIndex(3), disW);
+      const d3 = mkSub("disinterest","Disinterest subgroup C", colorForIndex(4), disW);
 
+      // Reduce main weight so subgroups visibly “come out of it”
+      L0.w = clamp(L0.w - totalSpawnW, 0.35, 1.0);
+
+      // Set divergence targets
+      engaged.targetMu = clamp(T.mu + 1.05, X.min+0.7, X.max-0.7);  // slight overlap
+      engaged.targetSigma = clamp(L0.sigma * 0.78, 0.90, 1.60);
+
+      // Disinterest targets: not necessarily right; drift away from teacher in mixed directions
+      const dirs = [-1, 1, 1].sort(()=>Math.random()-0.5);
+      const baseAway = 1.25;
+      const pickTarget = (dir) => clamp(T.mu + dir*baseAway + randn()*0.35, X.min+0.7, X.max-0.7);
+
+      d1.targetMu = pickTarget(dirs[0]); d2.targetMu = pickTarget(dirs[1]); d3.targetMu = pickTarget(dirs[2]);
+      d1.targetSigma = clamp(L0.sigma * 0.70, 0.90, 1.50);
+      d2.targetSigma = clamp(L0.sigma * 0.68, 0.90, 1.50);
+      d3.targetSigma = clamp(L0.sigma * 0.66, 0.90, 1.50);
+
+      state.agents.push(engaged, d1, d2, d3);
       state.phase = "postLecture";
+      state.splitInProgress = true;
+
       $("endLectureBtn").disabled = true;
       $("projectBtn").disabled = false;
 
       appendMsg("System",
-        "Lecture ended. One cohort remains engaged (small K gain). Others select disinterest: moderate σ tightening + drift away (either direction) → loss of overlap with teacher and with each other.",
+        "Lecture ended. Subgroups spawn out of the learner curve (weight transfers out of the main body). One subgroup overlaps the teacher; others select disinterest and begin to separate (balkanisation).",
         "end lecture"
       );
-
       redraw();
     }
 
     function applyProjectSupport(){
       if (state.phase === "lecture") return;
-      if (state.institutionOn) return;
-      state.institutionOn = true;
+      if (state.projectOn) return;
+      state.projectOn = true;
       state.phase = "project";
       $("projectBtn").disabled = true;
 
       appendMsg("System",
-        "Project support applied: institutional constraint enables personal project engagement (stronger K growth for engaged cohort).",
+        "Project support applied: institutional constraint enables personal project engagement (stronger K growth for overlapping subgroup).",
         "project support"
       );
       redraw();
@@ -661,90 +645,93 @@ window.addEventListener("DOMContentLoaded", () => {
       const T = teacher();
       if (!T) return;
 
-      const baseReach = 0.03 * p.teacherConstraint;
-      const reach = state.institutionOn ? baseReach * 1.15 : baseReach;
+      const reach = 0.03 * p.teacherConstraint * (state.projectOn ? 1.10 : 1.0);
       const jitter = randn() * 0.012 * p.noise;
 
       if (state.phase === "lecture") {
-        // Lecture: almost fixed, constrained
-        T.mu += jitter * 0.20;
+        // lecture: very constrained, almost fixed
+        T.mu += jitter * 0.18;
       } else {
-        // Post-lecture: teacher tries to reach engaged cohort (still constrained)
-        const E = engaged();
+        // after lecture: try to reach the overlapping subgroup (still constrained)
+        const E = engagedSub();
         if (E) {
           const delta = clamp(E.mu - T.mu, -reach, reach);
           T.mu += delta + jitter;
         } else {
-          T.mu += jitter * 0.30;
+          T.mu += jitter * 0.25;
         }
       }
 
       T.mu = clamp(T.mu, X.min+0.7, X.max-0.7);
-      T.sigma = T.baseSigma; // coherence unchanged
+      T.sigma = T.baseSigma;
       T.K = clamp(T.K - 0.001*p.noise + 0.0007, 0.82, 1.0);
     }
 
     function lectureStep(){
-      // Not much changes, except: emerging diversity (new cohorts introduced gradually)
       const p = params();
       const T = teacher();
-      if (!T) return;
+      const L0 = mainLearner();
+      if (!T || !L0) return;
 
-      maybeEmergeDiversity();
+      // Not much changes: slight drift and tiny K change from teacher overlap
+      const ov = overlapArea(T.mu, T.sigma, L0.mu, L0.sigma);
+      L0.mu += randn()*0.006*p.noise;
+      L0.sigma += (L0.baseSigma - L0.sigma)*0.02;
+      L0.K = clamp(L0.K + 0.0028*ov - 0.002*p.noise*Math.max(0,randn()), 0, 1);
 
-      // Everyone drifts very slightly; small K uptick only for those with some overlap
-      for (const c of cohorts()) {
-        const ov = overlapArea(T.mu, T.sigma, c.mu, c.sigma);
-        c.mu += randn() * 0.006 * p.noise;
-        c.sigma += (c.baseSigma - c.sigma) * 0.02;
-        c.K = clamp(c.K + 0.0030*ov - 0.002*p.noise*Math.max(0,randn()), 0, 1);
-
-        c.mu = clamp(c.mu, X.min+0.7, X.max-0.7);
-        c.sigma = clamp(c.sigma, 0.75, 2.6);
-      }
+      L0.mu = clamp(L0.mu, X.min+0.7, X.max-0.7);
+      L0.sigma = clamp(L0.sigma, 0.90, 2.6);
     }
 
     function postLectureStep(){
       const p = params();
       const T = teacher();
-      const E = engaged();
-      if (!T) return;
+      const A = agenda();
+      if (!T || !A) return;
 
-      // Engaged cohort learning: small after lecture; much larger with project support
-      if (E) {
-        const ov = overlapArea(T.mu, T.sigma, E.mu, E.sigma);
-        const baseGain = 0.010 * ov;
-        const projectBoost = state.institutionOn ? (0.030 + 0.040*p.projectStrength) * ov : 0;
-        const jitterLoss = 0.003 * p.noise * Math.max(0, randn());
-
-        E.K = clamp(E.K + baseGain + projectBoost - jitterLoss, 0, 1);
-
-        // With project support, engaged movement toward teacher is more effective (but not instant)
-        const engageStep = state.institutionOn ? (0.030 + 0.045*p.projectStrength) : 0.012;
-        E.mu += (T.mu - E.mu) * engageStep * (0.35 + 0.65*E.K);
-        E.mu += randn() * 0.012 * p.noise * (1 - E.K);
-
-        // modest tightening with knowledge (optional)
-        const sigGoal = clamp(E.baseSigma * (1.02 - 0.20*E.K), 0.75, 2.2);
-        E.sigma += (sigGoal - E.sigma) * (0.05 + 0.05*E.K);
-
-        E.mu = clamp(E.mu, X.min+0.7, X.max-0.7);
-        E.sigma = clamp(E.sigma, 0.70, 2.4);
+      // Smooth divergence from main curve toward targets (seamless spawning)
+      // After ~12 turns, treat split as finished.
+      if (state.splitInProgress && state.turn % 12 === 0) {
+        state.splitInProgress = false;
       }
 
-      // Selecting disinterest:
-      // - moderate sigma tightening (bounded by sigmaTightenLimit)
-      // - drift away from teacher NOT necessarily to the right (direction depends on relative position + random walk)
-      // - loss of overlap with each other: gentle peer repulsion (spreads means slightly)
-      const D = disinterested();
+      // Overlapping subgroup: stays near teacher; learning increases (much more with project support)
+      const E = engagedSub();
+      if (E) {
+        const ovT = overlapArea(T.mu, T.sigma, E.mu, E.sigma);
+        const ovA = overlapArea(A.mu, A.sigma, E.mu, E.sigma); // agenda relevance can contribute in project phase
+
+        const baseGain = 0.010 * ovT;
+        const projGain = state.projectOn ? (0.020 + 0.040*p.projectStrength) * (0.65*ovT + 0.35*ovA) : 0;
+        const jitterLoss = 0.003 * p.noise * Math.max(0, randn());
+
+        E.K = clamp(E.K + baseGain + projGain - jitterLoss, 0, 1);
+
+        // move toward targetMu (near teacher), and also toward teacher a bit
+        const step = state.projectOn ? (0.060 + 0.030*p.projectStrength) : 0.035;
+        E.mu += (E.targetMu - E.mu) * step;
+        E.mu += (T.mu - E.mu) * (0.010 + 0.020*E.K);
+        E.mu += randn()*0.010*p.noise*(1-E.K);
+
+        // sigma toward targetSigma, mild tightening with K
+        const sigGoal = clamp(E.targetSigma * (1.02 - 0.18*E.K), 0.85, 2.0);
+        E.sigma += (sigGoal - E.sigma) * (0.07 + 0.05*E.K);
+
+        E.mu = clamp(E.mu, X.min+0.7, X.max-0.7);
+        E.sigma = clamp(E.sigma, 0.80, 2.4);
+      }
+
+      // Disinterest subgroups: select disinterest → moderate tightening + drift away (not necessarily right)
+      // plus peer repulsion to reduce mutual overlap (balkanisation)
+      const D = disinterestSubs();
       if (D.length) {
-        // peer repulsion: push apart if too close
+        // Repulsion if overlap too high
         for (let i=0;i<D.length;i++){
           for (let j=i+1;j<D.length;j++){
             const a = D[i], b = D[j];
             const ovAB = overlapArea(a.mu,a.sigma,b.mu,b.sigma);
-            if (ovAB > 0.22) {
-              const push = (0.006 + 0.010*p.disinterestStrength) * (ovAB - 0.22);
+            if (ovAB > 0.20) {
+              const push = (0.005 + 0.012*p.disinterestStrength) * (ovAB - 0.20);
               const dir = (a.mu <= b.mu) ? -1 : 1;
               a.mu += dir * push;
               b.mu -= dir * push;
@@ -753,26 +740,41 @@ window.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      for (const d of disinterested()) {
-        // drift away from teacher (either direction) + random drift
+      for (const d of D) {
+        // move toward its own divergence target
+        const toTarget = (0.040 + 0.030*p.disinterestStrength);
+        d.mu += (d.targetMu - d.mu) * toTarget;
+
+        // drift away from teacher, but direction depends on relative position (NOT always right)
         const rel = d.mu - T.mu;
-        const awayDir = rel === 0 ? (Math.random() < 0.5 ? -1 : 1) : Math.sign(rel);
-        const away = (0.010 + 0.020*p.disinterestStrength) * (0.70 + 0.30*(1 - d.K));
-        const randomWalk = randn() * 0.010 * (0.35 + 0.65*p.disinterestStrength);
+        const awayDir = rel === 0 ? (Math.random()<0.5?-1:1) : Math.sign(rel);
+        d.mu += awayDir * (0.010 + 0.020*p.disinterestStrength);
 
-        d.mu += awayDir * away + randomWalk;
-        d.mu += randn() * 0.010 * p.noise;
+        d.mu += randn()*0.010*p.noise;
 
-        // moderate sigma tightening, not too much
-        const minSigma = p.sigmaTightenLimit;
-        const tightenTarget = clamp(d.baseSigma * (0.90 - 0.10*p.disinterestStrength), minSigma, 2.2);
-        d.sigma += (tightenTarget - d.sigma) * (0.06 + 0.04*p.disinterestStrength);
+        // moderate tightening with a floor
+        const floor = p.sigmaFloor;
+        const tightenTarget = clamp(d.targetSigma * (0.98 - 0.10*p.disinterestStrength), floor, 2.0);
+        d.sigma += (tightenTarget - d.sigma) * (0.08 + 0.04*p.disinterestStrength);
 
-        // knowledge stagnates/erodes slightly (disinterest)
-        d.K = clamp(d.K - (0.002 + 0.003*p.disinterestStrength) - 0.002*p.noise, 0, 1);
+        // knowledge stagnates/erodes
+        d.K = clamp(d.K - (0.002 + 0.004*p.disinterestStrength) - 0.002*p.noise, 0, 1);
 
         d.mu = clamp(d.mu, X.min+0.7, X.max-0.7);
-        d.sigma = clamp(d.sigma, minSigma, 2.4);
+        d.sigma = clamp(d.sigma, floor, 2.4);
+      }
+
+      // Main body remains (one cohort), but becomes less central as subgroups become explicit
+      const L0 = mainLearner();
+      if (L0) {
+        // slight drift + weak K
+        const ov = overlapArea(T.mu, T.sigma, L0.mu, L0.sigma);
+        L0.mu += randn()*0.006*p.noise;
+        L0.sigma += (L0.baseSigma - L0.sigma)*0.02;
+        L0.K = clamp(L0.K + 0.0018*ov - 0.002*p.noise*Math.max(0,randn()), 0, 1);
+
+        L0.mu = clamp(L0.mu, X.min+0.7, X.max-0.7);
+        L0.sigma = clamp(L0.sigma, 0.90, 2.6);
       }
     }
 
@@ -783,10 +785,9 @@ window.addEventListener("DOMContentLoaded", () => {
       else postLectureStep();
 
       if (state.turn % 5 === 0) {
-        const E = engaged();
-        const eK = E ? E.K.toFixed(2) : "—";
+        const E = engagedSub();
         appendMsg("System",
-          `Phase=${state.phase}${state.institutionOn ? " (project ON)" : ""}. Cohorts=${cohorts().length}. Engaged K=${eK}. Fragmentation=${fragmentation().toFixed(2)}.`,
+          `Phase=${state.phase}${state.projectOn ? " (project ON)" : ""}. Learner curves=${learners().length}. Engaged K=${E ? E.K.toFixed(2) : "—"}. Balkanisation=${balkanisation().toFixed(2)}.`,
           `turn ${state.turn+1}`
         );
       }
@@ -826,7 +827,7 @@ window.addEventListener("DOMContentLoaded", () => {
     $("endLectureBtn").addEventListener("click", endLecture);
     $("projectBtn").addEventListener("click", applyProjectSupport);
 
-    ["emergenceRate","teacherConstraint","disinterestStrength","sigmaTightenLimit","projectStrength","noise"].forEach(id => {
+    ["teacherConstraint","disinterestStrength","sigmaFloor","projectStrength","noise"].forEach(id => {
       const el = $(id);
       el.addEventListener("input", redraw);
       el.addEventListener("change", redraw);
