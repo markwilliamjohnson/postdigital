@@ -483,7 +483,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     /* ---------- Domain & palette ---------- */
     const X = { min:-5.2, max: 5.2 };
-    const teacherColor = "#ffffff";
+    const teacherColor = "#000000";
     const palette = ["#7aa2ff", "#ffd36a", "#ff8ab1", "#8bffb4", "#c7a6ff", "#ffb37a", "#7affd7"];
     function colorForIndex(i){ return palette[i % palette.length]; }
 
@@ -810,7 +810,7 @@ window.addEventListener("DOMContentLoaded", () => {
         const y = ys.get(a.id);
         if (!y) continue;
         ctx.strokeStyle = a.color;
-        ctx.lineWidth = (a.kind === "teacher") ? 3.1 : 2.5;
+        ctx.lineWidth = (a.kind === "teacher") ? 4.4 : 2.5;
         ctx.beginPath();
         ctx.moveTo(toX(xs[0]), toY(y[0]));
         for (let i=1;i<N;i++) ctx.lineTo(toX(xs[i]), toY(y[i]));
