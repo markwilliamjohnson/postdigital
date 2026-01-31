@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lecture → Discussion: Constraints, Put-off Narrowing, Balkanisation</title>
+  <style>
+    :root { --bg:#0b0d12; --panel:#121624; --ink:#e9ecf1; --muted:#a8b0c0; --line:#2a3350; }
+    html,body { height:100%; margin:0; background:var(--bg); color:var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    .wrap { max-width:1200px; margin:0 auto; padding:18px; display:grid; gap:14px; grid-template-columns: 1.2fr 0.8fr; }
+    header { grid-column:1 / -1; display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
+    h1 { margin:0; font-size:18px; letter-spacing:.2px; }
+    .sub { color:var(--muted); font-size:13px; margin-top:6px; line-height:1.35; max-width: 980px; }
+    .card { background:var(--panel); border:1px solid #1c2340; border-radius:16px;
+      box-shadow: 0 10px 26px rgba(0,0,0,.35); overflow:hidden; }
+    .card .hd { padding:12px 14px; border-bottom:1px solid #1c2340; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .card .bd { padding:14px; }
+
+    canvas { width:100%; height:410px; background:
+      radial-gradient(1200px 460px at 20% 0%, rgba(120,140,255,.10), transparent 55%),
+      radial-gradient(900px 420px at 80% 0%, rgba(255,160,120,.08), transparent 60%);
+      border-radius:14px; border:1px solid #1c2340; display:block; }
+
+    .legend { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .pill { display:inline-flex; gap:6px; align-items:center; padding:4px 8px; border-radius:999px;
+      border:1px solid #2a3350; font-size:11px; color:var(--muted); }
+    .sw { width:10px; height:10px; border-radius:999px; display:inline-block; }
+
+    .btns { display:flex; gap:8px; flex-wrap:wrap; }
+    button {
+      background:#1b2340; color:var(--ink); border:1px solid #2a3350;
+      border-radius:12px; padding:9px 10px; font-weight:800; cursor:pointer;
+    }
+    button:hover { filter: brightness(1.08); }
+    button:active { transform: translateY(1px); }
+    button.primary { background:#2a3cff; border-color:#3b4cff; }
+    button.warn { background:#3a1f29; border-color:#6a2a3d; }
+
+    .kpi { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .kpi .box { border:1px solid #1c2340; border-radius:14px; padding:10px; background: rgba(255,255,255,.02); }
+    .k { font-size:11px; color:var(--muted); }
+    .v { font-size:16px; font-weight:900; margin-top:4px; }
+
+    .row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px dashed #212a45; }
+    .row:last-child { border-bottom:none; }
+    label { font-size:12px; color:var(--muted); }
+    input[type="range"] { width: 240px; }
+    input[type="checkbox"] { transform: scale(1.1); }
+    .note { color:var(--muted); font-size:12px; line-height:1.45; }
+
+    .bars { display:flex; flex-direction:column; gap:10px; margin-top:10px; }
+    .barRow { border:1px solid #1c2340; border-radius:14px; padding:10px; background: rgba(255,255,255,.02); }
+    .barTop { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+    .name { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:8px; }
+    .val { font-size:12px; color:var(--ink); font-weight:800; text-align:right; }
+    .meter { height:10px; border-radius:999px; background:#0f1320; border:1px solid #1c2340; overflow:hidden; }
+    .fill { height:100%; width:0%; background:#ffffff; }
+    .small { font-size:11px; color:var(--muted); margin-top:6px; line-height:1.35; }
+
+    .log { height:250px; overflow:auto; padding-right:6px; margin-top:10px; }
+    .msg { border:1px solid #1c2340; border-radius:14px; padding:10px; margin:10px 0; background: rgba(255,255,255,.02); }
+    .msg .who { font-size:11px; color:var(--muted); margin-bottom:6px; }
+
+    .tag { display:inline-flex; padding:2px 6px; border-radius:999px; border:1px solid #2a3350; font-size:10px; color:var(--muted); margin-left:6px; }
+
+    .err {
+      position: fixed; left: 14px; right: 14px; bottom: 14px;
+      background: rgba(80, 18, 26, 0.92); border: 1px solid #6a2a3d; color: #ffd6dc;
+      padding: 10px 12px; border-radius: 14px; font-size: 12px; display:none; z-index: 9999;
+      white-space: pre-wrap;
+    }
+
+    @media (max-width: 980px) {
+      .wrap { grid-template-columns:1fr; }
+      canvas { height:340px; }
+      input[type="range"] { width: 180px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Lecture → Discussion: constrained teacher, selective engagement, put-off narrowing, balkanisation</h1>
+        <div class="sub">
+          Teacher delivers a lecture under movement constraints. Students are distributions with increasing SD to the right.
+          After the lecture, only a small subset (those with some overlap + willingness) engage in discussion.
+          Institutional facilitation increases reach and engagement. Some students become put-off: they move away to the right
+          and narrow their discourse (lower SD), forming right-side clusters that produce balkanisation.
+        </div>
+      </div>
+      <div class="legend" id="legend"></div>
+    </header>
+
+    <div class="card">
+      <div class="hd">
+        <strong>Distributions (μ, σ) + overlap shading (teacher vs students)</strong>
+        <span class="pill" id="phasePill">Phase: …</span>
+      </div>
+      <div class="bd">
+        <canvas id="plot"></canvas>
+        <div class="note" style="margin-top:10px;">
+          Labels above curves show an index (K) of alignment/engagement potential. Put-off groups move right and narrow (σ↓).
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hd">
+        <strong>Controls & indicators</strong>
+        <div class="btns">
+          <button class="primary" id="playBtn" type="button">Play</button>
+          <button id="stepBtn" type="button">Step</button>
+          <button class="warn" id="resetBtn" type="button">Reset</button>
+        </div>
+      </div>
+      <div class="bd">
+        <div class="kpi">
+          <div class="box"><div class="k">Turn</div><div class="v" id="turnKpi">0</div></div>
+          <div class="box"><div class="k">Phase</div><div class="v" id="phaseKpi">—</div></div>
+          <div class="box"><div class="k">Discussing groups</div><div class="v" id="discussKpi">0</div></div>
+          <div class="box"><div class="k">Balkanisation index</div><div class="v" id="balkanKpi">0.00</div></div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <div>
+            <label for="lectureTurns">Lecture length (turns)</label>
+            <div class="note">After this, only the “wants to discuss” subset engages.</div>
+          </div>
+          <input id="lectureTurns" type="range" min="8" max="60" step="1" value="28" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="teacherConstraint">Teacher movement constraint</label>
+            <div class="note">Lower = teacher more constrained (smaller reachable range per turn).</div>
+          </div>
+          <input id="teacherConstraint" type="range" min="0.2" max="1.6" step="0.01" value="0.55" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="agendaIntensity">Agenda intensity (digitalisation push)</label>
+            <div class="note">Higher increases put-off risk among low-overlap groups.</div>
+          </div>
+          <input id="agendaIntensity" type="range" min="0.0" max="2.0" step="0.01" value="1.10" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="putoffSensitivity">Put-off sensitivity</label>
+            <div class="note">Higher means more groups react by moving away and narrowing σ.</div>
+          </div>
+          <input id="putoffSensitivity" type="range" min="0.0" max="2.0" step="0.01" value="1.00" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="discussionFraction">Fraction who want to discuss (max)</label>
+            <div class="note">Only a small portion of overlapping groups are selected for discussion.</div>
+          </div>
+          <input id="discussionFraction" type="range" min="0.05" max="0.70" step="0.01" value="0.22" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="institutionOn">Institutional facilitation</label>
+            <div class="note">When on, constraints and frictions are reduced.</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <input id="institutionOn" type="checkbox" />
+            <span class="note">on</span>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="institutionStrength">Institutional facilitation strength</label>
+            <div class="note">Higher = better reach + more effective engagement.</div>
+          </div>
+          <input id="institutionStrength" type="range" min="0.0" max="2.0" step="0.01" value="1.00" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="noise">Interaction noise</label>
+            <div class="note">Adds jitter and slows convergence.</div>
+          </div>
+          <input id="noise" type="range" min="0" max="1.0" step="0.01" value="0.18" />
+        </div>
+
+        <div class="bars" id="bars"></div>
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="err" class="err"></div>
+
+<script>
+window.addEventListener("DOMContentLoaded", () => {
+  const errEl = document.getElementById("err");
+  function showErr(e) {
+    errEl.style.display = "block";
+    errEl.textContent = "Runtime error:\n" + (e && e.stack ? e.stack : String(e));
+  }
+  window.addEventListener("error", (ev) => showErr(ev.error || ev.message));
+  window.addEventListener("unhandledrejection", (ev) => showErr(ev.reason));
+
+  try {
+    const $ = (id) => document.getElementById(id);
+    const clamp = (v,a,b) => Math.max(a, Math.min(b,v));
+
+    /* ---------- Math ---------- */
+    function gaussian(x, mu, sigma) {
+      const z = (x - mu) / sigma;
+      return Math.exp(-0.5*z*z) / (sigma * Math.sqrt(2*Math.PI));
+    }
+    function overlapArea(mu1, s1, mu2, s2) {
+      const lo = Math.min(mu1 - 6*s1, mu2 - 6*s2);
+      const hi = Math.max(mu1 + 6*s1, mu2 + 6*s2);
+      const steps = 1100;
+      const dx = (hi - lo) / steps;
+      let area = 0;
+      for (let i=0;i<=steps;i++){
+        const x = lo + i*dx;
+        area += Math.min(gaussian(x,mu1,s1), gaussian(x,mu2,s2)) * dx;
+      }
+      return clamp(area, 0, 1);
+    }
+    function randn(){
+      let u=0,v=0; while(u===0) u=Math.random(); while(v===0) v=Math.random();
+      return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+    }
+    function hexToRgba(hex, a) {
+      const h = hex.replace("#","");
+      const r = parseInt(h.slice(0,2),16);
+      const g = parseInt(h.slice(2,4),16);
+      const b = parseInt(h.slice(4,6),16);
+      return `rgba(${r},${g},${b},${a})`;
+    }
+
+    /* ---------- Params ---------- */
+    function params(){
+      return {
+        lectureTurns: parseInt($("lectureTurns").value, 10),
+        teacherConstraint: parseFloat($("teacherConstraint").value),
+        agendaIntensity: parseFloat($("agendaIntensity").value),
+        putoffSensitivity: parseFloat($("putoffSensitivity").value),
+        discussionFraction: parseFloat($("discussionFraction").value),
+        institutionOn: $("institutionOn").checked,
+        institutionStrength: parseFloat($("institutionStrength").value),
+        noise: parseFloat($("noise").value),
+      };
+    }
+
+    /* ---------- Domain & palette ---------- */
+    const X = { min:-5.2, max: 5.2 };
+    const teacherColor = "#ffffff";
+    const palette = ["#7aa2ff", "#ffd36a", "#ff8ab1", "#8bffb4", "#c7a6ff", "#ffb37a", "#7affd7", "#ff6b6b", "#6be3ff"];
+    function colorForIndex(i){ return palette[i % palette.length]; }
+
+    /* ---------- State ---------- */
+    const state = {
+      turn: 0,
+      running: false,
+      timer: null,
+      phase: "lecture", // "lecture" -> "discussion"
+      agents: [],
+      balkanCenters: [2.6, 3.4, 4.2], // right-side “balkan” attractors
+    };
+
+    function makeStudents(){
+      // increasing SD towards the right; means march left->right
+      // (you can add/remove groups here)
+      const mus = [-3.4, -2.4, -1.6, -0.8, 0.2, 1.2, 2.2, 3.1, 3.9];
+      const sigmas = [0.55, 0.65, 0.80, 0.95, 1.10, 1.30, 1.55, 1.75, 1.95]; // increasing to right
+      const groups = [];
+      for (let i=0;i<mus.length;i++){
+        groups.push({
+          id: `g${i+1}`,
+          name: `Student group ${i+1}`,
+          color: colorForIndex(i),
+          mu: mus[i],
+          sigma: sigmas[i],
+          baseSigma: sigmas[i],
+          // K here is an "alignment/engagement potential" index (0..1), updated by overlap & phase
+          K: 0.20 + Math.random()*0.15,
+          kind: "student",
+          wantsDiscuss: false,
+          putOff: false,
+          balkanId: null,
+        });
+      }
+      return groups;
+    }
+
+    function makeInitial(){
+      state.turn = 0;
+      state.phase = "lecture";
+      state.agents = [
+        {
+          id:"teacher",
+          name:"Teacher",
+          color:teacherColor,
+          mu:-2.9,
+          sigma:0.75,
+          baseSigma:0.75,
+          fixedSigma:true, // lecture coherence stays unchanged
+          K:0.90, // teacher knowledge (kept high)
+          kind:"teacher"
+        },
+        ...makeStudents()
+      ];
+      selectDiscussers(); // mark subset after lecture (pre-selected)
+    }
+
+    function teacher(){ return state.agents.find(a => a.kind==="teacher"); }
+    function students(){ return state.agents.filter(a => a.kind==="student"); }
+    function discussers(){ return students().filter(s => s.wantsDiscuss && !s.putOff); }
+    function putOffs(){ return students().filter(s => s.putOff); }
+
+    /* ---------- selection: only a small portion with overlap want to discuss ---------- */
+    function selectDiscussers(){
+      const T = teacher();
+      const p = params();
+      if (!T) return;
+
+      // candidates are those with some overlap with teacher
+      const cand = students().map(s => ({
+        s,
+        ov: overlapArea(T.mu, T.sigma, s.mu, s.sigma)
+      }))
+      .filter(x => x.ov >= 0.12) // "some overlap"
+      .sort((a,b)=>b.ov-a.ov);
+
+      const maxCount = Math.max(1, Math.round(p.discussionFraction * students().length));
+      const chosen = new Set();
+
+      // pick top-overlap, but keep it "small portion": also random thin
+      for (const x of cand) {
+        if (chosen.size >= maxCount) break;
+        const acceptProb = clamp(0.35 + 0.90*x.ov, 0.0, 1.0); // overlap increases chance
+        if (Math.random() < acceptProb) chosen.add(x.s.id);
+      }
+      // ensure at least 1 if there were candidates
+      if (chosen.size === 0 && cand.length) chosen.add(cand[0].s.id);
+
+      for (const s of students()) s.wantsDiscuss = chosen.has(s.id);
+    }
+
+    /* ---------- Metrics ---------- */
+    function avgStudentOverlap(){
+      const S = students();
+      if (S.length < 2) return 0;
+      let sum=0, n=0;
+      for (let i=0;i<S.length;i++){
+        for (let j=i+1;j<S.length;j++){
+          sum += overlapArea(S[i].mu,S[i].sigma,S[j].mu,S[j].sigma);
+          n++;
+        }
+      }
+      return sum / Math.max(1,n);
+    }
+    function balkanisationIndex(){
+      // higher when students overlap less (esp after narrowing + clustering)
+      const ov = avgStudentOverlap();
+      return clamp(1 - ov, 0, 1);
+    }
+
+    /* ---------- UI: legend + bars ---------- */
+    const legendEl = $("legend");
+    function renderLegend(){
+      legendEl.innerHTML = "";
+      for (const a of state.agents) {
+        const pill = document.createElement("span");
+        pill.className = "pill";
+        const sw = document.createElement("span");
+        sw.className = "sw";
+        sw.style.background = a.color;
+        pill.appendChild(sw);
+        let label = a.name;
+        if (a.kind==="student" && a.wantsDiscuss) label += " (discuss)";
+        if (a.kind==="student" && a.putOff) label += " (put-off)";
+        pill.appendChild(document.createTextNode(label));
+        legendEl.appendChild(pill);
+      }
+    }
+
+    const barsEl = $("bars");
+    function teacherReachPerTurn(){
+      const p = params();
+      // constraint reduces movement; institutional facilitation increases effective reach
+      const inst = p.institutionOn ? (1 + 0.55*p.institutionStrength) : 1;
+      return 0.05 * p.teacherConstraint * inst;
+    }
+    function engagementEffect(){
+      const p = params();
+      // facilitation makes discussion more effective (and slightly reduces put-off)
+      const inst = p.institutionOn ? (1 + 0.70*p.institutionStrength) : 1;
+      return inst;
+    }
+
+    function renderBars(){
+      barsEl.innerHTML = "";
+      for (const a of state.agents) {
+        const row = document.createElement("div");
+        row.className = "barRow";
+
+        const top = document.createElement("div");
+        top.className = "barTop";
+
+        const left = document.createElement("div");
+        left.className = "name";
+        const sw = document.createElement("span");
+        sw.className = "sw";
+        sw.style.background = a.color;
+        left.appendChild(sw);
+
+        const nameText = document.createElement("span");
+        nameText.textContent = a.name;
+        left.appendChild(nameText);
+
+        if (a.kind==="student" && a.wantsDiscuss) {
+          const t = document.createElement("span");
+          t.className = "tag";
+          t.textContent = "discuss";
+          left.appendChild(t);
+        }
+        if (a.kind==="student" && a.putOff) {
+          const t = document.createElement("span");
+          t.className = "tag";
+          t.textContent = "put-off";
+          left.appendChild(t);
+        }
+
+        const right = document.createElement("div");
+        right.className = "val";
+        if (a.kind==="teacher") {
+          right.textContent = `reach/turn=${teacherReachPerTurn().toFixed(3)} | σ fixed`;
+        } else {
+          right.textContent = `K=${a.K.toFixed(2)} | μ=${a.mu.toFixed(2)} σ=${a.sigma.toFixed(2)}`;
+        }
+
+        top.appendChild(left); top.appendChild(right);
+
+        const meter = document.createElement("div");
+        meter.className = "meter";
+        const fill = document.createElement("div");
+        fill.className = "fill";
+        fill.style.background = a.color;
+        // teacher bar shows "constraint/inst readiness", students show K
+        const pct = (a.kind==="teacher")
+          ? clamp((teacherReachPerTurn()/0.09)*100, 0, 100)
+          : clamp(a.K*100, 0, 100);
+        fill.style.width = `${pct.toFixed(1)}%`;
+        meter.appendChild(fill);
+
+        const small = document.createElement("div");
+        small.className = "small";
+        if (a.kind==="teacher") {
+          small.textContent = `Teacher μ=${a.mu.toFixed(2)} σ=${a.sigma.toFixed(2)} | phase=${state.phase}`;
+        } else {
+          const extra = a.putOff ? " (narrowing reaction → balkan cluster)" : (a.wantsDiscuss ? " (willing to engage)" : "");
+          small.textContent = `μ=${a.mu.toFixed(2)}  σ=${a.sigma.toFixed(2)}${extra}`;
+        }
+
+        row.appendChild(top);
+        row.appendChild(meter);
+        row.appendChild(small);
+        barsEl.appendChild(row);
+      }
+    }
+
+    /* ---------- Log ---------- */
+    const logEl = $("log");
+    function appendMsg(who, text, tag){
+      const div = document.createElement("div");
+      div.className = "msg";
+      const whoLine = document.createElement("div");
+      whoLine.className = "who";
+      whoLine.textContent = who + (tag ? (" • " + tag) : "");
+      const body = document.createElement("div");
+      body.textContent = text;
+      div.appendChild(whoLine);
+      div.appendChild(body);
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    /* ---------- Canvas ---------- */
+    const canvas = $("plot");
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvasToDisplaySize(){
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.max(1, Math.round(rect.width * dpr));
+      const h = Math.max(1, Math.round(rect.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    }
+
+    function drawRoundedLabel(px, py, text, color){
+      ctx.save();
+      ctx.font = "11px system-ui";
+      const padX = 6, padY = 4;
+      const w = Math.ceil(ctx.measureText(text).width) + padX*2;
+      const h = 18;
+      const x = Math.round(px - w/2);
+      const y = Math.round(py - h - 8);
+
+      ctx.globalAlpha = 0.92;
+      ctx.fillStyle = "rgba(10,12,18,0.85)";
+      ctx.strokeStyle = "rgba(42,51,80,0.85)";
+      ctx.lineWidth = 1;
+
+      const r = 8;
+      ctx.beginPath();
+      ctx.moveTo(x+r, y);
+      ctx.lineTo(x+w-r, y);
+      ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+      ctx.lineTo(x+w, y+h-r);
+      ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+      ctx.lineTo(x+r, y+h);
+      ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+      ctx.lineTo(x, y+r);
+      ctx.quadraticCurveTo(x, y, x+r, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = color;
+      ctx.fillText(text, x + padX, y + 13);
+      ctx.restore();
+    }
+
+    function redraw(){
+      resizeCanvasToDisplaySize();
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0,0,W,H);
+
+      const pad = { l:52, r:18, t:18, b:40 };
+      const plotW = W - pad.l - pad.r;
+      const plotH = H - pad.t - pad.b;
+
+      const toX = x => pad.l + (x - X.min)/(X.max - X.min) * plotW;
+
+      let yMax = 0;
+      for (const a of state.agents) yMax = Math.max(yMax, gaussian(a.mu,a.mu,a.sigma));
+      yMax = Math.max(yMax, 1e-6) * 1.25;
+      const toY = y => pad.t + (1 - y/yMax) * plotH;
+
+      // axes
+      ctx.strokeStyle = "#2a3350"; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pad.l, pad.t);
+      ctx.lineTo(pad.l, pad.t + plotH);
+      ctx.lineTo(pad.l + plotW, pad.t + plotH);
+      ctx.stroke();
+
+      // ticks
+      ctx.fillStyle = "#a8b0c0";
+      ctx.font = "12px system-ui";
+      for (let x=-5;x<=5;x++){
+        const px = toX(x);
+        ctx.strokeStyle = "rgba(42,51,80,0.60)";
+        ctx.beginPath();
+        ctx.moveTo(px, pad.t + plotH);
+        ctx.lineTo(px, pad.t + plotH + 6);
+        ctx.stroke();
+        ctx.fillText(String(x), px - 4, pad.t + plotH + 22);
+      }
+      ctx.fillText("Discourse space (left→right: increasing SD initially; put-off narrows σ on the right)", pad.l, H - 10);
+
+      const N=850;
+      const xs = new Array(N);
+      for (let i=0;i<N;i++) xs[i] = X.min + (X.max-X.min)*i/(N-1);
+
+      const ys = new Map();
+      for (const a of state.agents) ys.set(a.id, xs.map(x=>gaussian(x,a.mu,a.sigma)));
+
+      const T = teacher();
+      const yT = T ? ys.get(T.id) : null;
+
+      // shading: teacher overlap with students
+      if (T && yT) {
+        for (const s of students()) {
+          const yS = ys.get(s.id);
+          if (!yS) continue;
+          const alpha = s.putOff ? 0.07 : (s.wantsDiscuss ? 0.18 : 0.11);
+          ctx.fillStyle = hexToRgba(s.color, alpha);
+          ctx.beginPath();
+          ctx.moveTo(toX(xs[0]), toY(0));
+          for (let i=0;i<N;i++){
+            ctx.lineTo(toX(xs[i]), toY(Math.min(yT[i], yS[i])));
+          }
+          ctx.lineTo(toX(xs[N-1]), toY(0));
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      // curves
+      for (const a of state.agents) {
+        const y = ys.get(a.id);
+        if (!y) continue;
+        ctx.strokeStyle = a.color;
+        ctx.lineWidth = (a.kind === "teacher") ? 3.2 : (a.putOff ? 2.8 : 2.4);
+        ctx.beginPath();
+        ctx.moveTo(toX(xs[0]), toY(y[0]));
+        for (let i=1;i<N;i++) ctx.lineTo(toX(xs[i]), toY(y[i]));
+        ctx.stroke();
+      }
+
+      // mean markers
+      for (const a of state.agents) {
+        const x = toX(a.mu);
+        ctx.strokeStyle = a.color;
+        ctx.lineWidth = 1.1;
+        ctx.beginPath();
+        ctx.moveTo(x, pad.t);
+        ctx.lineTo(x, pad.t + plotH);
+        ctx.stroke();
+      }
+
+      // labels above peaks (K index for students)
+      for (const a of state.agents) {
+        const peakY = gaussian(a.mu, a.mu, a.sigma);
+        if (a.kind === "teacher") {
+          drawRoundedLabel(toX(a.mu), toY(peakY), "Teacher", a.color);
+        } else {
+          const tag = a.putOff ? " (put-off)" : (a.wantsDiscuss ? " (discuss)" : "");
+          drawRoundedLabel(toX(a.mu), toY(peakY), `K=${a.K.toFixed(2)}${tag}`, a.color);
+        }
+      }
+
+      // KPIs
+      $("turnKpi").textContent = String(state.turn);
+      $("phaseKpi").textContent = state.phase;
+      $("discussKpi").textContent = String(discussers().length);
+      $("balkanKpi").textContent = balkanisationIndex().toFixed(2);
+
+      $("phasePill").textContent = state.phase === "lecture"
+        ? "Phase: lecture (teacher constrained)"
+        : "Phase: discussion (selective engagement)";
+
+      renderLegend();
+      renderBars();
+    }
+
+    /* ---------- Dynamics ---------- */
+    function stepModel(){
+      const p = params();
+      const T = teacher();
+      if (!T) return;
+
+      // phase transition
+      if (state.phase === "lecture" && state.turn >= p.lectureTurns) {
+        state.phase = "discussion";
+        appendMsg("System",
+          `Lecture ended at turn ${state.turn}. Only the pre-selected subset with overlap & willingness engages in discussion.`,
+          "phase"
+        );
+      }
+
+      // teacher: constrained movement; lecture is especially constrained
+      const reach = teacherReachPerTurn();
+      const eff = engagementEffect();
+      const jitter = randn() * 0.015 * p.noise;
+
+      // teacher moves primarily during discussion toward centroid of discussers
+      if (state.phase === "discussion") {
+        const D = discussers();
+        if (D.length) {
+          const target = D.reduce((s,x)=>s+x.mu,0)/D.length;
+          const delta = clamp(target - T.mu, -reach, reach);
+          T.mu += delta + jitter;
+        } else {
+          // no-one to reach; teacher stays near lecture location
+          T.mu += jitter * 0.35;
+        }
+      } else {
+        // lecture: teacher is mostly fixed, small drift
+        T.mu += jitter * 0.25;
+      }
+      T.mu = clamp(T.mu, X.min+0.7, X.max-0.7);
+      T.sigma = T.baseSigma; // coherence unchanged
+
+      // students update
+      for (const s of students()) {
+        const ov = overlapArea(T.mu, T.sigma, s.mu, s.sigma);
+
+        // update K: increases slightly with overlap; discussion more effective; put-off freezes/erodes
+        if (!s.putOff) {
+          const gain = (state.phase === "discussion" && s.wantsDiscuss)
+            ? (0.015 + 0.030*eff) * ov
+            : (0.004 + 0.010*eff) * ov;
+          const loss = Math.max(0, randn()) * 0.003 * p.noise;
+          s.K = clamp(s.K + gain - loss, 0, 1);
+        } else {
+          // put-off groups become less responsive (and “tighten”)
+          s.K = clamp(s.K - 0.004*p.noise, 0, 1);
+        }
+
+        // put-off risk mainly during lecture (reaction to agenda)
+        if (state.phase === "lecture" && !s.putOff) {
+          const lowOverlap = 1 - ov;
+          const rightBias = clamp((s.mu + 5.2)/10.4, 0, 1); // already-right groups more at risk
+          const baseRisk = 0.002 + 0.010 * p.agendaIntensity * p.putoffSensitivity;
+          const risk = baseRisk * (0.40 + 0.95*lowOverlap) * (0.55 + 0.65*rightBias) * (p.institutionOn ? (1 - 0.28*eff) : 1);
+          if (Math.random() < risk) {
+            s.putOff = true;
+            // assign a balkan cluster on the right
+            s.balkanId = Math.floor(Math.random() * state.balkanCenters.length);
+            appendMsg("System",
+              `${s.name} becomes put-off: moves away (→ right) and narrows discourse (σ↓), joining right-side cluster ${s.balkanId+1}.`,
+              "put-off"
+            );
+          }
+        }
+
+        // movement rules
+        if (state.phase === "discussion" && s.wantsDiscuss && !s.putOff) {
+          // engaged: move a bit toward teacher; facilitation helps
+          const step = (0.020 + 0.040*eff) * (0.30 + 0.70*s.K);
+          s.mu += (T.mu - s.mu) * step;
+          s.mu += randn() * 0.018 * p.noise * (1 - s.K);
+          // if engaged, discourse can broaden slightly early then stabilise (optional feel)
+          const sigmaGoal = clamp(s.baseSigma * (1.05 - 0.25*s.K), 0.55, 2.4);
+          s.sigma += (sigmaGoal - s.sigma) * (0.05 + 0.08*s.K);
+        } else if (s.putOff) {
+          // put-off: move away to right AND narrow σ, attracted to balkan cluster center
+          const center = state.balkanCenters[s.balkanId ?? 0];
+          const away = 0.020 + 0.040*p.agendaIntensity; // pushes right
+          const towardCluster = 0.060; // cluster pull
+
+          s.mu += away * (0.65 + 0.35*(1 - s.K));
+          s.mu += (center - s.mu) * towardCluster;
+          s.mu += randn() * 0.014 * p.noise;
+
+          // narrow discourse on the right: sigma decreases
+          const narrowGoal = clamp(s.baseSigma * (0.55 - 0.18*p.agendaIntensity), 0.40, 1.20);
+          s.sigma += (narrowGoal - s.sigma) * 0.10;
+        } else {
+          // non-discussers (not put-off): slight drift away from teacher’s agenda in lecture; mostly inert in discussion
+          const drift = (state.phase === "lecture") ? (0.004 + 0.010*p.agendaIntensity) : 0.002;
+          const dir = (s.mu >= T.mu) ? 1 : -1;
+          s.mu += dir * drift * (1 - ov) * (0.50 + 0.50*p.noise);
+          s.mu += randn() * 0.010 * p.noise;
+          // keep sigma near base
+          s.sigma += (s.baseSigma - s.sigma) * 0.03;
+        }
+
+        s.mu = clamp(s.mu, X.min+0.7, X.max-0.7);
+        s.sigma = clamp(s.sigma, 0.35, 2.6);
+      }
+
+      // keep teacher knowledge high (not shown as K label here)
+      T.K = clamp(T.K - 0.001*p.noise + 0.0006, 0.80, 1.0);
+
+      // occasionally re-select discussers when sliders change massively (optional)
+      if (state.turn % 18 === 0 && state.phase === "lecture") {
+        // re-run selection so discussionFraction slider feels responsive during lecture
+        selectDiscussers();
+      }
+
+      // log short status
+      if (state.turn % 4 === 0) {
+        const avgOv = avgStudentOverlap();
+        appendMsg("System",
+          `Phase=${state.phase}. Discussers=${discussers().length}. Put-off=${putOffs().length}. Avg student overlap=${avgOv.toFixed(2)} (balkan=${balkanisationIndex().toFixed(2)}).`,
+          `turn ${state.turn+1}`
+        );
+      }
+
+      state.turn++;
+      redraw();
+    }
+
+    /* ---------- Controls ---------- */
+    function play(){
+      if (state.running) return;
+      state.running = true;
+      $("playBtn").textContent = "Pause";
+      state.timer = setInterval(stepModel, 760);
+      redraw();
+    }
+    function pause(){
+      state.running = false;
+      $("playBtn").textContent = "Play";
+      if (state.timer) clearInterval(state.timer);
+      state.timer = null;
+      redraw();
+    }
+    function togglePlay(){ state.running ? pause() : play(); }
+
+    function resetAll(){
+      pause();
+      logEl.innerHTML = "";
+      makeInitial();
+      appendMsg("System",
+        "Reset. Teacher is constrained during the lecture. Students start with increasing SD to the right. A small overlap-based subset wants to discuss after the lecture. Put-off groups move right and narrow σ, forming balkan clusters; institutional facilitation increases reach and engagement.",
+        "reset"
+      );
+      redraw();
+    }
+
+    $("playBtn").addEventListener("click", togglePlay);
+    $("stepBtn").addEventListener("click", () => { if (!state.running) stepModel(); });
+    $("resetBtn").addEventListener("click", resetAll);
+
+    // redraw on input; reselect discussers when relevant controls change
+    const redrawIds = ["lectureTurns","teacherConstraint","agendaIntensity","putoffSensitivity","discussionFraction","institutionStrength","noise"];
+    redrawIds.forEach(id => {
+      const el = $(id);
+      el.addEventListener("input", () => { if (state.phase==="lecture") selectDiscussers(); redraw(); });
+      el.addEventListener("change", () => { if (state.phase==="lecture") selectDiscussers(); redraw(); });
+    });
+    $("institutionOn").addEventListener("change", () => { if (state.phase==="lecture") selectDiscussers(); redraw(); });
+
+    window.addEventListener("resize", redraw);
+
+    // boot
+    resetAll();
+
+  } catch(e) {
+    showErr(e);
+  }
+});
+</script>
+</body>
+</html>
