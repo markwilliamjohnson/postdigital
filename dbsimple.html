@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Vocabulary / Noise / Constraint Oscillation Demo</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 18px; line-height: 1.35; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 12px; }
+    .title { font-weight: 700; margin-bottom: 8px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; white-space: pre-wrap; }
+    label { display: block; margin: 8px 0 4px; font-weight: 600; }
+    input[type="range"] { width: 100%; }
+    .small { color: #444; font-size: 12px; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid #ddd; margin-left:6px; font-size:12px; color:#222;}
+    button { padding: 8px 12px; border-radius: 10px; border: 1px solid #ccc; background: #fafafa; cursor:pointer; }
+    button:hover { background:#f2f2f2; }
+    .kv { display:grid; grid-template-columns: 130px 1fr; gap:6px 10px; align-items:center; }
+    .bar { height: 10px; border-radius: 999px; background: #eee; overflow:hidden; }
+    .bar > div { height: 100%; width: 0%; background: #999; }
+    .warn { color:#b00020; font-weight:600; }
+  </style>
+</head>
+<body>
+  <h2>Noise vs Vocabulary vs Constraint (and why it oscillates)</h2>
+  <p class="small">
+    This demo models a "teacher register" moving along a coupled track:
+    <b>low vocab + low noise</b> (expert/controlled code) ↔ <b>high vocab + high noise</b> (legal/discursive code).
+    As <b>noise increases</b>, the teacher adds <b>constraint/redundancy</b> (definitions, exceptions, cross-refs).
+    Reducing <b>vocabulary</b> reduces <b>effective noise</b> (fewer distinct symbols → fewer meaningful corruption outcomes).
+  </p>
+
+  <div class="row">
+    <div class="card">
+      <div class="title">1) Channel: noise ↑ → constraint ↑</div>
+
+      <label>Noise (corruption probability): <span id="noiseVal" class="pill"></span></label>
+      <input id="noise" type="range" min="0" max="1" step="0.01" value="0.30" />
+
+      <label>Vocabulary mode:</label>
+      <div>
+        <input type="radio" name="vocabMode" id="vocabHigh" checked />
+        <label for="vocabHigh" style="display:inline;font-weight:500">High vocabulary (full phrase)</label>
+      </div>
+      <div>
+        <input type="radio" name="vocabMode" id="vocabLow" />
+        <label for="vocabLow" style="display:inline;font-weight:500">Low vocabulary (controlled tokens)</label>
+      </div>
+
+      <label>Message</label>
+      <div class="mono" id="out"></div>
+
+      <p class="small" id="explainChannel"></p>
+      <button id="reroll">Reroll noise</button>
+    </div>
+
+    <div class="card">
+      <div class="title">2) Oscillation: teacher chases two clusters</div>
+
+      <div class="kv small">
+        <div>Teacher vocab</div>
+        <div>
+          <div class="bar"><div id="barV"></div></div>
+          <span id="tv"></span>
+        </div>
+
+        <div>Teacher noise</div>
+        <div>
+          <div class="bar"><div id="barN"></div></div>
+          <span id="tn"></span>
+        </div>
+
+        <div>Expert loss</div>
+        <div><span id="lossE"></span></div>
+
+        <div>Law loss</div>
+        <div><span id="lossL"></span></div>
+
+        <div>Teacher move</div>
+        <div><span id="move"></span></div>
+      </div>
+
+      <label>Step size (bigger → more oscillation): <span id="stepVal" class="pill"></span></label>
+      <input id="step" type="range" min="0.05" max="0.5" step="0.01" value="0.35" />
+
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button id="tick">Tick (one update)</button>
+        <button id="run10">Run 10 ticks</button>
+        <button id="reset">Reset teacher to middle</button>
+      </div>
+
+      <label style="margin-top:12px;">Log</label>
+      <div class="mono" id="log" style="max-height:260px; overflow:auto; border:1px solid #eee; padding:8px; border-radius:10px;"></div>
+
+      <p class="small" id="explainOsc"></p>
+    </div>
+  </div>
+
+<script>
+  // ---------- Utilities ----------
+  function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+  function randChoice(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+
+  // Corrupt letters with probability p
+  function corruptChars(str, p){
+    const letters = "abcdefghijklmnopqrstuvwxyz";
+    let out = "";
+    for (const ch of str){
+      if (/[a-zA-Z]/.test(ch) && Math.random() < p){
+        out += letters[Math.floor(Math.random() * letters.length)];
+      } else {
+        out += ch;
+      }
+    }
+    return out;
+  }
+
+  // Controlled vocabulary: collapse many words into few tokens
+  function controlledVocab(text){
+    const map = {
+      "a":"A", "pedagogy":"P", "of":"OF", "postdigital":"PD", "skill":"S"
+    };
+    return text.split(/\s+/).map(w => {
+      const key = w.toLowerCase();
+      return map[key] || w.toUpperCase();
+    }).join(" ");
+  }
+
+  // Add legal-style constraint (redundancy) as noise rises
+  function legalConstraints(text, level){
+    const defs = 'DEF: "skill"=competence; "postdigital"=hybrid digital+material.';
+    const enumr= "ENUM: (a) scope (b) test (c) burden (d) remedy.";
+    const exc  = "EXC: notwithstanding the foregoing, exceptions apply where context requires.";
+    const xref = "XREF: see §1(a)(i); cf. §2(b).";
+    const pack = [text];
+    if (level >= 1) pack.push(defs);
+    if (level >= 2) pack.push(enumr);
+    if (level >= 3) pack.push(exc);
+    if (level >= 4) pack.push(xref);
+    return pack.join(" | ");
+  }
+
+  // Effective noise shrinks when vocabulary is reduced:
+  // fewer distinct symbols -> less meaningful divergence from corruption.
+  function effectiveNoise(noise, vocabLevel){
+    // vocabLevel: 0 = low vocab, 1 = high vocab
+    // This is the key "implication" you described.
+    // Low vocab reduces effective noise.
+    return noise * (0.4 + 0.6 * vocabLevel); // low vocab => ~0.4*noise, high vocab => ~1.0*noise
+  }
+
+  // Transmit through channel
+  function transmit(baseText, noise, vocabLevel){
+    // constraint increases with RAW noise (people scaffold more when things are uncertain)
+    const constraintLevel = 1 + Math.floor(noise * 4); // 1..5
+    const constrained = legalConstraints(baseText, constraintLevel);
+
+    // corruption uses EFFECTIVE noise (lower if vocab is controlled)
+    const p = effectiveNoise(noise, vocabLevel);
+    return { text: corruptChars(constrained, p), constraintLevel, effectiveP: p };
+  }
+
+  // ---------- UI: Channel demo ----------
+  const baseMsg = "A Pedagogy of postdigital skill";
+  const noiseEl = document.getElementById("noise");
+  const noiseValEl = document.getElementById("noiseVal");
+  const vocabHighEl = document.getElementById("vocabHigh");
+  const vocabLowEl = document.getElementById("vocabLow");
+  const outEl = document.getElementById("out");
+  const explainChannelEl = document.getElementById("explainChannel");
+
+  function renderChannel(){
+    const noise = parseFloat(noiseEl.value);
+    const vocabLevel = vocabLowEl.checked ? 0 : 1;
+    const msg = vocabLevel === 0 ? controlledVocab(baseMsg) : baseMsg;
+
+    const res = transmit(msg, noise, vocabLevel);
+    noiseValEl.textContent = noise.toFixed(2);
+    outEl.textContent = res.text;
+
+    explainChannelEl.innerHTML =
+      `Noise = <b>${noise.toFixed(2)}</b>. Constraint level = <b>${res.constraintLevel}</b> (more definitions/exceptions as noise rises).<br>` +
+      `Vocabulary mode = <b>${vocabLevel===0 ? "low" : "high"}</b> → effective corruption p = <b>${res.effectiveP.toFixed(2)}</b> ` +
+      `(low vocab reduces effective noise).`;
+  }
+
+  document.getElementById("reroll").addEventListener("click", renderChannel);
+  noiseEl.addEventListener("input", renderChannel);
+  vocabHighEl.addEventListener("change", renderChannel);
+  vocabLowEl.addEventListener("change", renderChannel);
+
+  // ---------- Oscillation demo ----------
+  // Two clusters (preferences) in coupled (vocab, noise) space:
+  const expertPref = { v: 0.2, n: 0.2 }; // low vocab/low noise
+  const lawPref    = { v: 0.8, n: 0.8 }; // high vocab/high noise
+
+  // Teacher starts in the middle
+  let T = { v: 0.5, n: 0.5 };
+
+  const stepEl = document.getElementById("step");
+  const stepValEl = document.getElementById("stepVal");
+  const barV = document.getElementById("barV");
+  const barN = document.getElementById("barN");
+  const tvEl = document.getElementById("tv");
+  const tnEl = document.getElementById("tn");
+  const lossEEl = document.getElementById("lossE");
+  const lossLEl = document.getElementById("lossL");
+  const moveEl = document.getElementById("move");
+  const logEl = document.getElementById("log");
+  const explainOscEl = document.getElementById("explainOsc");
+
+  function loss(T, pref){
+    // squared distance
+    return (T.v - pref.v) ** 2 + (T.n - pref.n) ** 2;
+  }
+
+  function renderTeacher(le, ll, moveText){
+    barV.style.width = (T.v * 100).toFixed(0) + "%";
+    barN.style.width = (T.n * 100).toFixed(0) + "%";
+    tvEl.textContent = " " + T.v.toFixed(2);
+    tnEl.textContent = " " + T.n.toFixed(2);
+    lossEEl.textContent = le.toFixed(3);
+    lossLEl.textContent = ll.toFixed(3);
+    moveEl.textContent = moveText;
+
+    stepValEl.textContent = parseFloat(stepEl.value).toFixed(2);
+
+    explainOscEl.innerHTML =
+      `Experts prefer <b>(v≈0.2,n≈0.2)</b>. Law students prefer <b>(v≈0.8,n≈0.8)</b>.<br>` +
+      `Teacher can only move along the coupled track: changing vocab also changes noise. If the update step is big, ` +
+      `the teacher overshoots the middle and bounces → <span class="warn">oscillation</span>.`;
+  }
+
+  let tickCount = 0;
+
+  function tick(){
+    const step = parseFloat(stepEl.value);
+
+    const le = loss(T, expertPref);
+    const ll = loss(T, lawPref);
+
+    // Move toward the more dissatisfied group
+    let moveText = "";
+    if (le > ll){
+      T.v = clamp01(T.v - step);
+      T.n = clamp01(T.n - step);
+      moveText = "toward expert (low vocab / low noise)";
+    } else {
+      T.v = clamp01(T.v + step);
+      T.n = clamp01(T.n + step);
+      moveText = "toward law (high vocab / high noise)";
+    }
+
+    tickCount += 1;
+    logEl.textContent =
+      `t=${tickCount} | move ${moveText} | T=(v=${T.v.toFixed(2)}, n=${T.n.toFixed(2)}) | lossE=${le.toFixed(3)} | lossL=${ll.toFixed(3)}\n`
+      + logEl.textContent;
+
+    renderTeacher(le, ll, moveText);
+  }
+
+  document.getElementById("tick").addEventListener("click", tick);
+  document.getElementById("run10").addEventListener("click", () => { for (let i=0;i<10;i++) tick(); });
+  document.getElementById("reset").addEventListener("click", () => {
+    T = { v: 0.5, n: 0.5 };
+    tickCount = 0;
+    logEl.textContent = "";
+    renderTeacher(loss(T, expertPref), loss(T, lawPref), "reset to middle");
+  });
+  stepEl.addEventListener("input", () => {
+    stepValEl.textContent = parseFloat(stepEl.value).toFixed(2);
+  });
+
+  // Initial render
+  renderChannel();
+  renderTeacher(loss(T, expertPref), loss(T, lawPref), "start");
+</script>
+</body>
+</html>
