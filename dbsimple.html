@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Animated Oscillation: Vocabulary / Noise / Constraint</title>
+  <title>Animated Oscillation + Brute-Force Redundancy</title>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 18px; line-height: 1.35; }
-    .row { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 12px; }
+    .row { display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 12px; }
     .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; }
     .title { font-weight: 800; margin-bottom: 8px; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; white-space: pre-wrap; }
@@ -17,7 +17,7 @@
     button { padding: 8px 12px; border-radius: 10px; border: 1px solid #ccc; background: #fafafa; cursor:pointer; }
     button:hover { background:#f2f2f2; }
     .btnrow { display:flex; gap:8px; flex-wrap:wrap; margin-top: 10px; }
-    .kv { display:grid; grid-template-columns: 120px 1fr; gap:6px 10px; align-items:center; }
+    .kv { display:grid; grid-template-columns: 160px 1fr; gap:6px 10px; align-items:center; }
     .bar { height: 10px; border-radius: 999px; background:#eee; overflow:hidden; }
     .bar > div { height:100%; width:0%; background:#999; }
     .warn { color:#b00020; font-weight: 750; }
@@ -26,16 +26,16 @@
   </style>
 </head>
 <body>
-  <h2>Animated Oscillation (teacher register bouncing between two vocab/noise regimes)</h2>
+  <h2>Animated Oscillation + Brute-force Redundancy (constraint) calculation</h2>
   <p class="small">
-    Left attractor: <b>low vocabulary + low noise</b> (controlled code). Right attractor: <b>high vocabulary + high noise</b> (legal/discursive code).
-    Noise increases corruption <i>and</i> increases redundancy/constraint. Reducing vocabulary reduces <i>effective</i> noise.
-    A teacher who adjusts toward whoever is currently failing will <span class="warn">oscillate</span> when the class is bimodal and the knobs are coupled.
+    We treat “high noise” as a high corruption probability <b>p</b>. Stability comes from <b>redundancy</b> (constraint):
+    repeat the message <b>k</b> times and decode by per-character majority vote.
+    The UI computes (by brute force) the smallest <b>k*</b> needed to recover the message with the chosen reliability.
   </p>
 
   <div class="row">
     <div class="card">
-      <div class="title">Channel output (updates every frame)</div>
+      <div class="title">Channel output + constraint metrics (updates during animation)</div>
 
       <div class="kv small">
         <div>Teacher vocab</div>
@@ -50,11 +50,14 @@
           <span id="tn"></span>
         </div>
 
-        <div>Constraint</div>
+        <div>Legal constraint</div>
         <div><span id="constraint"></span></div>
 
-        <div>Effective p</div>
+        <div>Effective corruption p</div>
         <div><span id="effP"></span></div>
+
+        <div>Brute-force redundancy k*</div>
+        <div><span id="kstar"></span> <span id="kmeta" class="pill"></span></div>
 
         <div>Move</div>
         <div><span id="move"></span></div>
@@ -74,8 +77,7 @@
 
       <canvas id="phase" width="520" height="220"></canvas>
       <p class="small">
-        The dot is the teacher at (vocab, noise). Targets are the two clusters:
-        expert at (0.2,0.2) and law at (0.8,0.8).
+        Dot = teacher at (vocab, noise). Targets: expert (0.2,0.2), law (0.8,0.8).
       </p>
 
       <label>Step size (bigger → more oscillation): <span id="stepVal" class="pill"></span></label>
@@ -84,8 +86,16 @@
       <label>Update speed (ticks/sec): <span id="hzVal" class="pill"></span></label>
       <input id="hz" type="range" min="2" max="30" step="1" value="12" />
 
-      <label>Coupling (how tightly vocab ↔ noise move together): <span id="coupleVal" class="pill"></span></label>
+      <label>Coupling (vocab ↔ noise): <span id="coupleVal" class="pill"></span></label>
       <input id="couple" type="range" min="0" max="1" step="0.05" value="1" />
+
+      <div class="divider"></div>
+
+      <label>Redundancy target success τ: <span id="tauVal" class="pill"></span></label>
+      <input id="tau" type="range" min="0.70" max="0.99" step="0.01" value="0.95" />
+
+      <label>Monte Carlo trials (more → slower): <span id="trialsVal" class="pill"></span></label>
+      <input id="trials" type="range" min="40" max="400" step="20" value="160" />
 
       <div class="btnrow">
         <button id="start">Start</button>
@@ -100,7 +110,6 @@
 <script>
   // ---------------- Utilities ----------------
   function clamp01(x){ return Math.max(0, Math.min(1, x)); }
-  function randChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
   function corruptChars(str, p){
     const letters = "abcdefghijklmnopqrstuvwxyz";
@@ -119,7 +128,7 @@
     return text.split(/\s+/).map(w => map[w.toLowerCase()] || w.toUpperCase()).join(" ");
   }
 
-  // Legal-style constraint (redundancy) increases with noise
+  // Legal-style constraint (redundancy scaffolding) increases with noise
   function legalConstraints(text, level){
     const defs = 'DEF: "skill"=competence; "postdigital"=hybrid digital+material.';
     const enumr= "ENUM: (a) scope (b) test (c) burden (d) remedy.";
@@ -133,25 +142,70 @@
     return pack.join(" | ");
   }
 
-  // Effective noise shrinks when vocabulary is reduced:
+  // Effective noise shrinks when vocabulary shrinks (your “implication”)
   // vocabLevel: 0 (low vocab) .. 1 (high vocab)
   function effectiveNoise(noise, vocabLevel){
-    return noise * (0.4 + 0.6 * vocabLevel); // low vocab => ~0.4*noise, high vocab => ~1.0*noise
+    return noise * (0.4 + 0.6 * vocabLevel);
   }
 
   function transmit(baseText, noise, vocabLevel){
     const constraintLevel = 1 + Math.floor(noise * 4); // 1..5
     const constrained = legalConstraints(baseText, constraintLevel);
     const p = effectiveNoise(noise, vocabLevel);
-    return { text: corruptChars(constrained, p), constraintLevel, effectiveP: p };
+    return { text: corruptChars(constrained, p), constraintLevel, effectiveP: p, constrained };
+  }
+
+  // ---------------- Brute-force redundancy (constraint) ----------------
+  // Repeat message k times, corrupt each, then majority vote per character.
+  function majorityDecode(copies){
+    const k = copies.length;
+    const L = copies[0].length;
+    let out = "";
+    for (let i = 0; i < L; i++){
+      const counts = new Map();
+      for (let j = 0; j < k; j++){
+        const ch = copies[j][i];
+        counts.set(ch, (counts.get(ch) || 0) + 1);
+      }
+      let bestCh = null, bestCt = -1;
+      for (const [ch, ct] of counts.entries()){
+        if (ct > bestCt){ bestCt = ct; bestCh = ch; }
+      }
+      out += bestCh;
+    }
+    return out;
+  }
+
+  function successRate(msg, p, k, trials){
+    let ok = 0;
+    for (let t = 0; t < trials; t++){
+      const copies = Array.from({length:k}, () => corruptChars(msg, p));
+      const decoded = majorityDecode(copies);
+      if (decoded === msg) ok++;
+    }
+    return ok / trials;
+  }
+
+  function requiredRedundancy(msg, p, tau, trials, kMax){
+    for (let k = 1; k <= kMax; k++){
+      const rate = successRate(msg, p, k, trials);
+      if (rate >= tau) return { k, rate };
+    }
+    return { k: null, rate: null };
+  }
+
+  // Cache to keep animation smooth (keyed by rounded p and tau/trials and msg length)
+  const kCache = new Map();
+  function cacheKey(msg, p, tau, trials){
+    // round p to 0.02 increments to avoid recalculating constantly
+    const pr = (Math.round(p / 0.02) * 0.02).toFixed(2);
+    return `${msg.length}|p=${pr}|tau=${tau.toFixed(2)}|tr=${trials}`;
   }
 
   // ---------------- Oscillation model ----------------
-  // Two preference clusters in (vocab, noise)
   const expert = { v: 0.2, n: 0.2 };
   const law    = { v: 0.8, n: 0.8 };
 
-  // Teacher starts centered
   let T = { v: 0.5, n: 0.5 };
   let tickCount = 0;
 
@@ -159,16 +213,14 @@
     return (T.v - pref.v)**2 + (T.n - pref.n)**2;
   }
 
-  // Teacher update: move toward whoever is worse off.
-  // Coupling c: 1 means vocab and noise move together; 0 means move only noise (decoupled).
   function updateTeacher(step, coupling){
     const le = loss(T, expert);
     const ll = loss(T, law);
 
-    const towardLaw = ll > le; // if law is worse, move right/up; else move left/down
+    const towardLaw = ll > le;         // if law is worse, move up/right; else down/left
     const dir = towardLaw ? +1 : -1;
 
-    // coupled track: vocab and noise move together (scaled by coupling)
+    // Teacher always adjusts noise; vocab follows via coupling.
     T.n = clamp01(T.n + dir * step);
     T.v = clamp01(T.v + dir * step * coupling);
 
@@ -184,6 +236,8 @@
   const tnEl = document.getElementById("tn");
   const constraintEl = document.getElementById("constraint");
   const effPEl = document.getElementById("effP");
+  const kstarEl = document.getElementById("kstar");
+  const kmetaEl = document.getElementById("kmeta");
   const moveEl = document.getElementById("move");
   const outEl = document.getElementById("out");
   const logEl = document.getElementById("log");
@@ -192,23 +246,24 @@
   const stepEl = document.getElementById("step");
   const hzEl = document.getElementById("hz");
   const coupleEl = document.getElementById("couple");
+  const tauEl = document.getElementById("tau");
+  const trialsEl = document.getElementById("trials");
+
   const stepValEl = document.getElementById("stepVal");
   const hzValEl = document.getElementById("hzVal");
   const coupleValEl = document.getElementById("coupleVal");
+  const tauValEl = document.getElementById("tauVal");
+  const trialsValEl = document.getElementById("trialsVal");
 
   const canvas = document.getElementById("phase");
   const ctx = canvas.getContext("2d");
 
   function drawPhase(){
-    // clear
     ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    // axes box
     ctx.strokeStyle = "#ddd";
     ctx.lineWidth = 1;
     ctx.strokeRect(30, 20, canvas.width-50, canvas.height-50);
 
-    // labels
     ctx.fillStyle = "#666";
     ctx.font = "12px system-ui, sans-serif";
     ctx.fillText("noise ↑", 8, 30);
@@ -216,16 +271,12 @@
 
     function toXY(v, n){
       const x0 = 30, y0 = 20, w = canvas.width-50, h = canvas.height-50;
-      const x = x0 + v * w;
-      const y = y0 + (1-n) * h;
-      return {x,y};
+      return { x: x0 + v*w, y: y0 + (1-n)*h };
     }
 
-    // targets
     const e = toXY(expert.v, expert.n);
     const l = toXY(law.v, law.n);
 
-    // draw target points
     ctx.fillStyle = "#999";
     ctx.beginPath(); ctx.arc(e.x, e.y, 6, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(l.x, l.y, 6, 0, Math.PI*2); ctx.fill();
@@ -234,40 +285,16 @@
     ctx.fillText("expert (0.2,0.2)", e.x + 8, e.y + 4);
     ctx.fillText("law (0.8,0.8)", l.x + 8, l.y + 4);
 
-    // teacher path point
     const t = toXY(T.v, T.n);
     ctx.fillStyle = "#111";
     ctx.beginPath(); ctx.arc(t.x, t.y, 5, 0, Math.PI*2); ctx.fill();
     ctx.fillText("teacher", t.x + 8, t.y + 4);
 
-    // coupled diagonal guide (if coupling ~ 1)
+    // diagonal guide
     ctx.strokeStyle = "#eee";
     ctx.beginPath();
-    const a = toXY(0,0);
-    const b = toXY(1,1);
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.stroke();
-  }
-
-  function renderStatus(moveText, res){
-    barV.style.width = (T.v * 100).toFixed(0) + "%";
-    barN.style.width = (T.n * 100).toFixed(0) + "%";
-    tvEl.textContent = " " + T.v.toFixed(2);
-    tnEl.textContent = " " + T.n.toFixed(2);
-    constraintEl.textContent = "level " + res.constraintLevel;
-    effPEl.textContent = res.effectiveP.toFixed(2);
-    moveEl.textContent = moveText;
-    outEl.textContent = res.text;
-
-    drawPhase();
-
-    const coupling = parseFloat(coupleEl.value);
-    explainEl.innerHTML =
-      `Teacher is moving on a coupled track. Coupling = <b>${coupling.toFixed(2)}</b> (1 means vocab changes whenever noise changes).<br>` +
-      `When teacher moves toward law, vocab/noise rise → more corruption, but also more legal constraint. ` +
-      `When teacher moves toward expert, vocab shrinks → effective noise shrinks. ` +
-      `Because the class has two separated clusters, the update flips direction and produces <span class="warn">oscillation</span>.`;
+    const a = toXY(0,0), b = toXY(1,1);
+    ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
   }
 
   function pushLog(line){
@@ -278,6 +305,37 @@
     stepValEl.textContent = parseFloat(stepEl.value).toFixed(2);
     hzValEl.textContent = parseInt(hzEl.value,10) + "/s";
     coupleValEl.textContent = parseFloat(coupleEl.value).toFixed(2);
+    tauValEl.textContent = parseFloat(tauEl.value).toFixed(2);
+    trialsValEl.textContent = parseInt(trialsEl.value,10);
+  }
+
+  function renderStatus(moveText, res, redundancyInfo){
+    barV.style.width = (T.v * 100).toFixed(0) + "%";
+    barN.style.width = (T.n * 100).toFixed(0) + "%";
+    tvEl.textContent = " " + T.v.toFixed(2);
+    tnEl.textContent = " " + T.n.toFixed(2);
+
+    constraintEl.textContent = "level " + res.constraintLevel;
+    effPEl.textContent = res.effectiveP.toFixed(2);
+    moveEl.textContent = moveText;
+
+    outEl.textContent = res.text;
+
+    if (redundancyInfo.k === null){
+      kstarEl.textContent = "not reached";
+      kmetaEl.textContent = "raise kMax / lower τ";
+    } else {
+      kstarEl.textContent = `k* = ${redundancyInfo.k}`;
+      kmetaEl.textContent = `success≈${(redundancyInfo.rate*100).toFixed(0)}%`;
+    }
+
+    drawPhase();
+
+    const coupling = parseFloat(coupleEl.value);
+    explainEl.innerHTML =
+      `Mechanism: <b>noise p</b> increases corruption; stability is restored by <b>redundancy (k)</b>.<br>` +
+      `We compute <b>k*</b> by brute force: repeat message k times, corrupt each with p, then majority-decode. ` +
+      `Oscillation happens because teacher moves along a coupled track (coupling=${coupling.toFixed(2)}) and the class has two separated preference clusters.`;
   }
 
   // ---------------- Animation loop ----------------
@@ -285,8 +343,26 @@
   let lastTime = 0;
   let accumulator = 0;
 
+  // To avoid expensive brute-force every substep, recompute redundancy every N ticks
+  const REDUNDANCY_EVERY_TICKS = 3;
+  let lastRedundancy = { k: null, rate: null };
+
+  function computeRedundancyIfNeeded(msgForRedundancy, effectiveP){
+    const tau = parseFloat(tauEl.value);
+    const trials = parseInt(trialsEl.value, 10);
+    const key = cacheKey(msgForRedundancy, effectiveP, tau, trials);
+
+    if (kCache.has(key)) return kCache.get(key);
+
+    // Keep kMax modest so it stays responsive; bump it if you want more range.
+    const kMax = 21;
+    const info = requiredRedundancy(msgForRedundancy, effectiveP, tau, trials, kMax);
+    kCache.set(key, info);
+    return info;
+  }
+
   function frame(ts){
-    if (!running){ return; }
+    if (!running) return;
     if (!lastTime) lastTime = ts;
     const dt = (ts - lastTime) / 1000;
     lastTime = ts;
@@ -304,18 +380,23 @@
       const { le, ll, towardLaw } = updateTeacher(step, coupling);
       tickCount += 1;
 
-      // vocabLevel is teacher vocab (0..1): low vocab => less effective noise
+      // Teacher vocab determines whether we use controlled vocab for the *base* message.
       const vocabLevel = T.v;
-      const msg = (vocabLevel < 0.5) ? controlledVocab(baseMsg) : baseMsg;
+      const base = (vocabLevel < 0.5) ? controlledVocab(baseMsg) : baseMsg;
 
-      // use teacher noise for channel noise
-      const res = transmit(msg, T.n, vocabLevel);
+      // Transmit through the legal-constraint channel
+      const res = transmit(base, T.n, vocabLevel);
+
+      // Brute-force redundancy is computed for the actual constrained message, because that's what must be recovered
+      // (i.e., constraint is part of the "signal" in the high-noise regime).
+      if (tickCount % REDUNDANCY_EVERY_TICKS === 0){
+        lastRedundancy = computeRedundancyIfNeeded(res.constrained, res.effectiveP);
+      }
 
       const moveText = towardLaw ? "toward law (high vocab/high noise)" : "toward expert (low vocab/low noise)";
-      renderStatus(moveText, res);
+      renderStatus(moveText, res, lastRedundancy);
 
-      // compact log
-      pushLog(`t=${tickCount} | ${moveText} | T(v=${T.v.toFixed(2)}, n=${T.n.toFixed(2)}) | lossE=${le.toFixed(3)} lossL=${ll.toFixed(3)}`);
+      pushLog(`t=${tickCount} | ${moveText} | T(v=${T.v.toFixed(2)}, n=${T.n.toFixed(2)}) | p=${res.effectiveP.toFixed(2)} | k*=${lastRedundancy.k ?? "?"} | lossE=${le.toFixed(3)} lossL=${ll.toFixed(3)}`);
     }
 
     requestAnimationFrame(frame);
@@ -344,25 +425,37 @@
     T = { v: 0.5, n: 0.5 };
     tickCount = 0;
     logEl.textContent = "";
+    kCache.clear();
+    lastRedundancy = { k: null, rate: null };
 
-    // render one static state
     const vocabLevel = T.v;
-    const msg = (vocabLevel < 0.5) ? controlledVocab(baseMsg) : baseMsg;
-    const res = transmit(msg, T.n, vocabLevel);
-    renderStatus("reset (middle)", res);
+    const base = (vocabLevel < 0.5) ? controlledVocab(baseMsg) : baseMsg;
+    const res = transmit(base, T.n, vocabLevel);
+
+    lastRedundancy = computeRedundancyIfNeeded(res.constrained, res.effectiveP);
+    renderStatus("reset (middle)", res, lastRedundancy);
   });
 
-  // control labels update
-  [stepEl, hzEl, coupleEl].forEach(el => el.addEventListener("input", syncControlLabels));
+  // Recompute cache when redundancy settings change
+  function invalidateRedundancy(){
+    kCache.clear();
+    lastRedundancy = { k: null, rate: null };
+  }
 
-  // initial render
+  [stepEl, hzEl, coupleEl, tauEl, trialsEl].forEach(el => el.addEventListener("input", () => {
+    syncControlLabels();
+    if (el === tauEl || el === trialsEl) invalidateRedundancy();
+  }));
+
+  // Initial render
   syncControlLabels();
   drawPhase();
   {
     const vocabLevel = T.v;
-    const msg = (vocabLevel < 0.5) ? controlledVocab(baseMsg) : baseMsg;
-    const res = transmit(msg, T.n, vocabLevel);
-    renderStatus("start (paused)", res);
+    const base = (vocabLevel < 0.5) ? controlledVocab(baseMsg) : baseMsg;
+    const res = transmit(base, T.n, vocabLevel);
+    lastRedundancy = computeRedundancyIfNeeded(res.constrained, res.effectiveP);
+    renderStatus("start (paused)", res, lastRedundancy);
   }
 </script>
 </body>
