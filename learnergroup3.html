@@ -4,75 +4,328 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Dynamic Bridging with Knowledge + New Noisy Group Spawning (Fixed)</title>
-  <style>
-    :root { --bg:#0b0d12; --panel:#121624; --ink:#e9ecf1; --muted:#a8b0c0; --line:#2a3350; }
-    html,body { height:100%; margin:0; background:var(--bg); color:var(--ink);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
-    .wrap { max-width:1200px; margin:0 auto; padding:18px; display:grid; gap:14px; grid-template-columns: 1.2fr 0.8fr; }
-    header { grid-column:1 / -1; display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
-    h1 { margin:0; font-size:18px; letter-spacing:.2px; }
-    .sub { color:var(--muted); font-size:13px; margin-top:6px; line-height:1.35; max-width: 920px; }
-    .card { background:var(--panel); border:1px solid #1c2340; border-radius:16px;
-      box-shadow: 0 10px 26px rgba(0,0,0,.35); overflow:hidden; }
-    .card .hd { padding:12px 14px; border-bottom:1px solid #1c2340; display:flex; align-items:center; justify-content:space-between; gap:10px; }
-    .card .bd { padding:14px; }
-    canvas { width:100%; height:410px; background:
-      radial-gradient(1200px 460px at 20% 0%, rgba(120,140,255,.10), transparent 55%),
-      radial-gradient(900px 420px at 80% 0%, rgba(255,160,120,.08), transparent 60%);
-      border-radius:14px; border:1px solid #1c2340; display:block; }
+<style>
+  :root{
+    /* Light theme: white background + dark text */
+    --bg:#ffffff;
+    --panel:#ffffff;
+    --panel2:#f6f7fb;
 
-    .legend { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    .pill { display:inline-flex; gap:6px; align-items:center; padding:4px 8px; border-radius:999px;
-      border:1px solid #2a3350; font-size:11px; color:var(--muted); }
-    .sw { width:10px; height:10px; border-radius:999px; display:inline-block; }
+    --ink:#0b1220;       /* dark text */
+    --muted:#3f4a5c;     /* readable muted text */
+    --line:#d7dbe6;      /* light borders */
 
-    .btns { display:flex; gap:8px; flex-wrap:wrap; }
-    button {
-      background:#1b2340; color:var(--ink); border:1px solid #2a3350;
-      border-radius:12px; padding:9px 10px; font-weight:800; cursor:pointer;
-    }
-    button:hover { filter: brightness(1.08); }
-    button:active { transform: translateY(1px); }
-    button.primary { background:#2a3cff; border-color:#3b4cff; }
-    button.warn { background:#3a1f29; border-color:#6a2a3d; }
+    /* Bold accent colours for UI elements (buttons etc.) */
+    --accent:#2a3cff;
+    --danger:#c81e3a;
+    --good:#0f7a3b;
 
-    .kpi { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .kpi .box { border:1px solid #1c2340; border-radius:14px; padding:10px; background: rgba(255,255,255,.02); }
-    .k { font-size:11px; color:var(--muted); }
-    .v { font-size:16px; font-weight:900; margin-top:4px; }
+    --shadow: 0 12px 30px rgba(10, 20, 40, .10);
+  }
 
-    .row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px dashed #212a45; }
-    .row:last-child { border-bottom:none; }
-    label { font-size:12px; color:var(--muted); }
-    input[type="range"] { width: 240px; }
-    .note { color:var(--muted); font-size:12px; line-height:1.45; }
+  html,body{
+    height:100%;
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  }
 
-    .bars { display:flex; flex-direction:column; gap:10px; margin-top:10px; }
-    .barRow { border:1px solid #1c2340; border-radius:14px; padding:10px; background: rgba(255,255,255,.02); }
-    .barTop { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
-    .name { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:8px; }
-    .val { font-size:12px; color:var(--ink); font-weight:800; text-align:right; }
-    .meter { height:10px; border-radius:999px; background:#0f1320; border:1px solid #1c2340; overflow:hidden; }
-    .fill { height:100%; width:0%; background:#ffffff; }
-    .small { font-size:11px; color:var(--muted); margin-top:6px; line-height:1.35; }
+  .wrap{
+    max-width:1200px;
+    margin:0 auto;
+    padding:18px;
+    display:grid;
+    gap:14px;
+    grid-template-columns: 1.2fr 0.8fr;
+  }
 
-    .log { height:250px; overflow:auto; padding-right:6px; margin-top:10px; }
-    .msg { border:1px solid #1c2340; border-radius:14px; padding:10px; margin:10px 0; background: rgba(255,255,255,.02); }
-    .msg .who { font-size:11px; color:var(--muted); margin-bottom:6px; }
+  header{
+    grid-column:1 / -1;
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:12px;
+  }
 
-    .err {
-      position: fixed; left: 14px; right: 14px; bottom: 14px;
-      background: rgba(80, 18, 26, 0.92); border: 1px solid #6a2a3d; color: #ffd6dc;
-      padding: 10px 12px; border-radius: 14px; font-size: 12px; display:none; z-index: 9999;
-      white-space: pre-wrap;
-    }
+  h1{
+    margin:0;
+    font-size:18px;
+    letter-spacing:.2px;
+    color:var(--ink);
+  }
 
-    @media (max-width: 980px) {
-      .wrap { grid-template-columns:1fr; }
-      canvas { height:340px; }
-      input[type="range"] { width: 180px; }
-    }
-  </style>
+  .sub{
+    color:var(--muted);
+    font-size:13px;
+    margin-top:6px;
+    line-height:1.35;
+    max-width: 920px;
+  }
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:16px;
+    box-shadow: var(--shadow);
+    overflow:hidden;
+  }
+
+  .card .hd{
+    padding:12px 14px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    background: linear-gradient(180deg, #ffffff, #fbfbfe);
+  }
+
+  .card .bd{
+    padding:14px;
+    background:var(--panel);
+  }
+
+  canvas{
+    width:100%;
+    height:410px;
+    /* White canvas with subtle tint so bold curves pop */
+    background:
+      radial-gradient(1200px 460px at 20% 0%, rgba(42,60,255,.10), transparent 55%),
+      radial-gradient(900px 420px at 80% 0%, rgba(255,70,110,.08), transparent 60%),
+      #ffffff;
+    border-radius:14px;
+    border:1px solid var(--line);
+    display:block;
+  }
+
+  .legend{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+
+  .pill{
+    display:inline-flex;
+    gap:6px;
+    align-items:center;
+    padding:4px 10px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    font-size:11px;
+    color:var(--muted);
+    background:#ffffff;
+  }
+
+  .sw{
+    width:10px;
+    height:10px;
+    border-radius:999px;
+    display:inline-block;
+    box-shadow: 0 0 0 1px rgba(10,18,32,.10);
+  }
+
+  .btns{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+
+  button{
+    background:#ffffff;
+    color:var(--ink);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:9px 10px;
+    font-weight:900;
+    cursor:pointer;
+    box-shadow: 0 6px 16px rgba(10,20,40,.08);
+  }
+
+  button:hover{ filter: brightness(0.98); }
+  button:active{ transform: translateY(1px); }
+
+  button.primary{
+    background: var(--accent);
+    color:#ffffff;
+    border-color: rgba(0,0,0,.10);
+  }
+
+  button.warn{
+    background: var(--danger);
+    color:#ffffff;
+    border-color: rgba(0,0,0,.12);
+  }
+
+  /* If your app uses button.good in other versions, this supports it too */
+  button.good{
+    background: var(--good);
+    color:#ffffff;
+    border-color: rgba(0,0,0,.12);
+  }
+
+  button:disabled{
+    opacity:0.45;
+    cursor:not-allowed;
+    box-shadow:none;
+  }
+
+  .kpi{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+
+  .kpi .box{
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:10px;
+    background: var(--panel2);
+  }
+
+  .k{
+    font-size:11px;
+    color:var(--muted);
+    font-weight:700;
+  }
+
+  .v{
+    font-size:16px;
+    font-weight:950;
+    margin-top:4px;
+    color:var(--ink);
+  }
+
+  .row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:10px 0;
+    border-bottom:1px dashed rgba(20,30,50,.20);
+  }
+
+  .row:last-child{ border-bottom:none; }
+
+  label{
+    font-size:12px;
+    color:var(--muted);
+    font-weight:750;
+  }
+
+  input[type="range"]{ width: 240px; }
+
+  .note{
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.45;
+  }
+
+  .bars{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-top:10px;
+  }
+
+  .barRow{
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:10px;
+    background: var(--panel2);
+  }
+
+  .barTop{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:8px;
+  }
+
+  .name{
+    font-size:12px;
+    color:var(--muted);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-weight:750;
+  }
+
+  .val{
+    font-size:12px;
+    color:var(--ink);
+    font-weight:900;
+    text-align:right;
+  }
+
+  .meter{
+    height:10px;
+    border-radius:999px;
+    background:#ffffff;
+    border:1px solid var(--line);
+    overflow:hidden;
+  }
+
+  .fill{
+    height:100%;
+    width:0%;
+    /* this gets overridden inline to match curve colour */
+    background:#0b1220;
+  }
+
+  .small{
+    font-size:11px;
+    color:var(--muted);
+    margin-top:6px;
+    line-height:1.35;
+  }
+
+  .log{
+    height:250px;
+    overflow:auto;
+    padding-right:6px;
+    margin-top:10px;
+  }
+
+  .msg{
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:10px;
+    margin:10px 0;
+    background:#ffffff;
+    box-shadow: 0 6px 16px rgba(10,20,40,.06);
+  }
+
+  .msg .who{
+    font-size:11px;
+    color:var(--muted);
+    margin-bottom:6px;
+    font-weight:800;
+  }
+
+  .err{
+    position: fixed;
+    left: 14px; right: 14px; bottom: 14px;
+    background: rgba(200, 30, 58, 0.12);
+    border: 1px solid rgba(200, 30, 58, 0.35);
+    color: #7a0e20;
+    padding: 10px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    display:none;
+    z-index: 9999;
+    white-space: pre-wrap;
+  }
+
+  @media (max-width: 980px) {
+    .wrap { grid-template-columns:1fr; }
+    canvas { height:340px; }
+    input[type="range"] { width: 180px; }
+  }
+</style>
+
 </head>
 <body>
   <div class="wrap">
