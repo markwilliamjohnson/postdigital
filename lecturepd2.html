@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lecture Balkanisation (σ↓) + Keep Max-Overlap Group + Project Converges to Agenda</title>
+  <style>
+    :root{
+      --bg:#f6f7fb;
+      --panel:#ffffff;
+      --ink:#111318;
+      --muted:#5a6475;
+      --line:#cfd6e6;
+      --shadow: 0 10px 26px rgba(20,28,45,.10);
+    }
+    html,body { height:100%; margin:0; background:var(--bg); color:var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    .wrap { max-width:1200px; margin:0 auto; padding:18px; display:grid; gap:14px; grid-template-columns: 1.2fr 0.8fr; }
+    header { grid-column:1 / -1; display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
+    h1 { margin:0; font-size:18px; letter-spacing:.2px; }
+    .sub { color:var(--muted); font-size:13px; margin-top:6px; line-height:1.35; max-width: 980px; }
+
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:16px;
+      box-shadow: var(--shadow); overflow:hidden; }
+    .card .hd { padding:12px 14px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .card .bd { padding:14px; }
+
+    /* Graph background: PURE WHITE */
+    canvas {
+      width:100%;
+      height:410px;
+      background:#ffffff;
+      border-radius:14px;
+      border:1px solid var(--line);
+      display:block;
+    }
+
+    .legend { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .pill { display:inline-flex; gap:6px; align-items:center; padding:4px 8px; border-radius:999px;
+      border:1px solid var(--line); font-size:11px; color:var(--muted); background: rgba(255,255,255,.75); }
+    .sw { width:10px; height:10px; border-radius:999px; display:inline-block; }
+
+    .btns { display:flex; gap:8px; flex-wrap:wrap; }
+    button {
+      background:#f3f5fb; color:var(--ink); border:1px solid var(--line);
+      border-radius:12px; padding:9px 10px; font-weight:800; cursor:pointer;
+    }
+    button:hover { filter: brightness(0.98); }
+    button:active { transform: translateY(1px); }
+    button.primary { background:#2a3cff; border-color:#2a3cff; color:#fff; }
+    button.warn { background:#ffe7ec; border-color:#ffb9c8; color:#5b1a2a; }
+    button.good { background:#e9fff2; border-color:#9fe3bc; color:#134027; }
+    button:disabled { opacity:0.45; cursor:not-allowed; }
+
+    .kpi { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .kpi .box { border:1px solid var(--line); border-radius:14px; padding:10px; background: rgba(20,28,45,.02); }
+    .k { font-size:11px; color:var(--muted); }
+    .v { font-size:16px; font-weight:900; margin-top:4px; }
+
+    .row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px dashed rgba(40,55,85,.18); }
+    .row:last-child { border-bottom:none; }
+    label { font-size:12px; color:var(--muted); }
+    input[type="range"] { width: 240px; }
+    .note { color:var(--muted); font-size:12px; line-height:1.45; }
+
+    .bars { display:flex; flex-direction:column; gap:10px; margin-top:10px; }
+    .barRow { border:1px solid var(--line); border-radius:14px; padding:10px; background: rgba(20,28,45,.02); }
+    .barTop { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+    .name { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:8px; }
+    .val { font-size:12px; color:var(--ink); font-weight:800; text-align:right; }
+    .meter { height:10px; border-radius:999px; background:#f0f3fb; border:1px solid var(--line); overflow:hidden; }
+    .fill { height:100%; width:0%; background:#111; }
+    .small { font-size:11px; color:var(--muted); margin-top:6px; line-height:1.35; }
+
+    .log { height:250px; overflow:auto; padding-right:6px; margin-top:10px; }
+    .msg { border:1px solid var(--line); border-radius:14px; padding:10px; margin:10px 0; background: rgba(20,28,45,.02); }
+    .msg .who { font-size:11px; color:var(--muted); margin-bottom:6px; }
+
+    .err {
+      position: fixed; left: 14px; right: 14px; bottom: 14px;
+      background: rgba(255, 226, 232, 0.98); border: 1px solid #ffb9c8; color: #5b1a2a;
+      padding: 10px 12px; border-radius: 14px; font-size: 12px; display:none; z-index: 9999;
+      white-space: pre-wrap;
+    }
+
+    @media (max-width: 980px) {
+      .wrap { grid-template-columns:1fr; }
+      canvas { height:340px; }
+      input[type="range"] { width: 180px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Lecture balkanisation (σ↓) → keep max-overlap subgroup → project converges to agenda</h1>
+        <div class="sub">
+          Blue agenda is fixed (μ=-3.5). Learners start as one cohort (μ=1.5) with little overlap with the teacher.
+          During the lecture, subgroups bud from the cohort via weight transfer. Disinterest groups pull away from the
+          teacher and their σ narrows (σ↓) as they become more focused on rejecting the message. At lecture end, all learner
+          curves vanish except the subgroup with the largest overlap with the teacher. Applying the institutional framework
+          increases flexibility so both converge toward the agenda.
+        </div>
+      </div>
+      <div class="legend" id="legend"></div>
+    </header>
+
+    <div class="card">
+      <div class="hd">
+        <strong>Weighted distributions + overlap shading (teacher vs learners)</strong>
+        <span class="pill" id="phasePill">Phase: …</span>
+      </div>
+      <div class="bd">
+        <canvas id="plot"></canvas>
+        <div class="note" style="margin-top:10px;">
+          Subgroups spawn by weight transfer (continuous split). Disinterest σ narrows during lecture (σ↓).
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hd">
+        <strong>Controls</strong>
+        <div class="btns">
+          <button class="primary" id="playBtn" type="button">Play</button>
+          <button id="stepBtn" type="button">Step</button>
+          <button class="warn" id="resetBtn" type="button">Reset</button>
+          <button class="good" id="endLectureBtn" type="button">End lecture</button>
+          <button class="good" id="projectBtn" type="button" disabled>Apply institutional constraint</button>
+        </div>
+      </div>
+      <div class="bd">
+        <div class="kpi">
+          <div class="box"><div class="k">Turn</div><div class="v" id="turnKpi">0</div></div>
+          <div class="box"><div class="k">Phase</div><div class="v" id="phaseKpi">lecture</div></div>
+          <div class="box"><div class="k">Learner curves</div><div class="v" id="countKpi">1</div></div>
+          <div class="box"><div class="k">Balkanisation</div><div class="v" id="balkanKpi">0.00</div></div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <div>
+            <label for="splitIntensity">Lecture splitting intensity</label>
+            <div class="note">Higher → faster budding via weight transfer (during lecture).</div>
+          </div>
+          <input id="splitIntensity" type="range" min="0.0" max="2.0" step="0.01" value="1.10" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="disinterestStrength">Selecting disinterest strength</label>
+            <div class="note">Higher → disinterest groups drift away + σ narrows more + repel each other more.</div>
+          </div>
+          <input id="disinterestStrength" type="range" min="0.0" max="2.2" step="0.01" value="1.05" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="sigmaFloor">σ floor (avoid extreme narrowing)</label>
+            <div class="note">Prevents disinterest groups becoming unrealistically narrow.</div>
+          </div>
+          <input id="sigmaFloor" type="range" min="0.55" max="1.30" step="0.01" value="0.85" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="teacherConstraint">Teacher constraint</label>
+            <div class="note">Lecture: constrained (small movement toward learners); post-lecture: freer; institution: strongest freedom.</div>
+          </div>
+          <input id="teacherConstraint" type="range" min="0.10" max="1.60" step="0.01" value="0.65" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="projectStrength">Institutional constraint strength</label>
+            <div class="note">Higher → teacher+learner converge to agenda faster; learner K grows faster.</div>
+          </div>
+          <input id="projectStrength" type="range" min="0.0" max="2.5" step="0.01" value="1.30" />
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="noise">Noise</label>
+            <div class="note">Adds jitter.</div>
+          </div>
+          <input id="noise" type="range" min="0" max="1.0" step="0.01" value="0.12" />
+        </div>
+
+        <div class="bars" id="bars"></div>
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="err" class="err"></div>
+
+<script>
+window.addEventListener("DOMContentLoaded", () => {
+  const errEl = document.getElementById("err");
+  function showErr(e) {
+    errEl.style.display = "block";
+    errEl.textContent = "Runtime error:\n" + (e && e.stack ? e.stack : String(e));
+  }
+  window.addEventListener("error", (ev) => showErr(ev.error || ev.message));
+  window.addEventListener("unhandledrejection", (ev) => showErr(ev.reason));
+
+  try {
+    const $ = (id) => document.getElementById(id);
+    const clamp = (v,a,b) => Math.max(a, Math.min(b,v));
+
+    /* ---------- Math ---------- */
+    function gaussian(x, mu, sigma) {
+      const z = (x - mu) / sigma;
+      return Math.exp(-0.5*z*z) / (sigma * Math.sqrt(2*Math.PI));
+    }
+    function overlapArea(mu1, s1, mu2, s2) {
+      const lo = Math.min(mu1 - 6*s1, mu2 - 6*s2);
+      const hi = Math.max(mu1 + 6*s1, mu2 + 6*s2);
+      const steps = 900;
+      const dx = (hi - lo) / steps;
+      let area = 0;
+      for (let i=0;i<=steps;i++){
+        const x = lo + i*dx;
+        area += Math.min(gaussian(x,mu1,s1), gaussian(x,mu2,s2)) * dx;
+      }
+      return clamp(area, 0, 1);
+    }
+    function randn(){
+      let u=0,v=0; while(u===0) u=Math.random(); while(v===0) v=Math.random();
+      return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+    }
+    function hexToRgba(hex, a) {
+      const h = hex.replace("#","");
+      const r = parseInt(h.slice(0,2),16);
+      const g = parseInt(h.slice(2,4),16);
+      const b = parseInt(h.slice(4,6),16);
+      return `rgba(${r},${g},${b},${a})`;
+    }
+
+    /* ---------- Params ---------- */
+    function params(){
+      return {
+        splitIntensity: parseFloat($("splitIntensity").value),
+        disinterestStrength: parseFloat($("disinterestStrength").value),
+        sigmaFloor: parseFloat($("sigmaFloor").value),
+        teacherConstraint: parseFloat($("teacherConstraint").value),
+        projectStrength: parseFloat($("projectStrength").value),
+        noise: parseFloat($("noise").value),
+      };
+    }
+
+    /* ---------- Domain & palette ---------- */
+    const X = { min:-5.2, max: 5.2 };
+    const teacherColor = "#000000";     // BLACK teacher
+    const agendaColor  = "#2a7fff";
+    const learnerMainColor = "#ff8f00";
+
+    // More saturated, higher-contrast palette
+    const palette = ["#ff8f00", "#ff2d6f", "#00c853", "#6c4cff", "#ff5a1f", "#00a6ff"];
+    function colorForIndex(i){ return palette[i % palette.length]; }
+
+    /* ---------- State ---------- */
+    const state = {
+      turn: 0,
+      running: false,
+      timer: null,
+      phase: "lecture", // lecture | postLecture | institution
+      institutionOn: false,
+      agents: [],
+      nextSub: 1,
+      lectureSpawned: false,
+    };
+
+    function teacher(){ return state.agents.find(a => a.kind==="teacher"); }
+    function agenda(){ return state.agents.find(a => a.kind==="agenda"); }
+    function learners(){ return state.agents.filter(a => a.kind==="learner"); }
+    function mainLearner(){ return state.agents.find(a => a.kind==="learner" && a.role==="main"); }
+
+    function makeInitial(){
+      state.turn = 0;
+      state.phase = "lecture";
+      state.institutionOn = false;
+      state.nextSub = 1;
+      state.lectureSpawned = false;
+
+      // Teacher starts far from learners and is constrained during lecture.
+      const T = { id:"teacher", kind:"teacher", name:"Teacher", color:teacherColor,
+        mu:-2.9, sigma:0.75, baseSigma:0.75, fixedSigma:true, K:0.90 };
+
+      const A = { id:"agenda", kind:"agenda", name:"Digitalisation agenda", color:agendaColor,
+        mu:-3.5, sigma:0.65, baseSigma:0.65, fixedSigma:true };
+
+      // Learners start far to the right with a broad σ.
+      const L0 = { id:"L0", kind:"learner", role:"main", name:"Learner cohort (main body)", color:learnerMainColor,
+        mu: 1.75, sigma:1.85, baseSigma:1.85, K:0.16, w:1.00 };
+
+      state.agents = [T, A, L0];
+
+      $("endLectureBtn").disabled = false;
+      $("projectBtn").disabled = true;
+
+      appendMsg("System",
+        "Reset. Lecture: low teacher-learner overlap; teacher movement is constrained; disinterest subgroups narrow σ (σ↓) while pulling away.",
+        "reset"
+      );
+    }
+
+    /* ---------- UI ---------- */
+    const legendEl = $("legend");
+    function renderLegend(){
+      legendEl.innerHTML = "";
+      for (const a of state.agents) {
+        const pill = document.createElement("span");
+        pill.className = "pill";
+        const sw = document.createElement("span");
+        sw.className = "sw";
+        sw.style.background = a.color;
+        pill.appendChild(sw);
+        pill.appendChild(document.createTextNode(a.name));
+        legendEl.appendChild(pill);
+      }
+    }
+
+    const barsEl = $("bars");
+    function renderBars(){
+      barsEl.innerHTML = "";
+      for (const a of state.agents) {
+        const row = document.createElement("div");
+        row.className = "barRow";
+
+        const top = document.createElement("div");
+        top.className = "barTop";
+
+        const left = document.createElement("div");
+        left.className = "name";
+        const sw = document.createElement("span");
+        sw.className = "sw";
+        sw.style.background = a.color;
+        left.appendChild(sw);
+        left.appendChild(document.createTextNode(a.name));
+
+        const right = document.createElement("div");
+        right.className = "val";
+        if (a.kind==="teacher") right.textContent = `μ=${a.mu.toFixed(2)} | σ fixed`;
+        else if (a.kind==="agenda") right.textContent = `μ=${a.mu.toFixed(2)} | fixed`;
+        else right.textContent = `w=${a.w.toFixed(2)} | K=${a.K.toFixed(2)} | μ=${a.mu.toFixed(2)} σ=${a.sigma.toFixed(2)}`;
+
+        top.appendChild(left); top.appendChild(right);
+
+        const meter = document.createElement("div");
+        meter.className = "meter";
+        const fill = document.createElement("div");
+        fill.className = "fill";
+        fill.style.background = a.color;
+        const pct = (a.kind==="learner") ? clamp(a.K*100,0,100) : (a.kind==="agenda" ? 70 : 92);
+        fill.style.width = `${pct.toFixed(1)}%`;
+        meter.appendChild(fill);
+
+        row.appendChild(top);
+        row.appendChild(meter);
+        barsEl.appendChild(row);
+      }
+    }
+
+    const logEl = $("log");
+    function appendMsg(who, text, tag){
+      const div = document.createElement("div");
+      div.className = "msg";
+      const whoLine = document.createElement("div");
+      whoLine.className = "who";
+      whoLine.textContent = who + (tag ? (" • " + tag) : "");
+      const body = document.createElement("div");
+      body.textContent = text;
+      div.appendChild(whoLine);
+      div.appendChild(body);
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    /* ---------- Metrics ---------- */
+    function avgLearnerOverlap(){
+      const S = learners();
+      if (S.length < 2) return 1;
+      let sum=0, n=0;
+      for (let i=0;i<S.length;i++){
+        for (let j=i+1;j<S.length;j++){
+          sum += overlapArea(S[i].mu,S[i].sigma,S[j].mu,S[j].sigma);
+          n++;
+        }
+      }
+      return sum / Math.max(1,n);
+    }
+    function balkanisation(){
+      return clamp(1 - avgLearnerOverlap(), 0, 1);
+    }
+
+    /* ---------- Canvas ---------- */
+    const canvas = $("plot");
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvasToDisplaySize(){
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.max(1, Math.round(rect.width * dpr));
+      const h = Math.max(1, Math.round(rect.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    }
+
+    /* Bigger, high-contrast labels: white text on dark background with accent stripe */
+    function drawLabel(px, py, text, accentColor){
+      ctx.save();
+
+      ctx.font = "700 14px system-ui";
+      ctx.textBaseline = "alphabetic";
+
+      const padX = 10;
+      const h = 26;
+      const textW = Math.ceil(ctx.measureText(text).width);
+      const w = textW + padX*2 + 10; // extra for accent stripe
+
+      const x = Math.round(px - w/2);
+      const y = Math.round(py - h - 10);
+
+      ctx.shadowColor = "rgba(0,0,0,0.25)";
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetY = 2;
+
+      ctx.globalAlpha = 0.92;
+      ctx.fillStyle = "rgba(0,0,0,0.88)";
+      ctx.strokeStyle = "rgba(0,0,0,0.95)";
+      ctx.lineWidth = 1;
+
+      const r = 10;
+      ctx.beginPath();
+      ctx.moveTo(x+r, y);
+      ctx.lineTo(x+w-r, y);
+      ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+      ctx.lineTo(x+w, y+h-r);
+      ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+      ctx.lineTo(x+r, y+h);
+      ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+      ctx.lineTo(x, y+r);
+      ctx.quadraticCurveTo(x, y, x+r, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.shadowColor = "transparent";
+      ctx.globalAlpha = 1;
+
+      // Accent stripe
+      ctx.fillStyle = accentColor;
+      ctx.fillRect(x + 7, y + 6, 4, h - 12);
+
+      // White text
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(text, x + 16, y + 18);
+
+      ctx.restore();
+    }
+
+    function visibilityWeight(w){
+      // Keep split curves readable even when w is small:
+      // still reflects weight, but avoids "flat" near-zero peaks.
+      return 0.28 + 0.72*Math.sqrt(clamp(w, 0, 1));
+    }
+
+    function redraw(){
+      resizeCanvasToDisplaySize();
+      const W = canvas.width, H = canvas.height;
+
+      // Hard white background
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, W, H);
+
+      const pad = { l:52, r:18, t:18, b:40 };
+      const plotW = W - pad.l - pad.r;
+      const plotH = H - pad.t - pad.b;
+
+      const toX = x => pad.l + (x - X.min)/(X.max - X.min) * plotW;
+
+      let yMax = 0;
+      for (const a of state.agents) {
+        const peak = gaussian(a.mu,a.mu,a.sigma);
+        const weighted = (a.kind==="learner") ? visibilityWeight(a.w) * peak : peak;
+        yMax = Math.max(yMax, weighted);
+      }
+      yMax = Math.max(yMax, 1e-6) * 1.25;
+      const toY = y => pad.t + (1 - y/yMax) * plotH;
+
+      // axes (slightly darker for contrast on white)
+      ctx.strokeStyle = "rgba(0,0,0,0.35)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pad.l, pad.t);
+      ctx.lineTo(pad.l, pad.t + plotH);
+      ctx.lineTo(pad.l + plotW, pad.t + plotH);
+      ctx.stroke();
+
+      // ticks
+      ctx.fillStyle = "rgba(0,0,0,0.75)";
+      ctx.font = "12px system-ui";
+      for (let x=-5;x<=5;x++){
+        const px = toX(x);
+        ctx.strokeStyle = "rgba(0,0,0,0.18)";
+        ctx.beginPath();
+        ctx.moveTo(px, pad.t + plotH);
+        ctx.lineTo(px, pad.t + plotH + 6);
+        ctx.stroke();
+        ctx.fillText(String(x), px - 4, pad.t + plotH + 22);
+      }
+      ctx.fillText("Discourse space", pad.l, H - 10);
+
+      const N=820;
+      const xs = new Array(N);
+      for (let i=0;i<N;i++) xs[i] = X.min + (X.max-X.min)*i/(N-1);
+
+      const ys = new Map();
+      for (const a of state.agents) {
+        ys.set(a.id, xs.map(x => {
+          const base = gaussian(x,a.mu,a.sigma);
+          return (a.kind==="learner") ? visibilityWeight(a.w) * base : base;
+        }));
+      }
+
+      const T = teacher();
+      const yT = T ? ys.get(T.id) : null;
+
+      // overlap shading: teacher vs learners
+      if (T && yT) {
+        for (const L of learners()) {
+          const yL = ys.get(L.id);
+          ctx.fillStyle = hexToRgba(L.color, 0.14);
+          ctx.beginPath();
+          ctx.moveTo(toX(xs[0]), toY(0));
+          for (let i=0;i<N;i++){
+            ctx.lineTo(toX(xs[i]), toY(Math.min(yT[i], yL[i])));
+          }
+          ctx.lineTo(toX(xs[N-1]), toY(0));
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      // curves (thicker, bolder)
+      for (const a of state.agents) {
+        const y = ys.get(a.id);
+        ctx.strokeStyle = a.color;
+        ctx.lineWidth =
+          (a.kind==="teacher") ? 4.8 :
+          (a.kind==="agenda") ? 3.8 : 3.4;
+        ctx.beginPath();
+        ctx.moveTo(toX(xs[0]), toY(y[0]));
+        for (let i=1;i<N;i++) ctx.lineTo(toX(xs[i]), toY(y[i]));
+        ctx.stroke();
+      }
+
+      // labels
+      for (const a of state.agents) {
+        const px = toX(a.mu);
+        ctx.strokeStyle = a.kind==="teacher" ? "rgba(0,0,0,0.22)" : hexToRgba(a.color, 0.22);
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        ctx.moveTo(px, pad.t);
+        ctx.lineTo(px, pad.t + plotH);
+        ctx.stroke();
+
+        const peak = gaussian(a.mu,a.mu,a.sigma);
+        const peakY = (a.kind==="learner") ? visibilityWeight(a.w) * peak : peak;
+
+        if (a.kind==="teacher") drawLabel(px, toY(peakY), "Teacher", a.color);
+        else if (a.kind==="agenda") drawLabel(px, toY(peakY), "Agenda", a.color);
+        else drawLabel(px, toY(peakY), `σ=${a.sigma.toFixed(2)}  K=${a.K.toFixed(2)}`, a.color);
+      }
+
+      // KPIs
+      $("turnKpi").textContent = String(state.turn);
+      $("phaseKpi").textContent = state.phase + (state.institutionOn ? " (institution)" : "");
+      $("phasePill").textContent = `Phase: ${state.phase}${state.institutionOn ? " (institution ON)" : ""}`;
+      $("countKpi").textContent = String(learners().length);
+      $("balkanKpi").textContent = balkanisation().toFixed(2);
+
+      renderLegend();
+      renderBars();
+    }
+
+    /* ---------- Lecture spawning (during lecture) ---------- */
+    function spawnLectureSubgroupsIfNeeded(){
+      if (state.lectureSpawned) return;
+      if (state.phase !== "lecture") return;
+
+      const L0 = mainLearner();
+      const T = teacher();
+      if (!L0 || !T) return;
+
+      // 1 "engaged" + 3 "disinterest" subgroups
+      const mk = (role, name, color, wTarget) => ({
+        id: `S${state.nextSub++}`,
+        kind:"learner",
+        role,
+        name,
+        color,
+        mu: L0.mu,
+        sigma: L0.sigma,
+        baseSigma: L0.sigma,
+        K: clamp(L0.K + (role==="engaged" ? 0.03 : -0.01) + randn()*0.01, 0, 1),
+        w: 0.01,
+        wTarget,
+        muTarget: L0.mu,
+        sigmaTarget: L0.sigma
+      });
+
+      const E  = mk("engaged", "Overlapping subgroup", colorForIndex(1), 0.18);
+      const D1 = mk("disinterest", "Disinterest subgroup A", colorForIndex(2), 0.17);
+      const D2 = mk("disinterest", "Disinterest subgroup B", colorForIndex(3), 0.17);
+      const D3 = mk("disinterest", "Disinterest subgroup C", colorForIndex(4), 0.17);
+
+      // Engaged target: move somewhat toward teacher (but not identical)
+      E.muTarget = clamp(T.mu + 1.05, X.min+0.7, X.max-0.7);
+      E.sigmaTarget = clamp(L0.sigma * 0.90, 0.95, 2.00);
+
+      // Disinterest targets: explicitly further away from teacher than the main cohort (pull away)
+      // Since cohort starts right of the teacher, these drift further right (more distance from teacher).
+      const farBase = clamp(L0.mu + 1.2, X.min+0.7, X.max-0.7); // beyond the cohort
+      D1.muTarget = clamp(farBase + 0.7 + randn()*0.25, X.min+0.7, X.max-0.7);
+      D2.muTarget = clamp(farBase + 1.2 + randn()*0.25, X.min+0.7, X.max-0.7);
+      D3.muTarget = clamp(farBase + 1.7 + randn()*0.25, X.min+0.7, X.max-0.7);
+
+      // Disinterest σ targets are smaller (narrower) and will tighten further as K falls (in stepLecture)
+      D1.sigmaTarget = clamp(L0.sigma * 0.62, 0.75, 1.60);
+      D2.sigmaTarget = clamp(L0.sigma * 0.58, 0.75, 1.55);
+      D3.sigmaTarget = clamp(L0.sigma * 0.55, 0.75, 1.50);
+
+      state.agents.push(E, D1, D2, D3);
+      state.lectureSpawned = true;
+
+      appendMsg("System",
+        "Lecture phase: subgroups bud from the cohort (weight transfer). Disinterest groups pull away from the teacher and narrow σ (σ↓) over time.",
+        "lecture"
+      );
+    }
+
+    /* ---------- End lecture: keep only max-overlap learner subgroup ---------- */
+    function endLecture(){
+      if (state.phase !== "lecture") return;
+      if (state.turn >= 2) spawnLectureSubgroupsIfNeeded();
+
+      const T = teacher();
+      const A = agenda();
+      const Ls = learners();
+      if (!T || !A || !Ls.length) return;
+
+      let best = Ls[0];
+      let bestOv = overlapArea(T.mu,T.sigma,best.mu,best.sigma);
+      for (const l of Ls) {
+        const ov = overlapArea(T.mu,T.sigma,l.mu,l.sigma);
+        if (ov > bestOv) { bestOv = ov; best = l; }
+      }
+
+      best.name = "Learners (max-overlap subgroup)";
+      best.role = "kept";
+      best.w = 1.00;
+      best.wTarget = 1.00;
+
+      // FIX: prevent SD jump after ending lecture
+      // Lock "base" to current sigma so post-lecture doesn't widen toward old cohort baseSigma.
+      best.baseSigma = best.sigma;
+      best.sigmaTarget = best.sigma;
+
+      state.agents = [T, A, best];
+      state.phase = "postLecture";
+
+      $("endLectureBtn").disabled = true;
+      $("projectBtn").disabled = false;
+
+      appendMsg("System",
+        `Lecture ended. Kept only the learner subgroup with largest overlap with the teacher (overlap=${bestOv.toFixed(2)}).`,
+        "end lecture"
+      );
+      redraw();
+    }
+
+    function applyInstitution(){
+      if (state.phase === "lecture") return;
+      if (state.institutionOn) return;
+      state.institutionOn = true;
+      state.phase = "institution";
+      $("projectBtn").disabled = true;
+
+      appendMsg("System",
+        "Institutional constraint applied: teacher+learner flexibility increases; both converge toward the agenda (blue).",
+        "institution"
+      );
+      redraw();
+    }
+
+    /* ---------- Dynamics ---------- */
+    function teacherReachPerTurn(){
+      const p = params();
+      const base = 0.020 * p.teacherConstraint;
+      if (state.phase === "lecture") return base * 0.55; // constrained
+      if (state.phase === "postLecture") return base * 1.8;
+      return base * (3.0 + 0.8*p.projectStrength);
+    }
+
+    function stepTeacher(){
+      const p = params();
+      const T = teacher();
+      const A = agenda();
+      if (!T || !A) return;
+
+      const jitter = randn() * 0.010 * p.noise;
+
+      if (state.phase === "lecture") {
+        // Teacher can move only slightly toward the learner body (small reach)
+        const L0 = mainLearner();
+        const reach = teacherReachPerTurn();
+        if (L0) {
+          const delta = clamp(L0.mu - T.mu, -reach, reach);
+          T.mu += delta * 0.75 + jitter * 0.20;
+        } else {
+          T.mu += jitter * 0.20;
+        }
+      } else {
+        const L = learners()[0];
+        const reach = teacherReachPerTurn();
+        if (L) {
+          const delta = clamp(L.mu - T.mu, -reach, reach);
+          T.mu += delta + jitter;
+        } else {
+          T.mu += jitter;
+        }
+        if (state.institutionOn) {
+          T.mu += (A.mu - T.mu) * (0.035 + 0.030*p.projectStrength);
+        }
+      }
+
+      T.mu = clamp(T.mu, X.min+0.7, X.max-0.7);
+      T.sigma = T.baseSigma;
+      T.K = clamp(T.K - 0.001*p.noise + 0.0007, 0.82, 1.0);
+    }
+
+    function stepLecture(){
+      const p = params();
+      const T = teacher();
+      const L0 = mainLearner();
+      if (!T || !L0) return;
+
+      // Make splitting happen DURING lecture
+      if (state.turn >= 2) spawnLectureSubgroupsIfNeeded();
+
+      // Main body: stays mostly where it is (low overlap) and doesn't "learn" much in lecture
+      const ovT = overlapArea(T.mu,T.sigma,L0.mu,L0.sigma);
+      L0.mu += randn()*0.006*p.noise;
+      L0.sigma += (L0.baseSigma - L0.sigma) * 0.03;
+      L0.K = clamp(L0.K + 0.0012*ovT - 0.0026*p.noise*Math.max(0,randn()), 0, 1);
+      L0.mu = clamp(L0.mu, X.min+0.7, X.max-0.7);
+      L0.sigma = clamp(L0.sigma, 1.00, 2.8);
+
+      const subs = learners().filter(x => x.role && x.role !== "main");
+      if (!subs.length) return;
+
+      // Weight transfer (continuous budding)
+      const totalTarget = subs.reduce((s,x)=>s+x.wTarget,0);
+      const targetMain = clamp(1.00 - totalTarget, 0.35, 1.00);
+      const wStep = (0.006 + 0.013*p.splitIntensity);
+      L0.w += (targetMain - L0.w) * wStep;
+      for (const s of subs) s.w += (s.wTarget - s.w) * (wStep * 1.35);
+
+      // Normalize weights
+      const all = [L0, ...subs];
+      const sumW = all.reduce((acc,x)=>acc + x.w, 0);
+      if (sumW > 1e-6) for (const x of all) x.w = x.w / sumW;
+
+      // Engaged subgroup: can move somewhat toward teacher; σ modestly tightens with engagement
+      const E = subs.find(s => s.role==="engaged");
+      if (E) {
+        const ovE = overlapArea(T.mu,T.sigma,E.mu,E.sigma);
+        E.K = clamp(E.K + 0.006*ovE - 0.0018*p.noise*Math.max(0,randn()), 0, 1);
+
+        E.mu += (E.muTarget - E.mu) * (0.050 + 0.020*p.splitIntensity);
+        E.mu += (T.mu - E.mu) * (0.012 + 0.018*E.K);
+        E.mu += randn()*0.010*p.noise*(1-E.K);
+
+        const sigGoal = clamp(E.sigmaTarget * (1.02 - 0.22*E.K), 0.85, 2.4);
+        E.sigma += (sigGoal - E.sigma) * (0.07 + 0.06*E.K);
+
+        E.mu = clamp(E.mu, X.min+0.7, X.max-0.7);
+        E.sigma = clamp(E.sigma, 0.80, 2.6);
+      }
+
+      const D = subs.filter(s => s.role==="disinterest");
+
+      // Repulsion among disinterest groups (reduces mutual overlap)
+      for (let i=0;i<D.length;i++){
+        for (let j=i+1;j<D.length;j++){
+          const a = D[i], b = D[j];
+          const ov = overlapArea(a.mu,a.sigma,b.mu,b.sigma);
+          if (ov > 0.30) {
+            const push = (0.010 + 0.020*p.disinterestStrength) * (ov - 0.30);
+            const dir = (a.mu <= b.mu) ? -1 : 1;
+            a.mu += dir * push;
+            b.mu -= dir * push;
+          }
+        }
+      }
+
+      for (const d of D) {
+        // Pull away from teacher (increase distance), and drift toward their far targets.
+        const rel = d.mu - T.mu;
+        const awayDir = rel === 0 ? 1 : Math.sign(rel); // cohort is right of teacher; keep pushing right.
+
+        d.mu += (d.muTarget - d.mu) * (0.045 + 0.030*p.disinterestStrength);
+        d.mu += awayDir * (0.010 + 0.018*p.disinterestStrength);
+        d.mu += randn()*0.010*p.noise;
+
+        // Disinterest focus: σ narrows over time (σ↓), and narrows more as K falls.
+        const floor = p.sigmaFloor;
+        const focusFactor = 1.0 - 0.28*(1 - d.K);               // lower K -> smaller σ goal
+        const timeFactor  = 1.0 - 0.010*clamp(state.turn,0,40); // gradual narrowing as lecture progresses
+        const sigGoal = clamp(d.sigmaTarget * focusFactor * timeFactor, floor, 2.4);
+
+        // Enforce monotonic tightening: never increase σ for disinterest during lecture.
+        if (d.sigma > sigGoal) {
+          d.sigma -= (d.sigma - sigGoal) * (0.10 + 0.08*p.disinterestStrength);
+        } else {
+          d.sigma = Math.min(d.sigma, sigGoal);
+        }
+
+        // Disinterest: K erodes (rejecting / disengaging)
+        d.K = clamp(d.K - (0.0020 + 0.0045*p.disinterestStrength) - 0.002*p.noise, 0, 1);
+
+        d.mu = clamp(d.mu, X.min+0.7, X.max-0.7);
+        d.sigma = clamp(d.sigma, floor, 2.4);
+      }
+    }
+
+    function stepPostLecture(){
+      const p = params();
+      const T = teacher();
+      const A = agenda();
+      const L = learners()[0];
+      if (!T || !A || !L) return;
+
+      const ovT = overlapArea(T.mu,T.sigma,L.mu,L.sigma);
+      const ovA = overlapArea(A.mu,A.sigma,L.mu,L.sigma);
+
+      const baseGain = 0.012 * ovT;
+      const instGain = state.institutionOn ? (0.020 + 0.040*p.projectStrength) * (0.60*ovT + 0.40*ovA) : 0;
+      const loss = 0.003 * p.noise * Math.max(0,randn());
+      L.K = clamp(L.K + baseGain + instGain - loss, 0, 1);
+
+      if (state.institutionOn) {
+        L.mu += (A.mu - L.mu) * (0.050 + 0.030*p.projectStrength) * (0.30 + 0.70*L.K);
+        L.mu += (T.mu - L.mu) * 0.020 * (0.30 + 0.70*L.K);
+      } else {
+        L.mu += (T.mu - L.mu) * 0.022 * (0.30 + 0.70*L.K);
+      }
+      L.mu += randn()*0.010*p.noise*(1-L.K);
+
+      // σ should *tighten* (peak "grows") as overlap increases.
+      // Post-lecture: tighten toward Teacher.
+      // Institution: tightening continues but target becomes more aligned to Agenda.
+      const alignOv = state.institutionOn ? (0.55*ovA + 0.45*ovT) : ovT;
+
+      let targetSigma = state.institutionOn
+        ? (0.75*A.sigma + 0.25*T.sigma)   // more aligned to agenda when institution is on
+        : T.sigma;                        // align to teacher post-lecture
+
+      // Never widen after end lecture
+      targetSigma = Math.min(targetSigma, L.sigma);
+
+      const sigmaRate = state.institutionOn
+        ? (0.065 + 0.055*p.projectStrength)
+        : 0.055;
+
+      const sigmaBoost = (0.25 + 0.75*alignOv) * (0.35 + 0.65*L.K);
+
+      L.sigma += (targetSigma - L.sigma) * sigmaRate * sigmaBoost;
+
+      L.mu = clamp(L.mu, X.min+0.7, X.max-0.7);
+      L.sigma = clamp(L.sigma, 0.55, 2.5);
+    }
+
+    function stepModel(){
+      stepTeacher();
+      if (state.phase === "lecture") stepLecture();
+      else stepPostLecture();
+
+      if (state.turn % 5 === 0) {
+        const L = learners()[0];
+        appendMsg("System",
+          `Phase=${state.phase}${state.institutionOn ? " (institution ON)" : ""}. Learner curves=${learners().length}. Balkanisation=${balkanisation().toFixed(2)}. K=${L ? L.K.toFixed(2) : "—"}.`,
+          `turn ${state.turn+1}`
+        );
+      }
+
+      state.turn++;
+      redraw();
+    }
+
+    /* ---------- Controls ---------- */
+    function play(){
+      if (state.running) return;
+      state.running = true;
+      $("playBtn").textContent = "Pause";
+      state.timer = setInterval(stepModel, 740);
+      redraw();
+    }
+    function pause(){
+      state.running = false;
+      $("playBtn").textContent = "Play";
+      if (state.timer) clearInterval(state.timer);
+      state.timer = null;
+      redraw();
+    }
+    function togglePlay(){ state.running ? pause() : play(); }
+
+    function resetAll(){
+      pause();
+      logEl.innerHTML = "";
+      makeInitial();
+      redraw();
+    }
+
+    $("playBtn").addEventListener("click", togglePlay);
+    $("stepBtn").addEventListener("click", () => { if (!state.running) stepModel(); });
+    $("resetBtn").addEventListener("click", resetAll);
+
+    $("endLectureBtn").addEventListener("click", endLecture);
+    $("projectBtn").addEventListener("click", applyInstitution);
+
+    ["splitIntensity","disinterestStrength","sigmaFloor","teacherConstraint","projectStrength","noise"].forEach(id => {
+      const el = $(id);
+      el.addEventListener("input", redraw);
+      el.addEventListener("change", redraw);
+    });
+
+    window.addEventListener("resize", redraw);
+
+    // boot
+    resetAll();
+
+  } catch(e) {
+    showErr(e);
+  }
+});
+</script>
+</body>
+</html>
