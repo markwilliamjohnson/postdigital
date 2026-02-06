@@ -1,21 +1,20 @@
+
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dynamic Bridging with Knowledge + New Noisy Group Spawning (Fixed)</title>
+  <title>Dynamic Interactions between learner groups</title>
+
 <style>
   :root{
-    /* Light theme: white background + dark text */
     --bg:#ffffff;
     --panel:#ffffff;
     --panel2:#f6f7fb;
+    --ink:#0b1220;
+    --muted:#3f4a5c;
+    --line:#d7dbe6;
 
-    --ink:#0b1220;       /* dark text */
-    --muted:#3f4a5c;     /* readable muted text */
-    --line:#d7dbe6;      /* light borders */
-
-    /* Bold accent colours for UI elements (buttons etc.) */
     --accent:#2a3cff;
     --danger:#c81e3a;
     --good:#0f7a3b;
@@ -86,7 +85,6 @@
     background:var(--panel);
   }
 
-  /* ✅ CHANGED: completely white plot background */
   canvas{
     width:100%;
     height:410px;
@@ -155,7 +153,6 @@
     border-color: rgba(0,0,0,.12);
   }
 
-  /* If your app uses button.good in other versions, this supports it too */
   button.good{
     background: var(--good);
     color:#ffffff;
@@ -268,7 +265,6 @@
   .fill{
     height:100%;
     width:0%;
-    /* this gets overridden inline to match curve colour */
     background:#0b1220;
   }
 
@@ -322,17 +318,17 @@
     input[type="range"] { width: 180px; }
   }
 </style>
-
 </head>
+
 <body>
   <div class="wrap">
     <header>
       <div>
-        <h1>Dynamic Bridging (Fixed): Knowledge Enables Mobility + New Noisy Group Spawning</h1>
+        <h1>Dynamic interaction between diverse learner groups</h1>
         <div class="sub">
-          Curves are action/utterance distributions (μ, σ). Knowledge K (shown above each curve and in bars) grants mobility.
-          The teacher may move, but their distribution shape (σ) remains unchanged — coherence is an index of knowledge.
-          As learners entrain to the discourse and map the teacher, their K rises and mobility increases.
+          Curves are action/utterance distributions (μ, σ). Labels above curves show the group name only.
+          Mobility (shown in bars) determines how freely agents move as learning accumulates.
+          The teacher may move, but their distribution shape (σ) remains unchanged (coherence).
         </div>
       </div>
       <div class="legend" id="legend"></div>
@@ -340,20 +336,20 @@
 
     <div class="card">
       <div class="hd">
-        <strong>Distributions + overlap shading (primary bridger vs others)</strong>
+        <strong>Distributions + overlap shading (primary teacher vs others)</strong>
         <span class="pill" id="bridgePill">Bridging: …</span>
       </div>
       <div class="bd">
         <canvas id="plot"></canvas>
         <div class="note" style="margin-top:10px;">
-          Cycle: align → spawn noisy right-hand group → bridge again → prune most-aligned curves.
+          Cycle: align → spawn novice new group on right → bridge again → prune most-aligned curves.
         </div>
       </div>
     </div>
 
     <div class="card">
       <div class="hd">
-        <strong>Controls & Knowledge</strong>
+        <strong>Controls & Mobility</strong>
         <div class="btns">
           <button class="primary" id="playBtn" type="button">Play</button>
           <button id="stepBtn" type="button">Step</button>
@@ -371,7 +367,7 @@
         <div class="row" style="margin-top:10px;">
           <div>
             <label for="learnRate">Learning rate (bridger → learners)</label>
-            <div class="note">Knowledge increases with overlap to the primary bridger.</div>
+            <div class="note">Learning increases with overlap to the primary bridger.</div>
           </div>
           <input id="learnRate" type="range" min="0" max="2.0" step="0.01" value="1.00" />
         </div>
@@ -379,7 +375,7 @@
         <div class="row">
           <div>
             <label for="peerRate">Peer learning rate (learner ↔ learner)</label>
-            <div class="note">Knowledge also grows from learner-learner overlap.</div>
+            <div class="note">Learning also grows from learner-learner overlap.</div>
           </div>
           <input id="peerRate" type="range" min="0" max="2.0" step="0.01" value="0.70" />
         </div>
@@ -393,8 +389,8 @@
 
         <div class="row">
           <div>
-            <label for="mobilityGain">Mobility gain from knowledge</label>
-            <div class="note">Higher makes K translate into freer movement.</div>
+            <label for="mobilityGain">Mobility gain from learning</label>
+            <div class="note">Higher makes learning translate into freer movement.</div>
           </div>
           <input id="mobilityGain" type="range" min="0.2" max="2.5" step="0.01" value="1.20" />
         </div>
@@ -409,7 +405,7 @@
 
         <div class="row">
           <div>
-            <label for="spawnThreshold">Alignment threshold to spawn new noisy group</label>
+            <label for="spawnThreshold">Alignment threshold to spawn novice new group</label>
             <div class="note">When avg learner overlap exceeds this, spawn occurs (with cooldown).</div>
           </div>
           <input id="spawnThreshold" type="range" min="0.35" max="0.80" step="0.01" value="0.58" />
@@ -481,16 +477,15 @@ window.addEventListener("DOMContentLoaded", () => {
     /* ---------- Domain & palette ---------- */
     const X = { min:-5.2, max: 5.2 };
 
-    /* ✅ CHANGED: bolder palette */
-    const teacherColor = "#111111"; // slightly softer than pure black
+    const teacherColor = "#111111";
     const palette = [
-      "#1D4ED8", // blue
-      "#D97706", // orange
-      "#DB2777", // magenta
-      "#059669", // green
-      "#7C3AED", // purple
-      "#DC2626", // red
-      "#0891B2"  // teal
+      "#1D4ED8",
+      "#D97706",
+      "#DB2777",
+      "#059669",
+      "#7C3AED",
+      "#DC2626",
+      "#0891B2"
     ];
     function colorForIndex(i){ return palette[i % palette.length]; }
 
@@ -507,16 +502,19 @@ window.addEventListener("DOMContentLoaded", () => {
       agents: [],
     };
 
+    /* ---------- Soft anchor: technical learners drift but tend back ---------- */
+    const ANCHOR_ID = "g1";
+    let anchorMu0 = -3.0;
+
     function makeInitial(){
       state.spawnCooldown = 0;
       state.nextGroupNum = 4;
       state.agents = [
-        // Teacher: can move, but distribution coherence stays fixed (σ = baseSigma always)
         { id:"teacher", name:"Teacher", color:teacherColor, mu:-3.2, sigma:0.75, K:0.90, baseSigma:0.75, fixedSigma:true, kind:"teacher" },
 
-        { id:"g1", name:"Technical learners",     color:colorForIndex(0), mu:-3.0, sigma:0.70, K:0.35, baseSigma:0.70, kind:"learner" },
-        { id:"g2", name:"Adaptive learners",      color:colorForIndex(1), mu:-0.2, sigma:1.10, K:0.25, baseSigma:1.10, kind:"learner" },
-        { id:"g3", name:"Philosophical learners", color:colorForIndex(2), mu: 3.0, sigma:1.55, K:0.30, baseSigma:1.55, kind:"learner" },
+        { id:"g1", name:"Technical learners",  color:colorForIndex(0), mu:-3.0, sigma:0.70, K:0.35, baseSigma:0.70, kind:"learner" },
+        { id:"g2", name:"Applied group",       color:colorForIndex(1), mu:-0.2, sigma:1.10, K:0.25, baseSigma:1.10, kind:"learner" },
+        { id:"g3", name:"Philosophical group", color:colorForIndex(2), mu: 3.0, sigma:1.55, K:0.30, baseSigma:1.55, kind:"learner" },
       ];
     }
 
@@ -530,28 +528,6 @@ window.addEventListener("DOMContentLoaded", () => {
         if (a && typeof a.K === "number" && a.K > best.K) best = a;
       }
       return best || null;
-    }
-
-    /* ---------- Anchor: keep g1 (technical learners) fixed ---------- */
-    const ANCHOR_ID = "g1";
-    let anchorMu0 = -3.0;
-
-    function applyAnchorFrame(){
-      const anchor = state.agents.find(a => a.id === ANCHOR_ID);
-      if(!anchor) return;
-
-      const delta = anchor.mu - anchorMu0;
-
-      if (Math.abs(delta) < 1e-9) {
-        anchor.mu = anchorMu0;
-        return;
-      }
-
-      for(const a of state.agents){
-        a.mu -= delta;
-        a.mu = clamp(a.mu, X.min+0.6, X.max-0.6);
-      }
-      anchor.mu = anchorMu0;
     }
 
     /* ---------- Pairs among learners ---------- */
@@ -584,6 +560,13 @@ window.addEventListener("DOMContentLoaded", () => {
       return ps[0];
     }
 
+    /* ---------- Mobility (derived from K; K not displayed) ---------- */
+    function mobility(agent){
+      const p = params();
+      const base = agent.kind === "teacher" ? 0.60 : 0.18;
+      return base + p.mobilityGain * agent.K;
+    }
+
     /* ---------- UI: legend, bars ---------- */
     const legendEl = $("legend");
     function renderLegend(){
@@ -601,11 +584,6 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     const barsEl = $("bars");
-    function mobility(agent){
-      const p = params();
-      const base = agent.kind === "teacher" ? 0.60 : 0.18;
-      return base + p.mobilityGain * agent.K;
-    }
     function renderBars(){
       barsEl.innerHTML = "";
       for (const a of state.agents) {
@@ -625,7 +603,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
         const right = document.createElement("div");
         right.className = "val";
-        right.textContent = `K=${a.K.toFixed(2)} | mobility=${mobility(a).toFixed(2)}`;
+        right.textContent = `mobility=${mobility(a).toFixed(2)}`; // ✅ no K display
 
         top.appendChild(left); top.appendChild(right);
 
@@ -634,7 +612,7 @@ window.addEventListener("DOMContentLoaded", () => {
         const fill = document.createElement("div");
         fill.className = "fill";
         fill.style.background = a.color;
-        fill.style.width = `${(a.K*100).toFixed(1)}%`;
+        fill.style.width = `${(a.K*100).toFixed(1)}%`; // uses K internally but not shown as a number
         meter.appendChild(fill);
 
         const small = document.createElement("div");
@@ -667,7 +645,7 @@ window.addEventListener("DOMContentLoaded", () => {
     /* ---------- Spawn + prune ---------- */
     function spawnNoisyRightGroup(){
       const id = `g${state.nextGroupNum++}`;
-      const name = `New noisy group ${id.toUpperCase()}`;
+      const name = `Novice new group ${id.toUpperCase()}`;
       const color = colorForIndex(state.nextGroupNum + 2);
 
       const mu = 4.1 + randn()*0.15;
@@ -708,13 +686,16 @@ window.addEventListener("DOMContentLoaded", () => {
       if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
     }
 
-    /* ✅ CHANGED: bigger, white label w/ dark text + colour dot */
-    function drawKLabel(px, py, text, color){
+    /* --- Label pill: group name only (no numbers) --- */
+    function drawNameLabel(px, py, title, color){
       ctx.save();
 
-      ctx.font = "700 14px system-ui";
+      const titleFont = "800 13px system-ui";
+      ctx.font = titleFont;
+      const titleW = Math.ceil(ctx.measureText(title).width);
+
       const padX = 10;
-      const w = Math.ceil(ctx.measureText(text).width) + padX*2 + 14; // extra for dot
+      const w = titleW + padX*2 + 16; // dot
       const h = 26;
 
       const x = Math.round(px - w/2);
@@ -722,12 +703,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
       const r = 10;
 
-      // Shadow for legibility over lines
       ctx.shadowColor = "rgba(0,0,0,0.12)";
       ctx.shadowBlur = 8;
       ctx.shadowOffsetY = 2;
 
-      // White pill background
       ctx.fillStyle = "rgba(255,255,255,0.98)";
       ctx.strokeStyle = "rgba(17,24,39,0.18)";
       ctx.lineWidth = 1;
@@ -748,15 +727,16 @@ window.addEventListener("DOMContentLoaded", () => {
       ctx.shadowColor = "transparent";
       ctx.stroke();
 
-      // Colour dot
+      // dot
       ctx.beginPath();
       ctx.fillStyle = color;
       ctx.arc(x + 12, y + h/2, 4, 0, Math.PI*2);
       ctx.fill();
 
-      // Dark text
+      // name
       ctx.fillStyle = "#111827";
-      ctx.fillText(text, x + 22, y + 18);
+      ctx.font = titleFont;
+      ctx.fillText(title, x + 22, y + 18);
 
       ctx.restore();
     }
@@ -765,7 +745,6 @@ window.addEventListener("DOMContentLoaded", () => {
       resizeCanvasToDisplaySize();
       const W = canvas.width, H = canvas.height;
 
-      // ensure white (in case any transparency)
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0,0,W,H);
 
@@ -780,7 +759,7 @@ window.addEventListener("DOMContentLoaded", () => {
       yMax = Math.max(yMax, 1e-6) * 1.25;
       const toY = y => pad.t + (1 - y/yMax) * plotH;
 
-      // ✅ CHANGED: darker axes for white background
+      // axes
       ctx.strokeStyle = "#111827";
       ctx.lineWidth = 1.25;
 
@@ -802,7 +781,7 @@ window.addEventListener("DOMContentLoaded", () => {
         ctx.stroke();
         ctx.fillText(String(x), px - 4, pad.t + plotH + 22);
       }
-      ctx.fillText("Utterance-space (technical ←→ philosophical / new noisy groups spawn far right)", pad.l, H - 10);
+      ctx.fillText("Utterance-space (technical ←→ philosophical / novice new groups spawn far right)", pad.l, H - 10);
 
       const N=900;
       const xs = new Array(N);
@@ -813,7 +792,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
       const bridger = chooseBridger();
 
-      // shading
+      // overlap shading
       if (bridger && bridger.id && ys.has(bridger.id)) {
         const yB = ys.get(bridger.id);
         for (const a of state.agents) {
@@ -832,7 +811,7 @@ window.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // ✅ CHANGED: thicker, rounder curves
+      // curves
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
 
@@ -856,15 +835,12 @@ window.addEventListener("DOMContentLoaded", () => {
         ctx.moveTo(x, pad.t);
         ctx.lineTo(x, pad.t + plotH);
         ctx.stroke();
-        ctx.fillStyle = a.color;
-        ctx.font = "12px system-ui";
-        ctx.fillText(`μ ${a.id}`, x + 6, pad.t + plotH - 8);
       }
 
-      // Knowledge labels above each curve peak
+      // Labels ABOVE each curve peak: GROUP NAME ONLY (no K numbers)
       for (const a of state.agents) {
         const peakY = gaussian(a.mu, a.mu, a.sigma);
-        drawKLabel(toX(a.mu), toY(peakY), `K=${a.K.toFixed(2)}`, a.color);
+        drawNameLabel(toX(a.mu), toY(peakY), a.name, a.color);
       }
 
       // KPIs
@@ -872,7 +848,7 @@ window.addEventListener("DOMContentLoaded", () => {
       const weak = weakestLearnerPair();
       $("turnKpi").textContent = String(state.turn);
       $("avgKpi").textContent = avg.toFixed(2);
-      $("weakKpi").textContent = weak ? `${weak.a.id}↔${weak.b.id} = ${weak.ov.toFixed(2)}` : "—";
+      $("weakKpi").textContent = weak ? `${weak.a.name} ↔ ${weak.b.name} = ${weak.ov.toFixed(2)}` : "—";
 
       const p = params();
       const spawnState = state.spawnCooldown > 0
@@ -880,8 +856,9 @@ window.addEventListener("DOMContentLoaded", () => {
         : `ready (thr ${p.spawnThreshold.toFixed(2)})`;
       $("spawnKpi").textContent = spawnState;
 
+      // Primary bridger pill: show mobility, not K
       $("bridgePill").textContent = bridger
-        ? `Primary bridger: ${bridger.name} (K=${bridger.K.toFixed(2)})`
+        ? `Primary bridger: ${bridger.name} (mobility=${mobility(bridger).toFixed(2)})`
         : `Primary bridger: —`;
 
       renderLegend();
@@ -896,7 +873,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
       const L = learners();
 
-      // knowledge via bridger overlap
+      // learning (stored as K internally; not shown)
       for (const g of L) {
         const ov = overlapArea(bridger.mu, bridger.sigma, g.mu, g.sigma);
         const gain = (0.010 + 0.022*p.learnRate) * ov * (1 - g.K);
@@ -913,11 +890,11 @@ window.addEventListener("DOMContentLoaded", () => {
         b.K = clamp(b.K + gainB, 0, 1);
       }
 
-      // teacher stays high (knowledge), and their sigma stays coherent (fixed)
+      // teacher stays coherent
       const teacher = state.agents.find(a => a.kind === "teacher");
       if (teacher) {
         teacher.K = clamp(teacher.K - 0.001*p.noise + 0.0008, 0.78, 1.0);
-        teacher.sigma = teacher.baseSigma; // enforce coherence every turn
+        teacher.sigma = teacher.baseSigma;
       }
 
       // weakest pair and midpoint
@@ -932,17 +909,17 @@ window.addEventListener("DOMContentLoaded", () => {
       bridger.mu += randn() * 0.03 * p.noise * (1 - bridger.K);
       bridger.mu = clamp(bridger.mu, X.min+0.6, X.max-0.6);
 
-      // If the bridger is the teacher, their distribution shape does NOT change.
+      // bridger sigma dynamics (teacher fixed)
       if (bridger.kind !== "teacher") {
         const weakOv = weak ? weak.ov : 0.5;
         const widen = clamp((0.38 - weakOv) * 1.4, 0, 0.45);
         const sigmaGoal = clamp(bridger.baseSigma + widen * (0.55 + bridger.K), 0.55, 2.4);
         bridger.sigma += (sigmaGoal - bridger.sigma) * (0.06 + 0.10*bridger.K);
       } else {
-        bridger.sigma = bridger.baseSigma; // keep teacher coherent while moving
+        bridger.sigma = bridger.baseSigma;
       }
 
-      // learners self-adjust with knowledge
+      // learners self-adjust
       for (const g of L) {
         const mobG = mobility(g);
         const others = L.filter(x => x.id !== g.id);
@@ -961,6 +938,14 @@ window.addEventListener("DOMContentLoaded", () => {
         g.sigma += (sigmaGoalG - g.sigma) * (0.03 + 0.06*g.K);
       }
 
+      // Soft anchor for Technical learners
+      const tech = state.agents.find(a => a.id === ANCHOR_ID);
+      if (tech) {
+        const spring = 0.10;
+        tech.mu += (anchorMu0 - tech.mu) * spring;
+        tech.mu = clamp(tech.mu, X.min+0.6, X.max-0.6);
+      }
+
       // spawn rule
       const avg = avgLearnerOverlap();
       if (state.spawnCooldown > 0) state.spawnCooldown--;
@@ -971,25 +956,19 @@ window.addEventListener("DOMContentLoaded", () => {
         pruneMostAligned();
       }
 
-      // log
+      // log (no K)
       if (weak) {
         appendMsg("System",
-          `${bridger.name} (K=${bridger.K.toFixed(2)}) bridges ${weak.a.id}↔${weak.b.id} (ov=${weak.ov.toFixed(2)}), target μ≈${targetMid.toFixed(2)}. Avg overlap=${avg.toFixed(2)}.`,
+          `${bridger.name} (mobility=${mobility(bridger).toFixed(2)}) bridges ${weak.a.name} ↔ ${weak.b.name} (ov=${weak.ov.toFixed(2)}), target μ≈${targetMid.toFixed(2)}. Avg overlap=${avg.toFixed(2)}.`,
           `turn ${state.turn+1}`
         );
       } else {
         appendMsg("System",
-          `${bridger.name} (K=${bridger.K.toFixed(2)}) bridges. Avg overlap=${avg.toFixed(2)}.`,
+          `${bridger.name} (mobility=${mobility(bridger).toFixed(2)}) bridges. Avg overlap=${avg.toFixed(2)}.`,
           `turn ${state.turn+1}`
         );
       }
 
-      // lock the technical group and recenter everyone around it
-      const g1 = state.agents.find(a => a.id === ANCHOR_ID);
-      if (g1) g1.mu = anchorMu0;
-      applyAnchorFrame();
-
-      // enforce teacher sigma again post-frame (belt & braces)
       if (teacher) teacher.sigma = teacher.baseSigma;
 
       state.turn++;
@@ -1019,12 +998,11 @@ window.addEventListener("DOMContentLoaded", () => {
       logEl.innerHTML = "";
       makeInitial();
 
-      // set anchor baseline from the created g1
       const anchor = state.agents.find(a => a.id === ANCHOR_ID);
       anchorMu0 = anchor ? anchor.mu : anchorMu0;
 
       appendMsg("System",
-        "Reset. The teacher may move without changing distribution shape (σ fixed). Knowledge index K is shown above each curve. When learners align (avg overlap exceeds threshold), a new broad noisy group appears on the far right; high-K agents bridge; aligned curves are pruned.",
+        "Reset. Labels above curves show group names only. Mobility is shown in bars and in the bridger pill. When learners align, a novice new group spawns on the far right; aligned curves are pruned. Technical learners can drift slightly but tend back toward their original position.",
         "reset"
       );
       redraw();
