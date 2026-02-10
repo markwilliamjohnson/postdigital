@@ -341,7 +341,7 @@
       <div class="bd">
         <canvas id="plot"></canvas>
         <div class="note" style="margin-top:10px;">
-          Cycle: align → spawn novice new group on right → bridge again → prune most-aligned curves.
+          Cycle: align → spawn subgroup on right → bridge again → prune most-aligned curves.
         </div>
       </div>
     </div>
@@ -404,7 +404,7 @@
 
         <div class="row">
           <div>
-            <label for="spawnThreshold">Alignment threshold to spawn novice new group</label>
+            <label for="spawnThreshold">Alignment threshold to spawn subgroup</label>
             <div class="note">When avg learner overlap exceeds this, spawn occurs (with cooldown).</div>
           </div>
           <input id="spawnThreshold" type="range" min="0.35" max="0.80" step="0.01" value="0.58" />
@@ -642,7 +642,7 @@ window.addEventListener("DOMContentLoaded", () => {
     /* ---------- Spawn + prune ---------- */
     function spawnNoisyRightGroup(){
       const id = `g${state.nextGroupNum++}`;
-      const name = `Novice new group ${id.toUpperCase()}`;
+      const name = `learner subgroup ${id.toUpperCase()}`;
       const color = colorForIndex(state.nextGroupNum + 2);
 
       const mu = 4.1 + randn()*0.15;
@@ -803,7 +803,7 @@ window.addEventListener("DOMContentLoaded", () => {
         ctx.stroke();
         ctx.fillText(String(x), px - 4, pad.t + plotH + 22);
       }
-      ctx.fillText("Utterance-space (technical ←→ philosophical / novice new groups spawn far right)", pad.l, H - 10);
+      ctx.fillText("Utterance-space (technical ←→ philosophical / subgroup spawn far right)", pad.l, H - 10);
 
       const N=900;
       const xs = new Array(N);
@@ -1029,7 +1029,7 @@ window.addEventListener("DOMContentLoaded", () => {
       anchorMu0 = anchor ? anchor.mu : anchorMu0;
 
       appendMsg("System",
-        "Reset. Labels above curves show group names. Teacher may move with fixed σ. When learners align, a novice new group spawns on the far right; aligned curves are pruned. Technical learners can drift slightly but tend back toward their original position.",
+        "Reset. Labels above curves show group names. Teacher may move with fixed σ. When learners align, a subgroup spawns on the far right; aligned curves are pruned. Technical learners can drift slightly but tend back toward their original position.",
         "reset"
       );
       redraw();
