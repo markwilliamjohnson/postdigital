@@ -1,0 +1,1726 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>创意章鱼：敏捷协调实验室</title>
+  <style>
+    :root {
+      --bg: #07111a;
+      --panel: rgba(8, 22, 34, 0.84);
+      --border: rgba(170, 220, 255, 0.22);
+      --text: #e7f3ff;
+      --muted: #9fb7c9;
+      --accent: #8fe7ff;
+      --accent2: #e7c6ff;
+      --good: #a9ffb0;
+      --warn: #ffd18a;
+      --bad: #ff9a9a;
+      --opportunity: #9dff9d;
+      --constraint: #ff8e8e;
+      --wisdom: #e4c1ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      height: 100vh;
+      overflow: hidden;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 10%, rgba(132, 92, 207, 0.22), transparent 25%),
+        radial-gradient(circle at 80% 0%, rgba(90, 210, 196, 0.12), transparent 28%),
+        linear-gradient(180deg, #08111a 0%, #091723 52%, #061018 100%);
+      display: grid;
+      grid-template-columns: 450px 1fr;
+    }
+
+    .sidebar {
+      height: 100vh;
+      padding: 18px;
+      background: linear-gradient(180deg, rgba(9, 23, 36, 0.97), rgba(6, 17, 27, 0.92));
+      border-right: 1px solid rgba(149, 196, 232, 0.16);
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px;
+      margin-bottom: 14px;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
+    }
+
+    h1 {
+      font-size: 1.36rem;
+      margin: 0 0 10px;
+      letter-spacing: -0.02em;
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: 0.9rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.085em;
+    }
+
+    p {
+      margin: 0 0 10px;
+      line-height: 1.45;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    b { color: #f1fbff; }
+
+    .control-row { margin-bottom: 14px; }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 7px;
+      font-size: 0.9rem;
+    }
+
+    .value {
+      color: var(--accent);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      appearance: none;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(143,231,255,0.85), rgba(231,198,255,0.22));
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      background: var(--accent);
+      box-shadow: 0 0 0 5px rgba(143,231,255,0.16);
+      cursor: pointer;
+    }
+
+    button, textarea, input[type="text"] {
+      width: 100%;
+      border: 1px solid rgba(170, 220, 255, 0.22);
+      background: linear-gradient(180deg, rgba(30, 72, 98, 0.92), rgba(15, 39, 58, 0.92));
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 750;
+      transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(143,231,255,0.55);
+    }
+
+    textarea {
+      min-height: 112px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .button-stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat {
+      background: rgba(255,255,255,0.035);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      padding: 10px;
+    }
+
+    .stat .k {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .stat .v {
+      font-size: 1.06rem;
+      font-weight: 850;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .legend-item {
+      display: grid;
+      grid-template-columns: 12px 1fr;
+      gap: 10px;
+      align-items: start;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-top: 3px;
+    }
+
+    .stage {
+      position: relative;
+      overflow: hidden;
+      height: 100vh;
+      min-height: 0;
+    }
+
+    canvas#canvas {
+      width: 100%;
+      height: 100vh;
+      display: block;
+    }
+
+    .small-note {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.4;
+      margin-top: 8px;
+    }
+
+    .history-box, .output, .recommendation-box {
+      max-height: 210px;
+      overflow: auto;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.035);
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+
+    .recommendation-box strong { color: var(--text); }
+
+    .mini-chart {
+      width: 100%;
+      height: 146px;
+      display: block;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 10px;
+    }
+
+    .preset-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .pill {
+      display: inline-block;
+      margin: 2px 4px 2px 0;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.055);
+      border: 1px solid rgba(255,255,255,0.07);
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    @media (max-width: 1120px) {
+      body {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(300px, 48vh) 1fr;
+      }
+
+      .sidebar {
+        height: auto;
+        max-height: 48vh;
+        border-right: none;
+        border-bottom: 1px solid rgba(149,196,232,0.16);
+      }
+
+      .stage { height: 52vh; }
+      canvas#canvas { height: 52vh; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="card">
+      <h1>创意章鱼：敏捷协调实验室</h1>
+      <p>
+        这个应用把章鱼作为一个关于<b>创造性教育行动</b>的隐喻。每一条触手都代表一种不同的技术、策略、智慧传统、技能、媒介或认识方式。
+      </p>
+      <p>
+        当章鱼拥有<b>自由探索的空间</b>、足够的共同方向来协调各条触手，并且具备足够的情境智慧来选择合适行动时，它最有创造力。当它僵硬、被过度控制、只会服从命令时，它最缺乏创造力。
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>创造性条件</h2>
+
+      <div class="control-row">
+        <div class="label-row"><span>自主性 / 探索自由</span><span class="value" id="autonomyValue">4.00 / 4</span></div>
+        <input id="autonomySlider" type="range" min="0" max="4" step="0.01" value="4" />
+      </div>
+
+      <div class="control-row">
+        <div class="label-row"><span>敏捷协调</span><span class="value" id="coordinationValue">0.80</span></div>
+        <input id="coordinationSlider" type="range" min="0" max="1" step="0.01" value="0.8" />
+      </div>
+
+      <div class="control-row">
+        <div class="label-row"><span>智慧 / 情境敏感性</span><span class="value" id="wisdomValue">0.75</span></div>
+        <input id="wisdomSlider" type="range" min="0" max="1" step="0.01" value="0.75" />
+      </div>
+
+      <div class="control-row">
+        <div class="label-row"><span>技术多样性</span><span class="value" id="diversityValue">0.70</span></div>
+        <input id="diversitySlider" type="range" min="0" max="1" step="0.01" value="0.7" />
+      </div>
+
+      <div class="control-row">
+        <div class="label-row"><span>约束压力</span><span class="value" id="constraintValue">0.45</span></div>
+        <input id="constraintSlider" type="range" min="0" max="1" step="0.01" value="0.45" />
+      </div>
+
+      <div class="button-grid">
+        <button id="resetBtn">重置工作室</button>
+        <button id="constraintPulseBtn">收紧任务要求</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>情境预设</h2>
+      <div class="preset-grid">
+        <button data-preset="stiff">命令式课堂</button>
+        <button data-preset="wild">自由探索</button>
+        <button data-preset="studio">创意工作室</button>
+        <button data-preset="confused">混乱项目</button>
+      </div>
+      <p class="small-note">
+        预设会改变滑块数值，但不会删除你已经写下的情境。
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>创造力仪表盘</h2>
+      <div class="stats">
+        <div class="stat"><div class="k">创造力</div><div class="v" id="creativityScore">0.00</div></div>
+        <div class="stat"><div class="k">捕捉到的想法</div><div class="v" id="ideaScore">0</div></div>
+        <div class="stat"><div class="k">处理的约束</div><div class="v" id="avoidScore">0</div></div>
+        <div class="stat"><div class="k">摩擦</div><div class="v" id="frictionScore">0.00</div></div>
+        <div class="stat"><div class="k">可持续性</div><div class="v" id="viabilityScore">1.00</div></div>
+        <div class="stat"><div class="k">僵硬度</div><div class="v" id="rigidityScore">0.00</div></div>
+        <div class="stat"><div class="k">创造状态</div><div class="v" id="creativeState">流动</div></div>
+        <div class="stat"><div class="k">移动速度</div><div class="v" id="speedScore">0.00</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>时间序列</h2>
+      <canvas id="historyCanvas" class="mini-chart" width="380" height="146"></canvas>
+      <p class="small-note">
+        系统会记录自主性、协调、智慧、多样性、约束、可持续性、僵硬度、摩擦和一致性随时间的变化。
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>教育情境</h2>
+      <div class="control-row">
+        <div class="label-row"><span>提交你自己的情境</span><span class="value" id="historyCountValue">0 个样本</span></div>
+        <textarea id="scenarioInput" placeholder="描述一个教育情境：学习者、学科、约束、技术、评价压力、信心问题、文化背景、教师角色等。"></textarea>
+      </div>
+      <div class="button-grid">
+        <button id="recommendBtn">生成建议</button>
+        <button id="copyRecommendationBtn">复制建议</button>
+      </div>
+      <div class="control-row" style="margin-top:12px">
+        <div class="label-row"><span>建议</span><span class="value" id="historyWindowValue">当前模式</span></div>
+        <div id="recommendationOutput" class="recommendation-box">请先描述一个情境，调整滑块，然后生成建议。</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>如何解读章鱼</h2>
+      <div class="legend-item"><span class="dot" style="background:#8fe7ff"></span><span><b>自由的触手</b>：自主性让技术、技能和媒介去探索情境，而不是只执行指令。</span></div>
+      <div class="legend-item"><span class="dot" style="background:#e7c6ff"></span><span><b>有智慧的协调</b>：当探索性的行动被比较、组合和反思时，创造力会增强。</span></div>
+      <div class="legend-item"><span class="dot" style="background:#ff8e8e"></span><span><b>僵硬的命令</b>：高约束、低自主会产生僵化、模仿和脆弱的服从。</span></div>
+      <p id="consequenceText"></p>
+    </div>
+
+    <div class="card">
+      <h2>近期样本</h2>
+      <div class="history-box" id="historyPreview">尚未记录样本。</div>
+    </div>
+  </aside>
+
+  <main class="stage">
+    <canvas id="canvas"></canvas>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const historyCanvas = document.getElementById('historyCanvas');
+    const historyCtx = historyCanvas.getContext('2d');
+
+    const autonomySlider = document.getElementById('autonomySlider');
+    const coordinationSlider = document.getElementById('coordinationSlider');
+    const wisdomSlider = document.getElementById('wisdomSlider');
+    const diversitySlider = document.getElementById('diversitySlider');
+    const constraintSlider = document.getElementById('constraintSlider');
+
+    const autonomyValue = document.getElementById('autonomyValue');
+    const coordinationValue = document.getElementById('coordinationValue');
+    const wisdomValue = document.getElementById('wisdomValue');
+    const diversityValue = document.getElementById('diversityValue');
+    const constraintValue = document.getElementById('constraintValue');
+
+    const creativityScoreEl = document.getElementById('creativityScore');
+    const ideaScoreEl = document.getElementById('ideaScore');
+    const avoidScoreEl = document.getElementById('avoidScore');
+    const frictionScoreEl = document.getElementById('frictionScore');
+    const viabilityScoreEl = document.getElementById('viabilityScore');
+    const rigidityScoreEl = document.getElementById('rigidityScore');
+    const creativeStateEl = document.getElementById('creativeState');
+    const speedScoreEl = document.getElementById('speedScore');
+
+    const consequenceText = document.getElementById('consequenceText');
+
+    const scenarioInput = document.getElementById('scenarioInput');
+    const recommendBtn = document.getElementById('recommendBtn');
+    const copyRecommendationBtn = document.getElementById('copyRecommendationBtn');
+    const recommendationOutput = document.getElementById('recommendationOutput');
+    const historyPreview = document.getElementById('historyPreview');
+    const historyCountValue = document.getElementById('historyCountValue');
+    const historyWindowValue = document.getElementById('historyWindowValue');
+
+    const state = {
+      w: 0,
+      h: 0,
+      t: 0,
+      autonomy: 4,
+      coordination: 0.8,
+      wisdom: 0.75,
+      diversity: 0.7,
+      constraint: 0.45,
+      opportunities: [],
+      constraints: [],
+      ripples: [],
+      particles: [],
+      history: [],
+      maxHistory: 260,
+      lastRecordedSnapshotAt: 0,
+      metrics: {
+        creativity: 0,
+        ideas: 0,
+        constraintsHandled: 0,
+        friction: 0,
+        viability: 1,
+        rigidity: 0,
+        coherence: 0
+      }
+    };
+
+    const armNames = [
+      '故事',
+      '图像',
+      '实验',
+      '对话',
+      '制作',
+      '分析',
+      '身体动作',
+      '反思'
+    ];
+
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function rand(min, max) { return Math.random() * (max - min) + min; }
+    function dist2(ax, ay, bx, by) { const dx = ax - bx; const dy = ay - by; return dx * dx + dy * dy; }
+    function avg(arr) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0; }
+    function minOf(arr) { return arr.length ? Math.min(...arr) : 0; }
+    function maxOf(arr) { return arr.length ? Math.max(...arr) : 0; }
+    function normalize(x, y) {
+      const len = Math.hypot(x, y) || 1;
+      return { x: x / len, y: y / len };
+    }
+    function effectiveAutonomy(autonomy, coordination, wisdom) {
+      return autonomy * (0.20 + coordination * 0.55 + wisdom * 0.25);
+    }
+    function formatSimTime(t) { return `t=${t.toFixed(2)}秒`; }
+
+    function creativeField(x, y, t) {
+      const nx = x / Math.max(state.w, 1);
+      const ny = y / Math.max(state.h, 1);
+      const angle = Math.sin(nx * 6.5 + t * 0.6) * 1.05 + Math.cos(ny * 7.5 - t * 0.7) * 0.85;
+      const mag = 0.35 + 0.75 * (0.5 + 0.5 * Math.sin(t * 0.28 + nx * 5.2 - ny * 5.5));
+      return { angle, mag, vx: Math.cos(angle) * mag, vy: Math.sin(angle) * mag };
+    }
+
+    function spawnOpportunity(n = 1) {
+      const labels = ['问题', '图像', '故事', '材料', '同伴想法', '难题', '模式', '惊喜'];
+      for (let i = 0; i < n; i++) {
+        state.opportunities.push({
+          x: rand(80, state.w - 80),
+          y: rand(80, state.h - 90),
+          value: rand(0.7, 1.4),
+          phase: rand(0, Math.PI * 2),
+          label: labels[Math.floor(rand(0, labels.length))]
+        });
+      }
+    }
+
+    function spawnConstraint(n = 1) {
+      const labels = ['考试压力', '固定脚本', '怕犯错', '评分标准', '时间限制', '工具限制', '沉默'];
+      for (let i = 0; i < n; i++) {
+        state.constraints.push({
+          x: rand(90, state.w - 90),
+          y: rand(90, state.h - 110),
+          value: rand(0.8, 1.45) * (0.72 + state.constraint * 0.9),
+          radius: rand(20, 38),
+          drift: rand(-0.24, 0.24),
+          phase: rand(0, Math.PI * 2),
+          label: labels[Math.floor(rand(0, labels.length))]
+        });
+      }
+    }
+
+    function resetParticles() {
+      state.particles = [];
+      for (let i = 0; i < 90; i++) {
+        state.particles.push({ x: rand(0, state.w), y: rand(0, state.h), s: rand(0.5, 1.6), p: rand(0, Math.PI * 2) });
+      }
+    }
+
+    function recordHistory(reason) {
+      const entry = {
+        step: state.history.length + 1,
+        time: Number(state.t.toFixed(2)),
+        reason,
+        autonomy: Number(state.autonomy.toFixed(3)),
+        coordination: Number(state.coordination.toFixed(3)),
+        wisdom: Number(state.wisdom.toFixed(3)),
+        diversity: Number(state.diversity.toFixed(3)),
+        constraint: Number(state.constraint.toFixed(3)),
+        creativity: Number(state.metrics.creativity.toFixed(3)),
+        viability: Number(state.metrics.viability.toFixed(3)),
+        friction: Number(state.metrics.friction.toFixed(3)),
+        rigidity: Number(state.metrics.rigidity.toFixed(3)),
+        coherence: Number(state.metrics.coherence.toFixed(3))
+      };
+
+      const prev = state.history[state.history.length - 1];
+      const materiallyDifferent = !prev ||
+        prev.reason !== entry.reason ||
+        Math.abs(prev.autonomy - entry.autonomy) > 0.015 ||
+        Math.abs(prev.coordination - entry.coordination) > 0.015 ||
+        Math.abs(prev.wisdom - entry.wisdom) > 0.015 ||
+        Math.abs(prev.diversity - entry.diversity) > 0.015 ||
+        Math.abs(prev.constraint - entry.constraint) > 0.015 ||
+        Math.abs(prev.viability - entry.viability) > 0.03 ||
+        Math.abs(prev.creativity - entry.creativity) > 0.03;
+
+      if (!materiallyDifferent) return;
+
+      state.history.push(entry);
+      if (state.history.length > state.maxHistory) state.history.shift();
+      updateHistoryUI();
+    }
+
+    function updateHistoryUI() {
+      historyCountValue.textContent = `${state.history.length} 个样本`;
+      const recent = state.history.slice(-12);
+      historyPreview.textContent = recent.length
+        ? recent.map(e =>
+            `[${e.step}] ${formatSimTime(e.time)} | ${translateReason(e.reason)}\n` +
+            `自主性=${e.autonomy}, 协调=${e.coordination}, 智慧=${e.wisdom}, 多样性=${e.diversity}, 约束=${e.constraint}, 创造力=${e.creativity}, 可持续性=${e.viability}, 摩擦=${e.friction}, 僵硬度=${e.rigidity}, 一致性=${e.coherence}`
+          ).join('\n\n')
+        : '尚未记录样本。';
+    }
+
+    function translateReason(reason) {
+      const map = {
+        'Reset studio': '重置工作室',
+        'Tightened brief': '收紧任务要求',
+        'Changed autonomy': '改变自主性',
+        'Changed coordination': '改变协调',
+        'Changed wisdom': '改变智慧',
+        'Changed diversity': '改变多样性',
+        'Changed constraint': '改变约束',
+        'Periodic snapshot': '周期性快照',
+        'Applied preset: stiff': '应用预设：命令式课堂',
+        'Applied preset: wild': '应用预设：自由探索',
+        'Applied preset: studio': '应用预设：创意工作室',
+        'Applied preset: confused': '应用预设：混乱项目'
+      };
+      return map[reason] || reason;
+    }
+
+    class Segment {
+      constructor(arm, index, count) {
+        this.arm = arm;
+        this.index = index;
+        this.count = count;
+        this.length = lerp(26, 14, index / (count - 1));
+        this.angle = rand(-0.18, 0.18);
+        this.angularVelocity = 0;
+        this.pos = { x: 0, y: 0 };
+        this.baseSignal = 0;
+        this.peerSignal = 0;
+        this.opportunitySignal = 0;
+        this.constraintSignal = 0;
+        this.flowSignal = 0;
+        this.creativeSignal = 0;
+        this.localAutonomy = 0;
+        this.integration = 0;
+        this.adaptability = 0;
+        this.rigidity = 0;
+        this.probeBias = rand(-1, 1);
+      }
+    }
+
+    class Arm {
+      constructor(owner, index) {
+        this.owner = owner;
+        this.index = index;
+        this.name = armNames[index] || `触手 ${index + 1}`;
+        this.baseAngle = (Math.PI * 2 * index) / 8 + rand(-0.06, 0.06);
+        this.wavePhase = rand(0, Math.PI * 2);
+        this.probePhase = rand(0, Math.PI * 2);
+        this.segments = Array.from({ length: 18 }, (_, i) => new Segment(this, i, 18));
+        this.tip = { x: owner.x, y: owner.y };
+      }
+
+      forwardKinematics() {
+        let x = this.owner.x;
+        let y = this.owner.y;
+        let a = this.baseAngle + this.owner.bodyHeading * 0.18;
+
+        for (const s of this.segments) {
+          a += s.angle * 0.20;
+          x += Math.cos(a) * s.length;
+          y += Math.sin(a) * s.length;
+          s.pos.x = x;
+          s.pos.y = y;
+        }
+
+        this.tip.x = x;
+        this.tip.y = y;
+      }
+
+      sampleEnvironment() {
+        this.forwardKinematics();
+        const autonomy = state.autonomy / 4;
+        const wisdom = state.wisdom;
+        const diversity = state.diversity;
+        const techniqueAffinity = 0.75 + Math.sin(this.index * 1.7 + state.t * 0.2) * 0.18 + diversity * 0.25;
+
+        for (const s of this.segments) {
+          let opportunity = 0;
+          let constraint = 0;
+          const localWisdom = 0.30 + wisdom * 0.70;
+          const searchGain = 0.72 + autonomy * 0.72 + diversity * 0.50;
+
+          for (const o of state.opportunities) {
+            const dx = o.x - s.pos.x;
+            const dy = o.y - s.pos.y;
+            const d2 = dx * dx + dy * dy + 1;
+            opportunity += o.value / d2 * 2300 * localWisdom * searchGain * techniqueAffinity;
+          }
+
+          for (const c of state.constraints) {
+            const dx = c.x - s.pos.x;
+            const dy = c.y - s.pos.y;
+            const d2 = dx * dx + dy * dy + 1;
+            constraint += c.value / d2 * 3150 * (0.70 + wisdom * 0.30);
+          }
+
+          const flow = creativeField(s.pos.x, s.pos.y, state.t);
+          const flowAlignment = Math.cos(flow.angle - s.angle) * flow.mag;
+
+          s.opportunitySignal = clamp(opportunity, 0, 2.8);
+          s.constraintSignal = clamp(constraint, 0, 3.2);
+          s.flowSignal = clamp((flowAlignment + 1.5) / 3, 0, 1.3);
+          s.baseSignal = s.opportunitySignal * 1.18 - s.constraintSignal * 1.02 + s.flowSignal * 0.62;
+        }
+      }
+
+      creativePasses() {
+        const autonomy = state.autonomy / 4;
+        const coordination = state.coordination;
+        const wisdom = state.wisdom;
+        const diversity = state.diversity;
+        const passes = Math.max(1, Math.round(1 + autonomy * 3 + diversity * 2));
+        const comps = this.segments;
+
+        for (let i = 0; i < comps.length; i++) {
+          const left = comps[i - 1]?.baseSignal ?? comps[i].baseSignal;
+          const right = comps[i + 1]?.baseSignal ?? comps[i].baseSignal;
+          comps[i].peerSignal = (left + right) * 0.5;
+          comps[i].creativeSignal = comps[i].baseSignal;
+        }
+
+        for (let pass = 0; pass < passes; pass++) {
+          const next = new Array(comps.length).fill(0);
+
+          for (let i = 0; i < comps.length; i++) {
+            const c = comps[i];
+            const left = comps[i - 1]?.creativeSignal ?? c.creativeSignal;
+            const right = comps[i + 1]?.creativeSignal ?? c.creativeSignal;
+            const grandLeft = comps[i - 2]?.creativeSignal ?? left;
+            const grandRight = comps[i + 2]?.creativeSignal ?? right;
+            const neighborArmSignal = this.owner.getNeighborSignal(this.index, i) * coordination;
+
+            const localComparison = (left + right) * 0.5;
+            const wideComparison = (grandLeft + grandRight) * 0.5;
+            const reflectiveCoherence = 1 - clamp(Math.abs(localComparison - wideComparison), 0, 1.6) / 1.6;
+
+            const freedomEnabledInitiative = autonomy * (0.25 + coordination * 0.35 + wisdom * 0.45 + diversity * 0.35);
+            const integrationEnabledLearning = autonomy * coordination * (0.36 + wisdom * 0.35 + pass * 0.04);
+            const commandPenalty = (1 - autonomy) * (0.32 + state.constraint * 0.52);
+
+            c.localAutonomy = lerp(
+              c.localAutonomy,
+              clamp(0.07 + freedomEnabledInitiative - commandPenalty - c.constraintSignal * 0.05, 0, 1.8),
+              0.18
+            );
+
+            c.integration = lerp(
+              c.integration,
+              clamp(0.10 + integrationEnabledLearning + reflectiveCoherence * 0.34 - Math.abs(left - right) * 0.06, 0, 1.7),
+              0.18
+            );
+
+            const creativeIntegration =
+              c.baseSignal * (0.55 + c.localAutonomy * 0.16 + diversity * 0.10) +
+              localComparison * (0.12 + c.integration * 0.22) +
+              wideComparison * (0.06 + autonomy * coordination * 0.20 + wisdom * 0.08) +
+              neighborArmSignal * (0.18 + wisdom * 0.10) -
+              c.constraintSignal * (0.04 + (1 - autonomy) * 0.08);
+
+            const commandFiltered =
+              c.baseSignal * (0.68 - (1 - autonomy) * 0.22) +
+              localComparison * (0.18 + coordination * 0.06) +
+              wideComparison * (0.06 + (1 - autonomy) * 0.10) -
+              c.constraintSignal * (0.09 + (1 - autonomy) * 0.10);
+
+            const freedomBlend = clamp(autonomy * (0.44 + coordination * 0.28 + wisdom * 0.18 + diversity * 0.10), 0, 1);
+            next[i] = lerp(commandFiltered, creativeIntegration, freedomBlend);
+          }
+
+          for (let i = 0; i < comps.length; i++) {
+            comps[i].creativeSignal = lerp(comps[i].creativeSignal, next[i], 0.82);
+          }
+        }
+
+        for (const c of comps) {
+          const peerFit = 1 - clamp(Math.abs(c.creativeSignal - c.peerSignal), 0, 1.4) / 1.4;
+          const pressure = state.constraint * 0.75 + c.constraintSignal * 0.12;
+
+          c.adaptability = clamp(
+            0.16 + c.localAutonomy * 0.55 + c.integration * 0.42 + peerFit * 0.24 + diversity * 0.20 + wisdom * 0.16 - pressure * 0.20,
+            0,
+            2
+          );
+
+          c.rigidity = clamp(
+            pressure * 0.76 + (1 - autonomy) * 0.42 - c.localAutonomy * 0.28 - c.integration * 0.28 - peerFit * 0.15,
+            0,
+            1.9
+          );
+        }
+      }
+
+      move() {
+        const autonomy = state.autonomy / 4;
+        const coordination = state.coordination;
+        const diversity = state.diversity;
+        const commandWeight = 1 - autonomy;
+        const fragmentation = autonomy * (1 - coordination);
+
+        let cumulative = 0;
+
+        for (let i = 0; i < this.segments.length; i++) {
+          const s = this.segments[i];
+          const tipBias = i / (this.segments.length - 1);
+
+          const localInitiative = s.baseSignal * (0.13 + s.localAutonomy * 0.23);
+          const peerAlignment = (s.peerSignal - s.baseSignal) * (0.05 + s.integration * 0.11);
+          const creativeDrive = s.creativeSignal * (0.05 + s.localAutonomy * 0.10 + s.integration * 0.06);
+          const centralConstraint = -commandWeight * (0.04 + tipBias * 0.12) * Math.sign(s.angle);
+
+          const wholeArmWave =
+            Math.sin(state.t * (1.8 + autonomy * 1.1 + diversity * 0.3) + i * (0.52 + autonomy * 0.42) + this.wavePhase) *
+            (0.010 + autonomy * 0.050 + diversity * 0.020);
+
+          const localProbe =
+            Math.sin(state.t * (2.4 + tipBias * 1.6 + autonomy * 1.25) + s.probeBias * 4 + this.probePhase) *
+            (0.009 + autonomy * 0.060 + diversity * 0.025 + tipBias * autonomy * 0.040);
+
+          const tipExperiment =
+            Math.cos(state.t * (1.35 + autonomy * 0.9) + this.index * 0.7 + i * 0.28) *
+            tipBias * (0.003 + autonomy * 0.040 + diversity * 0.014);
+
+          const disorder =
+            Math.sin(state.t * 2.1 + i * 0.38 + s.probeBias * 3.5) *
+            fragmentation * (0.005 + tipBias * 0.020);
+
+          const constraintRetraction = -s.constraintSignal * (0.008 + tipBias * 0.013);
+          const opportunityReach = s.opportunitySignal * (0.005 + tipBias * 0.017 + autonomy * 0.010 + diversity * 0.006);
+
+          const target =
+            localInitiative + peerAlignment + creativeDrive + wholeArmWave + localProbe + tipExperiment + disorder +
+            opportunityReach + constraintRetraction + centralConstraint;
+
+          const softness = 0.40 + s.adaptability * 0.27 + s.localAutonomy * 0.22;
+
+          cumulative += target;
+          s.angularVelocity += target * softness * 0.060;
+          s.angularVelocity *= 0.89 - tipBias * 0.025;
+          s.angle += s.angularVelocity;
+
+          const spread = lerp(0.55, 2.45, autonomy) + tipBias * autonomy * 0.58 + diversity * 0.20;
+          s.angle = clamp(s.angle, -spread, spread);
+        }
+
+        this.forwardKinematics();
+        return cumulative / this.segments.length;
+      }
+
+      draw(ctx) {
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        for (let i = 0; i < this.segments.length; i++) {
+          const s = this.segments[i];
+          const prev = i === 0 ? { x: this.owner.x, y: this.owner.y } : this.segments[i - 1].pos;
+          const width = lerp(18, 3.4, i / (this.segments.length - 1));
+
+          const blue = Math.round(140 + clamp(s.localAutonomy, 0, 1.7) * 55 + state.diversity * 24);
+          const green = Math.round(90 + clamp(s.adaptability, 0, 1.9) * 86 + state.wisdom * 18);
+          const red = Math.round(92 + clamp(s.rigidity, 0, 1.9) * 76 + clamp(s.constraintSignal, 0, 3) * 11);
+
+          ctx.strokeStyle = `rgba(${red},${green},${blue},0.93)`;
+          ctx.lineWidth = width;
+          ctx.beginPath();
+          ctx.moveTo(prev.x, prev.y);
+          ctx.lineTo(s.pos.x, s.pos.y);
+          ctx.stroke();
+
+          if (i > 0 && i % 2 === 1) {
+            ctx.beginPath();
+            ctx.fillStyle = `rgba(245,248,255,${0.055 + s.integration * 0.09})`;
+            ctx.arc(s.pos.x, s.pos.y, 1.5 + s.adaptability * 0.85, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        const tip = this.tip;
+        ctx.font = '11px system-ui, "Microsoft YaHei", sans-serif';
+        ctx.fillStyle = 'rgba(230,245,255,0.58)';
+        ctx.fillText(this.name, tip.x + 6, tip.y + 3);
+      }
+    }
+
+    class Octopus {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.homeX = x;
+        this.homeY = y;
+        this.radius = 36;
+        this.bodyHeading = 0;
+        this.velocity = { x: 0, y: 0 };
+        this.friction = 0;
+        this.viability = 1;
+        this.fluid = true;
+        this.rigidity = 0;
+        this.lastCoherence = 0;
+        this.arms = Array.from({ length: 8 }, (_, i) => new Arm(this, i));
+      }
+
+      setHome(x, y) {
+        this.homeX = x;
+        this.homeY = y;
+        this.x = x;
+        this.y = y;
+      }
+
+      getNeighborSignal(armIndex, segIndex) {
+        const left = this.arms[(armIndex + this.arms.length - 1) % this.arms.length].segments[segIndex]?.creativeSignal || 0;
+        const right = this.arms[(armIndex + 1) % this.arms.length].segments[segIndex]?.creativeSignal || 0;
+        return (left + right) * 0.5;
+      }
+
+      computeCreativeIntent() {
+        const autonomy = state.autonomy / 4;
+        const coordination = state.coordination;
+        const wisdom = state.wisdom;
+        const diversity = state.diversity;
+        const effAutonomy = effectiveAutonomy(autonomy, coordination, wisdom);
+
+        let opportunityVec = { x: 0, y: 0 };
+        let constraintVec = { x: 0, y: 0 };
+        let nearestOpportunity = Infinity;
+        let nearestConstraint = Infinity;
+
+        const opportunitySenseRadius = lerp(110, 440, wisdom) * (0.85 + diversity * 0.35);
+        const constraintSenseRadius = lerp(120, 285, wisdom);
+
+        let bestOpportunity = null;
+        let bestOpportunityScore = -Infinity;
+
+        for (const o of state.opportunities) {
+          const dx = o.x - this.x;
+          const dy = o.y - this.y;
+          const d = Math.hypot(dx, dy) + 1;
+          nearestOpportunity = Math.min(nearestOpportunity, d);
+
+          if (d < opportunitySenseRadius) {
+            const score = o.value * (1 - d / opportunitySenseRadius) * (0.42 + wisdom * 1.18 + diversity * 0.42);
+            if (score > bestOpportunityScore) {
+              bestOpportunityScore = score;
+              bestOpportunity = { dx, dy, d, value: o.value };
+            }
+          }
+        }
+
+        if (bestOpportunity) {
+          opportunityVec.x += (bestOpportunity.dx / bestOpportunity.d) * (0.38 + wisdom * 2.10 + diversity * 0.70 + bestOpportunity.value);
+          opportunityVec.y += (bestOpportunity.dy / bestOpportunity.d) * (0.38 + wisdom * 2.10 + diversity * 0.70 + bestOpportunity.value);
+        }
+
+        for (const o of state.opportunities) {
+          const dx = o.x - this.x;
+          const dy = o.y - this.y;
+          const d = Math.hypot(dx, dy) + 1;
+          if (d < opportunitySenseRadius) {
+            const weight = (1 - d / opportunitySenseRadius) * o.value * (0.05 + wisdom * 0.28 + diversity * 0.16);
+            opportunityVec.x += (dx / d) * weight;
+            opportunityVec.y += (dy / d) * weight;
+          }
+        }
+
+        for (const c of state.constraints) {
+          const dx = this.x - c.x;
+          const dy = this.y - c.y;
+          const d = Math.hypot(dx, dy) + 1;
+          const edgeDistance = d - c.radius;
+          nearestConstraint = Math.min(nearestConstraint, edgeDistance);
+
+          if (d < constraintSenseRadius + c.radius) {
+            const weight = (1 - edgeDistance / (constraintSenseRadius + c.radius)) * c.value;
+            constraintVec.x += (dx / d) * weight * (1.12 + wisdom * 0.62 + coordination * 0.15);
+            constraintVec.y += (dy / d) * weight * (1.12 + wisdom * 0.62 + coordination * 0.15);
+          }
+        }
+
+        const flow = creativeField(this.x, this.y, state.t);
+        const homeDx = this.homeX - this.x;
+        const homeDy = this.homeY - this.y;
+        const homeD = Math.hypot(homeDx, homeDy) + 1;
+
+        const commandHomeVec = {
+          x: (homeDx / homeD) * (1 - autonomy) * (0.12 + state.constraint * 0.05),
+          y: (homeDy / homeD) * (1 - autonomy) * (0.12 + state.constraint * 0.05)
+        };
+
+        const intent = {
+          x:
+            opportunityVec.x * (0.32 + wisdom * 1.70 + diversity * 0.50) * (0.90 + effAutonomy * 0.72) +
+            constraintVec.x * (0.60 + effAutonomy * 0.48 + coordination * 0.18) +
+            flow.vx * (0.04 + autonomy * 0.06 + diversity * 0.03) +
+            commandHomeVec.x,
+          y:
+            opportunityVec.y * (0.32 + wisdom * 1.70 + diversity * 0.50) * (0.90 + effAutonomy * 0.72) +
+            constraintVec.y * (0.60 + effAutonomy * 0.48 + coordination * 0.18) +
+            flow.vy * (0.04 + autonomy * 0.06 + diversity * 0.03) +
+            commandHomeVec.y
+        };
+
+        return {
+          intent,
+          nearestOpportunity: isFinite(nearestOpportunity) ? nearestOpportunity : null,
+          nearestConstraint: isFinite(nearestConstraint) ? nearestConstraint : null
+        };
+      }
+
+      update() {
+        const autonomy = state.autonomy / 4;
+        const coordination = state.coordination;
+        const wisdom = state.wisdom;
+        const diversity = state.diversity;
+        const effAutonomy = effectiveAutonomy(autonomy, coordination, wisdom);
+        const fragmentation = autonomy * (1 - coordination);
+        const disciplinedFocus = coordination * wisdom * (0.55 + diversity * 0.25);
+
+        if (!this.fluid) {
+          this.velocity.x *= 0.975;
+          this.velocity.y *= 0.975;
+          this.x += this.velocity.x * 0.016;
+          this.y += this.velocity.y * 0.016;
+          this.bodyHeading += 0.002;
+          return;
+        }
+
+        for (const arm of this.arms) arm.sampleEnvironment();
+        for (const arm of this.arms) arm.creativePasses();
+
+        const armOutputs = [];
+        let allSegments = [];
+        for (const arm of this.arms) {
+          armOutputs.push(arm.move());
+          allSegments = allSegments.concat(arm.segments);
+        }
+
+        const meanAdaptability = avg(allSegments.map(s => s.adaptability));
+        const meanAutonomy = avg(allSegments.map(s => s.localAutonomy));
+        const meanIntegration = avg(allSegments.map(s => s.integration));
+        const meanRigidity = avg(allSegments.map(s => s.rigidity));
+        const meanConstraint = avg(allSegments.map(s => s.constraintSignal));
+        const meanOpportunity = avg(allSegments.map(s => s.opportunitySignal));
+
+        const coherence = clamp(
+          1 - avg(allSegments.map(s => Math.abs(s.creativeSignal - s.peerSignal))) / 1.25,
+          0,
+          1
+        );
+        this.lastCoherence = clamp(coherence + meanIntegration * 0.18 - fragmentation * 0.12 + wisdom * 0.05, 0, 1.7);
+
+        const env = this.computeCreativeIntent();
+        const armVector = armOutputs.reduce((acc, v, i) => {
+          acc.x += v * Math.cos(this.arms[i].baseAngle);
+          acc.y += v * Math.sin(this.arms[i].baseAngle);
+          return acc;
+        }, { x: 0, y: 0 });
+
+        const armIntent = normalize(armVector.x, armVector.y);
+        const envLen = Math.hypot(env.intent.x, env.intent.y);
+        const envIntent = envLen > 0.0001 ? normalize(env.intent.x, env.intent.y) : { x: 0, y: 0 };
+
+        const combinedDirection = {
+          x: envIntent.x * (0.52 + wisdom * 0.38 + diversity * 0.10) + armIntent.x * (0.08 + coordination * 0.28 + diversity * 0.12 - fragmentation * 0.08),
+          y: envIntent.y * (0.52 + wisdom * 0.38 + diversity * 0.10) + armIntent.y * (0.08 + coordination * 0.28 + diversity * 0.12 - fragmentation * 0.08)
+        };
+
+        const dirLen = Math.hypot(combinedDirection.x, combinedDirection.y);
+        const desiredDir = dirLen > 0.0001
+          ? { x: combinedDirection.x / dirLen, y: combinedDirection.y / dirLen }
+          : { x: Math.cos(this.bodyHeading), y: Math.sin(this.bodyHeading) };
+
+        const nearestOpportunityFactor = env.nearestOpportunity == null ? 0 : clamp(1 - env.nearestOpportunity / lerp(110, 440, wisdom), 0, 1);
+        const nearestConstraintFactor = env.nearestConstraint == null ? 0 : clamp(1 - env.nearestConstraint / 145, 0, 1);
+
+        const ideaDrive = nearestOpportunityFactor * (0.08 + wisdom * 0.30 + effAutonomy * 0.18 + diversity * 0.15);
+        const constraintResponse = nearestConstraintFactor * (0.14 + coordination * 0.15 + wisdom * 0.08);
+
+        const maxSpeed =
+          7 +
+          effAutonomy * 12 +
+          coordination * 4 +
+          diversity * 5 +
+          ideaDrive * 18 +
+          constraintResponse * 9 -
+          fragmentation * 4 -
+          (1 - autonomy) * state.constraint * 6;
+
+        const desiredSpeed =
+          maxSpeed * clamp(0.13 + ideaDrive + constraintResponse + coordination * 0.10 + diversity * 0.08 - fragmentation * 0.10, 0.08, 0.96);
+
+        const desiredVelocity = { x: desiredDir.x * desiredSpeed, y: desiredDir.y * desiredSpeed };
+
+        const steering =
+          0.22 +
+          effAutonomy * 0.40 +
+          coordination * 0.68 +
+          wisdom * 0.28 +
+          diversity * 0.18 -
+          fragmentation * 0.18;
+
+        this.velocity.x = lerp(this.velocity.x, desiredVelocity.x, 0.05 * steering);
+        this.velocity.y = lerp(this.velocity.y, desiredVelocity.y, 0.05 * steering);
+
+        const wallMargin = 92;
+        if (this.x < wallMargin) this.velocity.x += (wallMargin - this.x) * 0.0012;
+        if (this.x > state.w - wallMargin) this.velocity.x -= (this.x - (state.w - wallMargin)) * 0.0012;
+        if (this.y < wallMargin) this.velocity.y += (wallMargin - this.y) * 0.0012;
+        if (this.y > state.h - wallMargin) this.velocity.y -= (this.y - (state.h - wallMargin)) * 0.0012;
+
+        const vMag = Math.hypot(this.velocity.x, this.velocity.y);
+        const hardCap = 30;
+        if (vMag > hardCap) {
+          this.velocity.x = this.velocity.x / vMag * hardCap;
+          this.velocity.y = this.velocity.y / vMag * hardCap;
+        }
+
+        this.x += this.velocity.x * 0.016;
+        this.y += this.velocity.y * 0.016;
+        this.x = clamp(this.x, 88, state.w - 88);
+        this.y = clamp(this.y, 88, state.h - 88);
+
+        const targetHeading = Math.atan2(this.velocity.y || Math.sin(this.bodyHeading), this.velocity.x || Math.cos(this.bodyHeading));
+        let delta = targetHeading - this.bodyHeading;
+        while (delta > Math.PI) delta -= Math.PI * 2;
+        while (delta < -Math.PI) delta += Math.PI * 2;
+        this.bodyHeading += delta * 0.03 * (1 + coordination + wisdom * 0.3);
+
+        this.friction = clamp(
+          lerp(
+            this.friction,
+            meanConstraint * 0.32 + (1 - autonomy) * 0.30 + fragmentation * 0.66 + state.constraint * 0.20 - disciplinedFocus * 0.18,
+            0.05
+          ),
+          0,
+          4
+        );
+
+        for (const arm of this.arms) {
+          for (const s of arm.segments) {
+            for (let i = state.opportunities.length - 1; i >= 0; i--) {
+              const o = state.opportunities[i];
+              const d2 = dist2(o.x, o.y, s.pos.x, s.pos.y);
+
+              if (d2 < 195 && Math.random() < 0.030 + autonomy * 0.20 + coordination * 0.06 + wisdom * 0.14 + diversity * 0.11) {
+                state.metrics.ideas += 1;
+                this.viability = clamp(this.viability + 0.012 + autonomy * 0.004 + wisdom * 0.004 + diversity * 0.003, 0, 1);
+                state.ripples.push({ x: o.x, y: o.y, r: 8, life: 1, type: 'opportunity' });
+                state.opportunities.splice(i, 1);
+                spawnOpportunity(1);
+              }
+            }
+
+            for (const c of state.constraints) {
+              const d2 = dist2(c.x, c.y, s.pos.x, s.pos.y);
+              if (d2 < (c.radius + 12) * (c.radius + 12)) {
+                state.metrics.friction += 0.015 * (1.05 + (1 - autonomy) * 0.75 + (1 - coordination) * 0.42 + state.constraint * 0.3);
+                this.rigidity = clamp(this.rigidity + 0.0008 + (1 - autonomy) * 0.0016 + state.constraint * 0.0012, 0, 1.6);
+              } else if (d2 < (c.radius + 38) * (c.radius + 38) && this.lastCoherence > 0.06 * (0.6 + coordination * 0.8)) {
+                state.metrics.constraintsHandled += 0.001 + autonomy * 0.002 + coordination * 0.003 + wisdom * 0.002;
+              }
+            }
+          }
+        }
+
+        const complexityGap = Math.max(0, state.constraint - (effAutonomy * 0.72 + disciplinedFocus * 0.48 + diversity * 0.20 + 0.08));
+        const acuteLoad =
+          complexityGap * 0.42 +
+          meanConstraint * 0.11 +
+          this.friction * 0.10 +
+          Math.max(0, 0.10 - this.lastCoherence) * 0.24 +
+          fragmentation * (0.18 + autonomy * 0.24) +
+          (1 - wisdom) * 0.06 +
+          (1 - diversity) * 0.04;
+
+        const recoverySupport =
+          effAutonomy * 0.18 +
+          coordination * 0.20 +
+          disciplinedFocus * 0.28 +
+          wisdom * 0.10 +
+          diversity * 0.10 +
+          meanOpportunity * 0.03 +
+          Math.max(0, this.lastCoherence) * 0.06 +
+          0.015;
+
+        const rigidityRise = Math.max(0, acuteLoad - recoverySupport) * 0.024;
+        const rigidityRecovery = 0.014 + effAutonomy * 0.018 + coordination * 0.026 + disciplinedFocus * 0.030 + diversity * 0.012;
+        this.rigidity = clamp(this.rigidity + rigidityRise * 0.016 - rigidityRecovery * 0.016, 0, 1.6);
+
+        const vitalityGain =
+          0.008 + effAutonomy * 0.010 + coordination * 0.013 + disciplinedFocus * 0.017 + wisdom * 0.007 +
+          diversity * 0.008 + meanOpportunity * 0.004 + Math.max(0, this.lastCoherence) * 0.004;
+
+        const vitalityLoss =
+          this.rigidity * 0.024 + Math.max(0, this.friction - 2.2) * 0.004 + fragmentation * 0.010 +
+          (1 - autonomy) * Math.max(0, state.constraint - 0.72) * 0.006;
+
+        this.viability = clamp(this.viability + (vitalityGain - vitalityLoss) * 0.016, 0, 1);
+        if (this.viability <= 0.01 && this.rigidity > 1.20 && this.friction > 2.5) {
+          this.viability = 0;
+          this.fluid = false;
+        }
+
+        state.metrics.creativity = clamp(
+          meanAdaptability * 0.58 +
+          meanAutonomy * 0.32 +
+          meanIntegration * 0.30 +
+          this.lastCoherence * 0.28 +
+          diversity * 0.22 +
+          wisdom * 0.18 -
+          meanRigidity * 0.36,
+          0,
+          2.2
+        );
+        state.metrics.viability = this.viability;
+        state.metrics.rigidity = this.rigidity;
+        state.metrics.coherence = this.lastCoherence;
+      }
+
+      draw(ctx) {
+        for (const arm of this.arms) arm.draw(ctx);
+
+        const mantleGlow = 12 + this.friction * 6 + state.autonomy * 5 + this.viability * 10 + state.diversity * 6;
+        const g = ctx.createRadialGradient(this.x, this.y, 6, this.x, this.y, mantleGlow + 46);
+        g.addColorStop(0, `rgba(190, 220, 255, ${0.20 + state.autonomy / 4 * 0.30 + this.viability * 0.12})`);
+        g.addColorStop(0.45, `rgba(220, 170, 255, ${0.09 + state.diversity * 0.08})`);
+        g.addColorStop(1, 'rgba(72, 125, 176, 0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, mantleGlow + 46, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(${Math.round(88 + this.friction * 30 + (1 - this.viability) * 50)}, ${Math.round(94 + state.autonomy / 4 * 78 + this.viability * 32 + state.wisdom * 20)}, ${Math.round(140 + state.autonomy / 4 * 55 + state.diversity * 30)}, 0.97)`;
+        ctx.ellipse(this.x, this.y, this.radius + 9, this.radius + 1, this.bodyHeading * 0.14, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.font = '12px system-ui, "Microsoft YaHei", sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.72)';
+        ctx.textAlign = 'center';
+        ctx.fillText('创意中心', this.x, this.y + 4);
+        ctx.textAlign = 'start';
+
+        const eyeOffset = 11;
+        for (const side of [-1, 1]) {
+          const ex = this.x + Math.cos(this.bodyHeading + side * 0.9) * eyeOffset;
+          const ey = this.y + Math.sin(this.bodyHeading + side * 0.9) * eyeOffset - 2;
+
+          ctx.beginPath();
+          ctx.fillStyle = this.fluid ? '#eff8ff' : 'rgba(200,210,220,0.6)';
+          ctx.arc(ex, ey, 4.4, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.fillStyle = '#071019';
+          ctx.arc(ex + Math.cos(this.bodyHeading) * 1.5, ey + Math.sin(this.bodyHeading) * 1.4, this.fluid ? 1.8 : 0.9, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = canvas.clientWidth * dpr;
+      canvas.height = canvas.clientHeight * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      state.w = canvas.clientWidth;
+      state.h = canvas.clientHeight;
+
+      if (octopus) octopus.setHome(state.w * 0.5, state.h * 0.56);
+    }
+
+    function resetWorld() {
+      state.opportunities = [];
+      state.constraints = [];
+      state.ripples = [];
+      state.metrics.ideas = 0;
+      state.metrics.constraintsHandled = 0;
+      state.metrics.friction = 0;
+      state.metrics.creativity = 0;
+      state.history = [];
+      state.lastRecordedSnapshotAt = state.t;
+      resetParticles();
+
+      for (let i = 0; i < 20; i++) spawnOpportunity(1);
+      for (let i = 0; i < 6 + Math.round(state.constraint * 9); i++) spawnConstraint(1);
+
+      octopus = new Octopus(state.w * 0.5, state.h * 0.56);
+      updateHistoryUI();
+      recordHistory('Reset studio');
+    }
+
+    function pulseConstraints() {
+      for (const c of state.constraints) {
+        c.value *= 1.18;
+        c.radius *= 1.08;
+      }
+      for (let i = 0; i < 4; i++) {
+        state.ripples.push({ x: rand(60, state.w - 60), y: rand(60, state.h - 60), r: 6, life: 1, type: 'constraint' });
+      }
+      recordHistory('Tightened brief');
+    }
+
+    function applyPreset(name) {
+      const presets = {
+        stiff: {
+          autonomy: 0.55,
+          coordination: 0.72,
+          wisdom: 0.38,
+          diversity: 0.22,
+          constraint: 0.86,
+          text: '一个命令驱动的课堂：学习者按照固定步骤操作，复制标准答案，并因为评价标准狭窄且带有惩罚感而尽量避免犯错。'
+        },
+        wild: {
+          autonomy: 3.85,
+          coordination: 0.22,
+          wisdom: 0.48,
+          diversity: 0.92,
+          constraint: 0.24,
+          text: '一个高度开放的创意活动：学习者可以选择任何媒介或主题，但缺少共同反思、学习顺序和对发现成果的整合。'
+        },
+        studio: {
+          autonomy: 3.55,
+          coordination: 0.82,
+          wisdom: 0.82,
+          diversity: 0.86,
+          constraint: 0.42,
+          text: '一个创意工作室式课堂：学习者在示范、实验、同伴对话、制作、反思和教师咨询之间来回移动，并有足够结构使学习保持连贯。'
+        },
+        confused: {
+          autonomy: 2.7,
+          coordination: 0.18,
+          wisdom: 0.24,
+          diversity: 0.65,
+          constraint: 0.70,
+          text: '一个项目式活动：有许多可能的工具和主题，但学习者不清楚什么重要、如何判断进展，以及什么时候应该寻求帮助。'
+        }
+      };
+
+      const p = presets[name];
+      if (!p) return;
+      autonomySlider.value = p.autonomy;
+      coordinationSlider.value = p.coordination;
+      wisdomSlider.value = p.wisdom;
+      diversitySlider.value = p.diversity;
+      constraintSlider.value = p.constraint;
+      if (!scenarioInput.value.trim()) scenarioInput.value = p.text;
+      recordHistory(`Applied preset: ${name}`);
+    }
+
+    function drawBackground() {
+      const g = ctx.createLinearGradient(0, 0, 0, state.h);
+      g.addColorStop(0, '#07131c');
+      g.addColorStop(1, '#0b1d2a');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, state.w, state.h);
+
+      for (const p of state.particles) {
+        p.p += 0.007 + state.constraint * 0.006;
+        p.x += Math.sin(p.p) * 0.5;
+        p.y += Math.cos(p.p * 0.8) * 0.35;
+        if (p.x < -5) p.x = state.w + 5;
+        if (p.x > state.w + 5) p.x = -5;
+        if (p.y < -5) p.y = state.h + 5;
+        if (p.y > state.h + 5) p.y = -5;
+        ctx.beginPath();
+        ctx.fillStyle = 'rgba(190, 220, 255, 0.12)';
+        ctx.arc(p.x, p.y, p.s, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      for (let y = 0; y < state.h; y += 30) {
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(150, 200, 220, 0.055)';
+        ctx.moveTo(0, y + Math.sin(state.t + y * 0.04) * 4);
+        for (let x = 0; x <= state.w; x += 24) {
+          const yy = y + Math.sin(state.t * 0.9 + x * 0.02 + y * 0.05) * 4;
+          ctx.lineTo(x, yy);
+        }
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = 'rgba(42, 45, 72, 0.25)';
+      ctx.fillRect(0, state.h - 74, state.w, 74);
+    }
+
+    function drawFieldHints() {
+      for (let x = 60; x < state.w; x += 90) {
+        for (let y = 70; y < state.h; y += 80) {
+          const flow = creativeField(x, y, state.t);
+          const len = 10 + flow.mag * 12;
+          const x2 = x + Math.cos(flow.angle) * len;
+          const y2 = y + Math.sin(flow.angle) * len;
+          ctx.beginPath();
+          ctx.strokeStyle = 'rgba(170,205,255,0.14)';
+          ctx.lineWidth = 1.1;
+          ctx.moveTo(x, y);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        }
+      }
+    }
+
+    function drawEnvironment() {
+      for (const o of state.opportunities) {
+        o.phase += 0.03;
+        o.y += Math.sin(o.phase) * 0.18;
+
+        const r = 4 + o.value * 4;
+        const g = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, r * 3.2);
+        g.addColorStop(0, 'rgba(165,255,175,0.92)');
+        g.addColorStop(1, 'rgba(130,255,180,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(o.x, o.y, r * 3.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.fillStyle = 'rgba(190,255,190,0.95)';
+        ctx.arc(o.x, o.y, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (state.w > 700) {
+          ctx.font = '10px system-ui, "Microsoft YaHei", sans-serif';
+          ctx.fillStyle = 'rgba(210,255,220,0.58)';
+          ctx.fillText(o.label, o.x + r + 4, o.y + 3);
+        }
+      }
+
+      for (const c of state.constraints) {
+        c.phase += 0.01 + state.constraint * 0.01;
+        c.x += Math.sin(c.phase) * c.drift;
+        c.y += Math.cos(c.phase * 0.8) * c.drift * 0.6;
+        c.x = clamp(c.x, 60, state.w - 60);
+        c.y = clamp(c.y, 60, state.h - 90);
+
+        const pulse = 1 + Math.sin(c.phase * 2) * 0.08;
+        const radius = c.radius * pulse;
+        const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, radius * 2.2);
+        g.addColorStop(0, 'rgba(255,120,130,0.34)');
+        g.addColorStop(1, 'rgba(255,120,130,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, radius * 2.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255,140,150,0.73)';
+        ctx.lineWidth = 2;
+        ctx.arc(c.x, c.y, radius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        if (state.w > 700) {
+          ctx.font = '10px system-ui, "Microsoft YaHei", sans-serif';
+          ctx.fillStyle = 'rgba(255,200,205,0.58)';
+          ctx.fillText(c.label, c.x + radius + 4, c.y + 3);
+        }
+      }
+
+      for (let i = state.ripples.length - 1; i >= 0; i--) {
+        const r = state.ripples[i];
+        r.r += 1.5;
+        r.life -= 0.02;
+        ctx.beginPath();
+        ctx.strokeStyle = r.type === 'opportunity'
+          ? `rgba(160,255,170,${r.life * 0.8})`
+          : `rgba(255,130,145,${r.life * 0.8})`;
+        ctx.lineWidth = 2;
+        ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+        ctx.stroke();
+        if (r.life <= 0) state.ripples.splice(i, 1);
+      }
+    }
+
+    function drawHistoryChart() {
+      const w = historyCanvas.width;
+      const h = historyCanvas.height;
+
+      historyCtx.clearRect(0, 0, w, h);
+      historyCtx.fillStyle = 'rgba(255,255,255,0.03)';
+      historyCtx.fillRect(0, 0, w, h);
+
+      for (let y = 0; y <= 4; y++) {
+        const yy = 8 + (h - 16) * (y / 4);
+        historyCtx.beginPath();
+        historyCtx.strokeStyle = 'rgba(255,255,255,0.06)';
+        historyCtx.moveTo(0, yy);
+        historyCtx.lineTo(w, yy);
+        historyCtx.stroke();
+      }
+
+      if (state.history.length < 2) return;
+
+      const seriesDefs = [
+        { key: 'autonomy', max: 4, color: '#8fe7ff' },
+        { key: 'coordination', max: 1, color: '#ffd18a' },
+        { key: 'wisdom', max: 1, color: '#e4c1ff' },
+        { key: 'diversity', max: 1, color: '#9dff9d' },
+        { key: 'constraint', max: 1, color: '#ff8e8e' },
+        { key: 'viability', max: 1, color: '#98f5c2' },
+        { key: 'rigidity', max: 1.6, color: '#ffb0b0' },
+        { key: 'friction', max: 4, color: '#c69bff' }
+      ];
+
+      for (const def of seriesDefs) {
+        historyCtx.beginPath();
+        historyCtx.lineWidth = 1.5;
+        historyCtx.strokeStyle = def.color;
+
+        state.history.forEach((point, i) => {
+          const x = (i / (state.history.length - 1)) * (w - 10) + 5;
+          const y = h - 8 - (clamp(point[def.key], 0, def.max) / def.max) * (h - 16);
+          if (i === 0) historyCtx.moveTo(x, y);
+          else historyCtx.lineTo(x, y);
+        });
+
+        historyCtx.stroke();
+      }
+    }
+
+    function summarizeHistory() {
+      if (!state.history.length) {
+        return { text: '尚未收集时间序列数据。', label: '无数据' };
+      }
+
+      const aut = state.history.map(p => p.autonomy);
+      const coord = state.history.map(p => p.coordination);
+      const wis = state.history.map(p => p.wisdom);
+      const div = state.history.map(p => p.diversity);
+      const con = state.history.map(p => p.constraint);
+      const via = state.history.map(p => p.viability);
+      const friction = state.history.map(p => p.friction);
+      const rigidity = state.history.map(p => p.rigidity);
+      const creative = state.history.map(p => p.creativity);
+      const coh = state.history.map(p => p.coherence);
+
+      const start = state.history[0];
+      const end = state.history[state.history.length - 1];
+
+      const text =
+        `时间序列摘要：\n` +
+        `- 观察时长：${end.time.toFixed(1)} 秒\n` +
+        `- 自主性 / 自由：开始 ${start.autonomy.toFixed(2)}，结束 ${end.autonomy.toFixed(2)}，平均 ${avg(aut).toFixed(2)}，最低 ${minOf(aut).toFixed(2)}，最高 ${maxOf(aut).toFixed(2)}\n` +
+        `- 敏捷协调：开始 ${start.coordination.toFixed(2)}，结束 ${end.coordination.toFixed(2)}，平均 ${avg(coord).toFixed(2)}\n` +
+        `- 智慧 / 情境敏感性：开始 ${start.wisdom.toFixed(2)}，结束 ${end.wisdom.toFixed(2)}，平均 ${avg(wis).toFixed(2)}\n` +
+        `- 技术多样性：开始 ${start.diversity.toFixed(2)}，结束 ${end.diversity.toFixed(2)}，平均 ${avg(div).toFixed(2)}\n` +
+        `- 约束压力：开始 ${start.constraint.toFixed(2)}，结束 ${end.constraint.toFixed(2)}，平均 ${avg(con).toFixed(2)}\n` +
+        `- 可持续性：开始 ${start.viability.toFixed(2)}，结束 ${end.viability.toFixed(2)}，平均 ${avg(via).toFixed(2)}，最低 ${minOf(via).toFixed(2)}\n` +
+        `- 摩擦：平均 ${avg(friction).toFixed(2)}，最高 ${maxOf(friction).toFixed(2)}\n` +
+        `- 僵硬度：平均 ${avg(rigidity).toFixed(2)}，最高 ${maxOf(rigidity).toFixed(2)}\n` +
+        `- 创造力得分：平均 ${avg(creative).toFixed(2)}，最低 ${minOf(creative).toFixed(2)}，最高 ${maxOf(creative).toFixed(2)}\n` +
+        `- 行为一致性：平均 ${avg(coh).toFixed(2)}，最低 ${minOf(coh).toFixed(2)}，最高 ${maxOf(coh).toFixed(2)}\n` +
+        `- 解释：自主性表示不同技术和技能进行探索的自由；协调表示这些探索是否被带入共同的意义建构；智慧表示情境判断；多样性表示媒介、策略和认识方式的范围；约束压力表示评价、脚本、时间压力、恐惧、制度规则或过度控制。`;
+
+      return { text, label: `${state.history.length} 个样本` };
+    }
+
+    function classifyPattern() {
+      const autonomy = state.autonomy / 4;
+      const coordination = state.coordination;
+      const wisdom = state.wisdom;
+      const diversity = state.diversity;
+      const constraint = state.constraint;
+      const creativity = state.metrics.creativity;
+      const rigidity = octopus ? octopus.rigidity : 0;
+
+      if (autonomy < 0.30 && constraint > 0.65) return 'stiff-command';
+      if (autonomy > 0.68 && coordination < 0.35) return 'fragmented-freedom';
+      if (wisdom < 0.35 && diversity > 0.55) return 'busy-but-unwise';
+      if (diversity < 0.35 && autonomy > 0.45) return 'free-but-narrow';
+      if (creativity > 1.25 && rigidity < 0.45 && coordination > 0.55) return 'creative-flow';
+      if (constraint > 0.75 && coordination > 0.65) return 'disciplined-but-tight';
+      return 'developing';
+    }
+
+    function makeRecommendations() {
+      const scenario = scenarioInput.value.trim() || '一个学习小组正在尝试开展创造性教育活动，但自由、结构、技能、判断和评价压力之间的关系还不清楚。';
+      const h = summarizeHistory();
+      const pattern = classifyPattern();
+      const autonomy = state.autonomy / 4;
+      const coordination = state.coordination;
+      const wisdom = state.wisdom;
+      const diversity = state.diversity;
+      const constraint = state.constraint;
+
+      const diagnosis = {
+        'stiff-command': '章鱼过于僵硬：学习者很可能只是服从、复制或等待许可，而不是主动探索。',
+        'fragmented-freedom': '章鱼有自由，但整合不足：可能会出现很多想法，但它们未必能积累成共同学习。',
+        'busy-but-unwise': '章鱼很活跃，但反思不足：学习者可能使用许多工具，却缺少对目的、情境或质量的判断。',
+        'free-but-narrow': '章鱼有一定自由，但技术范围太窄：学习者可能重复熟悉的做法，而不是发现新的表达形式。',
+        'creative-flow': '章鱼处于较强的创造状态：自由、协调、智慧和多样性正在相互配合。',
+        'disciplined-but-tight': '章鱼组织性较强，但压力可能正在缩小可采取行动的范围。',
+        'developing': '章鱼可以运转，但仍不均衡：创造力取决于能否改善自主性、协调、智慧和技术多样性之间最薄弱的关系。'
+      }[pattern];
+
+      const moves = [];
+
+      if (autonomy < 0.45) {
+        moves.push('增加安全的自主性：给学习者一个有边界的选择，例如问题、媒介、伙伴、路径、例子、数据来源或最终作品形式。把一个指令替换成一个决策点。');
+      }
+      if (coordination < 0.45) {
+        moves.push('增加敏捷协调：使用短循环的制作、分享、比较和修改。每一轮之后，让学习者说出发生了什么变化。');
+      }
+      if (wisdom < 0.45) {
+        moves.push('培养智慧和情境敏感性：询问这里真正重要的是什么、谁会受到影响、什么算是质量、哪些风险被忽视了。');
+      }
+      if (diversity < 0.45) {
+        moves.push('扩展技术库：至少要求两种方式，例如图解、故事、模型、实体制作、对话、数据、身体动作、声音或原型。');
+      }
+      if (constraint > 0.62) {
+        moves.push('降低约束压力但不取消标准：把探索时间和评价时间分开，并在第一次实验之后再明确评价标准。');
+      }
+      if (autonomy > 0.70 && coordination < 0.50) {
+        moves.push('把自由探索转化为集体学习：使用作品走廊、批评协议、共享地图，或“每种方法揭示了什么？”的对照表。');
+      }
+      if (state.metrics.creativity < 0.75) {
+        moves.push('用一个低风险的创造性行动重新启动不具创造力的章鱼：一个令人惊讶的材料、一个学习者问题、一个替代表征，以及一次反思暂停。');
+      }
+      if (!moves.length) {
+        moves.push('保持平衡：维持较高自主性，同时保护反思、比较和有目的的约束，让探索能够累积起来。');
+        moves.push('邀请学习者把一种技术从一个领域转移到另一个领域：例如用身体动作、绘画、故事或模拟来解释一个数学关系。');
+      }
+
+      const techniqueSuggestions = [
+        '故事触手：把主题变成一个生活中的问题或人物旅程',
+        '图像触手：绘制地图、图解、隐喻或视觉对比',
+        '实验触手：测试一个小变化并观察会发生什么',
+        '对话触手：在决定之前比较不同解释',
+        '制作触手：做一个粗略的实体或数字原型',
+        '分析触手：命名变量、约束和取舍',
+        '身体动作触手：用身体表现关系、节奏、顺序或反馈回路',
+        '反思触手：询问什么让我们惊讶、什么失败了、现在有什么新的可能'
+      ];
+
+      const recommendation =
+`提交的情境：\n${scenario}\n\n诊断：\n${diagnosis}\n\n不具创造力的章鱼如何变得更有创造力：\n${moves.map((m, i) => `${i + 1}. ${m}`).join('\n')}\n\n可以激活的技术触手：\n${techniqueSuggestions.map(s => `- ${s}`).join('\n')}\n\n可用作课程设计提示：\n为上面的情境设计一个创造性教育活动。给学习者足够的自主性去探索，足够的协调去分享和整合发现，足够的智慧去判断什么重要，并提供足够的技术多样性以避免只有一条狭窄路径。识别哪里过度约束正在让章鱼变得僵硬，然后重新设计活动，让学习者能够制作、测试、比较、反思和调整。\n\n模拟模式：\n${h.text}`;
+
+      recommendationOutput.textContent = recommendation;
+      historyWindowValue.textContent = h.label;
+    }
+
+    function updateUI() {
+      autonomyValue.textContent = `${state.autonomy.toFixed(2)} / 4`;
+      coordinationValue.textContent = state.coordination.toFixed(2);
+      wisdomValue.textContent = state.wisdom.toFixed(2);
+      diversityValue.textContent = state.diversity.toFixed(2);
+      constraintValue.textContent = state.constraint.toFixed(2);
+
+      creativityScoreEl.textContent = state.metrics.creativity.toFixed(2);
+      ideaScoreEl.textContent = state.metrics.ideas.toFixed(0);
+      avoidScoreEl.textContent = state.metrics.constraintsHandled.toFixed(1);
+      frictionScoreEl.textContent = (state.metrics.friction + octopus.friction).toFixed(2);
+      viabilityScoreEl.textContent = octopus.viability.toFixed(2);
+      rigidityScoreEl.textContent = octopus.rigidity.toFixed(2);
+      creativeStateEl.textContent = octopus.fluid ? (state.metrics.creativity > 1.25 ? '创造性强' : octopus.rigidity > 0.85 ? '正在僵化' : '流动') : '僵硬';
+      speedScoreEl.textContent = Math.hypot(octopus.velocity.x, octopus.velocity.y).toFixed(2);
+
+      const autonomy = state.autonomy / 4;
+
+      if (autonomy > 0.72 && state.coordination > 0.55) {
+        consequenceText.textContent = '章鱼正在自由探索，同时保持协调。不同技术可以追求局部发现，然后回到共同的创造方向。';
+      } else if (autonomy > 0.72 && state.coordination <= 0.55) {
+        consequenceText.textContent = '章鱼有很多自由，但协调较弱。这可能产生令人兴奋的碎片，却不一定形成累积性的学习。';
+      } else if (autonomy > 0.35) {
+        consequenceText.textContent = '章鱼拥有部分自主性。它可以实验，但创造力取决于教师是否保护反思、比较和技术多样性。';
+      } else {
+        consequenceText.textContent = '章鱼变得僵硬。触手贴近身体，探索范围缩小，整个系统像是在等待命令，而不是发现可能性。';
+      }
+    }
+
+    let octopus = null;
+    let last = performance.now();
+
+    function animate(now) {
+      const dt = Math.min(0.033, (now - last) / 1000);
+      last = now;
+      state.t += dt;
+
+      state.autonomy = parseFloat(autonomySlider.value);
+      state.coordination = parseFloat(coordinationSlider.value);
+      state.wisdom = parseFloat(wisdomSlider.value);
+      state.diversity = parseFloat(diversitySlider.value);
+      state.constraint = parseFloat(constraintSlider.value);
+
+      drawBackground();
+      drawFieldHints();
+      drawEnvironment();
+
+      if (Math.random() < 0.01 + state.diversity * 0.018 && state.opportunities.length < 24) spawnOpportunity(1);
+      if (Math.random() < 0.004 + state.constraint * 0.012 && state.constraints.length < 18) spawnConstraint(1);
+
+      octopus.update();
+      octopus.draw(ctx);
+
+      drawHistoryChart();
+      updateUI();
+
+      if (state.t - state.lastRecordedSnapshotAt >= 1.4) {
+        state.lastRecordedSnapshotAt = state.t;
+        recordHistory('Periodic snapshot');
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    autonomySlider.addEventListener('input', () => recordHistory('Changed autonomy'));
+    coordinationSlider.addEventListener('input', () => recordHistory('Changed coordination'));
+    wisdomSlider.addEventListener('input', () => recordHistory('Changed wisdom'));
+    diversitySlider.addEventListener('input', () => recordHistory('Changed diversity'));
+    constraintSlider.addEventListener('input', () => {
+      const targetConstraints = 6 + Math.round(parseFloat(constraintSlider.value) * 9);
+      while (state.constraints.length < targetConstraints) spawnConstraint(1);
+      while (state.constraints.length > targetConstraints && state.constraints.length > 3) state.constraints.pop();
+      recordHistory('Changed constraint');
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', resetWorld);
+    document.getElementById('constraintPulseBtn').addEventListener('click', pulseConstraints);
+    recommendBtn.addEventListener('click', makeRecommendations);
+
+    document.querySelectorAll('[data-preset]').forEach(btn => {
+      btn.addEventListener('click', () => applyPreset(btn.dataset.preset));
+    });
+
+    copyRecommendationBtn.addEventListener('click', async () => {
+      try {
+        if (!recommendationOutput.textContent.trim() || recommendationOutput.textContent.startsWith('请先描述')) makeRecommendations();
+        await navigator.clipboard.writeText(recommendationOutput.textContent);
+        copyRecommendationBtn.textContent = '已复制';
+        setTimeout(() => { copyRecommendationBtn.textContent = '复制建议'; }, 1200);
+      } catch {
+        copyRecommendationBtn.textContent = '复制失败';
+        setTimeout(() => { copyRecommendationBtn.textContent = '复制建议'; }, 1200);
+      }
+    });
+
+    window.addEventListener('resize', resize);
+
+    resize();
+    resetWorld();
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
