@@ -1,0 +1,251 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Which image?</title>
+  <style>
+    :root {
+      --bg: #f5f5f2;
+      --card: #ffffff;
+      --text: #111111;
+      --muted: #666666;
+      --border: #dddddd;
+      --shadow: 0 10px 28px rgba(0, 0, 0, 0.10);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      text-align: center;
+      padding: 28px 16px 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 4rem);
+      letter-spacing: -0.04em;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      padding: 0 16px 24px;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 13px 22px;
+      font-size: 1rem;
+      font-weight: 700;
+      background: #111111;
+      color: #ffffff;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    main {
+      width: min(1400px, 96vw);
+      margin: 0 auto 32px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .image-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      min-height: 420px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .label {
+      padding: 16px 18px;
+      font-size: 1.35rem;
+      font-weight: 800;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .filename {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 500;
+      word-break: break-all;
+      text-align: right;
+    }
+
+    .image-wrap {
+      flex: 1;
+      display: grid;
+      place-items: center;
+      padding: 12px;
+      background: #fafafa;
+    }
+
+    img {
+      display: block;
+      width: 100%;
+      height: min(72vh, 760px);
+      object-fit: contain;
+      border-radius: 14px;
+      background: #eeeeee;
+    }
+
+    .note {
+      width: min(1400px, 96vw);
+      margin: 0 auto 24px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      text-align: center;
+    }
+
+    @media (max-width: 850px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      img {
+        height: auto;
+        max-height: 72vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Which image?</h1>
+  </header>
+
+  <div class="controls">
+    <button id="newPairButton" type="button">Select another two images</button>
+  </div>
+
+  <main aria-live="polite">
+    <section class="image-card" aria-labelledby="imageALabel">
+      <div class="label" id="imageALabel">
+        <span>Image A</span>
+        <span class="filename" id="fileA"></span>
+      </div>
+      <div class="image-wrap">
+        <img id="imageA" alt="Randomly selected image A" />
+      </div>
+    </section>
+
+    <section class="image-card" aria-labelledby="imageBLabel">
+      <div class="label" id="imageBLabel">
+        <span>Image B</span>
+        <span class="filename" id="fileB"></span>
+      </div>
+      <div class="image-wrap">
+        <img id="imageB" alt="Randomly selected image B" />
+      </div>
+    </section>
+  </main>
+
+  <p class="note">
+    Put this HTML file next to a folder called <strong>images</strong> containing the numbered picture files.
+  </p>
+
+  <script>
+    // Browser JavaScript cannot reliably list files from a local folder.
+    // Edit this array if your filenames are different.
+    const imageFiles = [
+      "pic_01.png",
+      "pic_02.png",
+      "pic_03.png",
+      "pic_04.png",
+      "pic_05.png",
+      "pic_06.png",
+      "pic_07.png",
+      "pic_08.png",
+      "pic_09.png",
+      "pic_10.png",
+      "pic_11.png",
+      "pic_12.png",
+      "pic_13.png",
+      "pic_14.png",
+      "pic_15.png",
+      "pic_16.png",
+      "pic_17.png",
+      "pic_18.png",
+      "pic_19.png",
+      "pic_21.png",
+      "pic_22.png",
+      "pic_23.png",
+      "pic_24.png",
+      "pic_25.png",
+      "pic_26.png",
+      "pic_27.png",
+      "pic_28.png",
+      "pic_29.png",
+      "pic_30.png"
+    ];
+
+    const imageA = document.getElementById("imageA");
+    const imageB = document.getElementById("imageB");
+    const fileA = document.getElementById("fileA");
+    const fileB = document.getElementById("fileB");
+    const newPairButton = document.getElementById("newPairButton");
+
+    function randomIndex(max) {
+      return Math.floor(Math.random() * max);
+    }
+
+    function selectTwoDifferentImages() {
+      if (imageFiles.length < 2) {
+        alert("You need at least two images in the imageFiles array.");
+        return;
+      }
+
+      const firstIndex = randomIndex(imageFiles.length);
+      let secondIndex = randomIndex(imageFiles.length);
+
+      while (secondIndex === firstIndex) {
+        secondIndex = randomIndex(imageFiles.length);
+      }
+
+      const firstFile = imageFiles[firstIndex];
+      const secondFile = imageFiles[secondIndex];
+
+      imageA.src = `images/${firstFile}`;
+      imageB.src = `images/${secondFile}`;
+      fileA.textContent = firstFile;
+      fileB.textContent = secondFile;
+    }
+
+    newPairButton.addEventListener("click", selectTwoDifferentImages);
+
+    // Show the first pair immediately when the page opens.
+    selectTwoDifferentImages();
+  </script>
+</body>
+</html>
