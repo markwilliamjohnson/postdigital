@@ -1,0 +1,709 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>🧠 Creative Teaching Lab – Pedagogy Mixer Game</title>
+  <!-- Font Awesome 6 (free icons) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Google Fonts: playful but readable -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(145deg, #f9f3e6 0%, #ffe6d5 100%);
+      min-height: 100vh;
+      padding: 2rem 1.5rem;
+      color: #2d3e2b;
+    }
+
+    /* main game container */
+    .game-container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* header */
+    .game-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .game-header h1 {
+      font-size: 2.6rem;
+      background: linear-gradient(135deg, #c4450c, #e68a2e, #9b5e2c);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      letter-spacing: -0.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .game-header h1 i {
+      background: none;
+      color: #e07c3c;
+      font-size: 2.2rem;
+    }
+
+    .subhead {
+      color: #5a3e2b;
+      font-weight: 500;
+      background: #fff3e6aa;
+      backdrop-filter: blur(4px);
+      display: inline-block;
+      padding: 0.5rem 1.2rem;
+      border-radius: 60px;
+      font-size: 1rem;
+      margin-top: 12px;
+    }
+
+    /* two column layout (challenge + mixer) */
+    .lab-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      margin-bottom: 2.5rem;
+    }
+
+    /* challenge card */
+    .challenge-card {
+      flex: 1.2;
+      min-width: 240px;
+      background: #fffef7;
+      border-radius: 32px;
+      box-shadow: 0 20px 35px -12px rgba(0,0,0,0.2);
+      padding: 1.5rem 1.8rem;
+      border: 1px solid #ffddb0;
+      transition: transform 0.2s ease;
+    }
+
+    .challenge-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .challenge-icon {
+      font-size: 2.3rem;
+      margin-bottom: 12px;
+      color: #c96f2c;
+    }
+
+    .challenge-card h3 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .challenge-text {
+      font-size: 1.2rem;
+      line-height: 1.4;
+      background: #fceedf;
+      padding: 1rem;
+      border-radius: 28px;
+      margin: 1rem 0;
+      font-weight: 500;
+      color: #4f351e;
+    }
+
+    .btn-secondary {
+      background: #f0dbc8;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 60px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: #6b3f1c;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-secondary:hover {
+      background: #e2c7ae;
+      transform: scale(0.96);
+    }
+
+    /* MIXER PANEL (main game area) */
+    .mixer-panel {
+      flex: 2.5;
+      min-width: 320px;
+      background: #ffffffdd;
+      backdrop-filter: blur(4px);
+      background: rgba(255, 250, 240, 0.95);
+      border-radius: 48px;
+      padding: 1.6rem;
+      box-shadow: 0 20px 30px -8px rgba(0,0,0,0.15);
+      border: 1px solid #ffe1b9;
+    }
+
+    .category-row {
+      background: #fff4ea;
+      border-radius: 32px;
+      padding: 1rem 1.2rem;
+      margin-bottom: 1.4rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .cat-info {
+      flex: 3;
+    }
+
+    .cat-label {
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      color: #bc6f2c;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .cat-value {
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: #31241a;
+      word-break: break-word;
+    }
+
+    .randomize-btn {
+      background: #ffd7ae;
+      border: none;
+      width: 46px;
+      height: 46px;
+      border-radius: 60px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: 0.1s linear;
+      color: #8b4e1f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .randomize-btn:hover {
+      background: #e9b97c;
+      transform: rotate(12deg);
+      color: #3b2a1c;
+    }
+
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .btn-primary {
+      background: #c57f3e;
+      border: none;
+      padding: 12px 22px;
+      border-radius: 40px;
+      font-weight: 700;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .btn-primary:hover {
+      background: #a8642c;
+      transform: scale(0.97);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 2px solid #d99856;
+      padding: 10px 20px;
+      border-radius: 40px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn-outline:hover {
+      background: #f0dbc8;
+    }
+
+    .idea-output {
+      background: #f5e7db;
+      border-radius: 32px;
+      padding: 1.2rem;
+      margin: 1rem 0;
+      border-left: 12px solid #f3a261;
+    }
+
+    .idea-title {
+      font-weight: 800;
+      font-size: 1.3rem;
+      margin-bottom: 12px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .idea-desc {
+      line-height: 1.45;
+      color: #2d3a22;
+    }
+
+    .stats-badge {
+      background: #f7e2d1;
+      border-radius: 50px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    /* NOTEBOOK SECTION */
+    .notebook {
+      background: #fffcf5;
+      border-radius: 40px;
+      padding: 1.8rem;
+      margin-top: 2rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    }
+
+    .notebook-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .saved-list {
+      max-height: 280px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .saved-item {
+      background: #fff1e4;
+      border-radius: 24px;
+      padding: 0.8rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .saved-text {
+      flex: 5;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .delete-idea {
+      background: none;
+      border: none;
+      color: #b97f51;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 0 6px;
+    }
+
+    .empty-notebook {
+      text-align: center;
+      padding: 2rem;
+      color: #a57351;
+      font-style: italic;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }
+
+    @media (max-width: 800px) {
+      body { padding: 1rem; }
+      .cat-value { font-size: 1rem; }
+      .idea-title { font-size: 1.1rem; }
+    }
+
+    button {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<div class="game-container">
+  <div class="game-header">
+    <h1><i class="fas fa-flask"></i> CREATIVE TEACHING LAB <i class="fas fa-dice-d6"></i></h1>
+    <div class="subhead"><i class="fas fa-gamepad"></i> Mix, match & discover unexpected classroom magic</div>
+  </div>
+
+  <div class="lab-grid">
+    <!-- CLASSROOM CHALLENGE CARD (stimulates creativity) -->
+    <div class="challenge-card">
+      <div class="challenge-icon"><i class="fas fa-chalkboard-user"></i></div>
+      <h3><i class="fas fa-lightbulb"></i> Today’s Challenge</h3>
+      <div class="challenge-text" id="challengeDisplay">Students seem disengaged during theoretical lessons. Need a boost of curiosity.</div>
+      <button id="newChallengeBtn" class="btn-secondary"><i class="fas fa-dice-d6"></i> New Challenge</button>
+      <p style="margin-top: 18px; font-size: 0.8rem;"><i class="fas fa-brain"></i> How can the strategy on the right help solve this? Let your creativity bloom!</p>
+    </div>
+
+    <!-- MIXER PANEL: main interactive game -->
+    <div class="mixer-panel">
+      <!-- Category 1: Teaching Framework -->
+      <div class="category-row">
+        <div class="cat-info">
+          <span class="cat-label"><i class="fas fa-chalkboard"></i> TEACHING FRAMEWORK</span>
+          <div class="cat-value" id="frameworkValue">Project-Based Learning (PBL)</div>
+        </div>
+        <button class="randomize-btn" id="randomFrameworkBtn" aria-label="randomize framework"><i class="fas fa-shuffle"></i></button>
+      </div>
+      <!-- Category 2: Creative Catalyst -->
+      <div class="category-row">
+        <div class="cat-info">
+          <span class="cat-label"><i class="fas fa-magic"></i> CREATIVE CATALYST</span>
+          <div class="cat-value" id="catalystValue">Role-Playing & Dramatization</div>
+        </div>
+        <button class="randomize-btn" id="randomCatalystBtn"><i class="fas fa-shuffle"></i></button>
+      </div>
+      <!-- Category 3: Engagement Twist -->
+      <div class="category-row">
+        <div class="cat-info">
+          <span class="cat-label"><i class="fas fa-dice-d20"></i> ENGAGEMENT TWIST</span>
+          <div class="cat-value" id="twistValue">Time Travel Narrative</div>
+        </div>
+        <button class="randomize-btn" id="randomTwistBtn"><i class="fas fa-shuffle"></i></button>
+      </div>
+
+      <div class="action-buttons">
+        <button id="surpriseMeBtn" class="btn-primary"><i class="fas fa-hat-wizard"></i> SURPRISE ME! (Full Mix)</button>
+        <button id="saveIdeaBtn" class="btn-outline"><i class="fas fa-bookmark"></i> Save to Notebook</button>
+      </div>
+
+      <!-- Generated strategy output -->
+      <div class="idea-output" id="ideaOutput">
+        <div class="idea-title"><i class="fas fa-sparkles"></i> Creative Teaching Strategy</div>
+        <div class="idea-desc" id="dynamicDesc">Combine PBL with role‑play and time travel narrative to immerse students in historical problem‑solving. Learners become time agents solving real‑world issues, boosting empathy and critical thinking.</div>
+      </div>
+
+      <div class="stats-badge" id="exploreCounter"><i class="fas fa-chart-simple"></i> Ideas explored: 0</div>
+    </div>
+  </div>
+
+  <!-- IDEA NOTEBOOK: store creative outputs -->
+  <div class="notebook">
+    <div class="notebook-header">
+      <h3><i class="fas fa-pen-fancy"></i> ✨ Idea Notebook ✨</h3>
+      <button id="clearNotebookBtn" class="btn-secondary" style="background:#eedbcb;"><i class="fas fa-trash-alt"></i> Clear all</button>
+    </div>
+    <div id="savedIdeasContainer" class="saved-list">
+      <div class="empty-notebook"><i class="fas fa-folder-open"></i> No saved ideas yet. Mix & click "Save to Notebook"!</div>
+    </div>
+    <p style="margin-top: 12px; font-size: 0.75rem; text-align: center;"><i class="fas fa-lightbulb"></i> Collect your favorite teaching mixes – use them for lesson planning or warm-ups!</p>
+  </div>
+  <footer>🎓 Creative Teaching Lab • Generate random pedagogies & spark innovation in your classroom</footer>
+</div>
+
+<script>
+  // ---------- DATA ARRAYS (rich creative approaches) ----------
+  const teachingFrameworks = [
+    "Project-Based Learning (PBL)", "Inquiry-Based Learning", "Gamification", "Design Thinking",
+    "Culturally Responsive Teaching", "Flipped Classroom", "Problem-Posing Education",
+    "Constructivist Learning", "Place-Based Education", "Social-Emotional Learning (SEL) Integration",
+    "Montessori-Inspired Choice", "Maker-Centered Learning", "Critical Pedagogy", "Translanguaging Pedagogy"
+  ];
+
+  const creativeCatalysts = [
+    "Role-Playing & Dramatization", "Digital Storytelling / Podcasts", "Interactive Simulations",
+    "Art & Visual Journaling", "Debate & Public Forum", "Music & Rhythm Composition",
+    "Escape Room Challenges", "Physical Movement / Kinesthetic", "Peer Teaching & Jigsaw",
+    "Virtual / Augmented Reality", "Mystery / Investigation", "Game-Based Learning Platforms",
+    "Comic Strip Creation", "Improvisation Games"
+  ];
+
+  const engagementTwists = [
+    "Time Travel Narrative", "Mystery Boxes (Surprise Props)", "Choice Boards & Menus",
+    "Student-Created Rubrics", "Classroom Transformation", "Real-World Client Project",
+    "Pass the Mic (Rotating Leader)", "Randomized Roles (Cards)", "Walk & Talk Gallery",
+    "Failure Celebration (Iteration)", "Genius Hour / 20% Time", "AI-Assisted Collaboration",
+    "Epic Quest Theme", "‘Shark Tank’ Pitch Mode"
+  ];
+
+  // Classroom Challenges (provoke creative thinking)
+  const classroomChallenges = [
+    "Students are reluctant to ask questions or participate.",
+    "Mixed ability levels – some finish early, others struggle.",
+    "Low energy after lunch; passive note-taking.",
+    "Foreign language anxiety blocks oral production.",
+    "Abstract scientific concepts feel disconnected from real life.",
+    "Students see little relevance in historical events.",
+    "Group work leads to social loafing & conflict.",
+    "Fear of mistakes: perfectionism kills creativity.",
+    "Short attention spans during direct instruction.",
+    "Lack of collaboration between introverted & extroverted students.",
+    "Difficulty transferring knowledge to new situations.",
+    "Students resist open-ended tasks, want ‘right answers’ only."
+  ];
+
+  // ---------- GAME STATE ----------
+  let currentFramework = teachingFrameworks[0];
+  let currentCatalyst = creativeCatalysts[0];
+  let currentTwist = engagementTwists[0];
+  let ideasExploredCount = 0;     // increments with Surprise Me!
+  let savedIdeas = [];            // store objects { title, fullDescription }
+
+  // DOM elements
+  const frameworkSpan = document.getElementById("frameworkValue");
+  const catalystSpan = document.getElementById("catalystValue");
+  const twistSpan = document.getElementById("twistValue");
+  const dynamicDescDiv = document.getElementById("dynamicDesc");
+  const exploreCounterSpan = document.getElementById("exploreCounter");
+  const savedContainer = document.getElementById("savedIdeasContainer");
+  const challengeDisplaySpan = document.getElementById("challengeDisplay");
+
+  // Helper: generate rich description from current pedagogy + catalyst + twist
+  function generateRichDescription(framework, catalyst, twist) {
+    // concise but creative, actionable output
+    const frameworkShort = framework.replace(/\(.*?\)/g, '').trim();
+    let description = `✨ ${framework} ✨ amplified with ✨${catalyst}✨ and the twist: “${twist}”. `;
+    
+    // Add customized pedagogical flavor based on keywords
+    if (framework.includes("Project-Based")) {
+      description += `Students tackle a real-world challenge, using ${catalyst.toLowerCase()} to present outcomes. The ${twist.toLowerCase()} adds urgency and narrative depth. → Outcome: authentic portfolio & public showcase.`;
+    } else if (framework.includes("Inquiry")) {
+      description += `Learners drive questions & investigations. With ${catalyst.toLowerCase()}, they explore evidence creatively. The ${twist.toLowerCase()} transforms the classroom into an exploratory wonderland. → Cultivates curiosity and self-directed discovery.`;
+    } else if (framework.includes("Gamification")) {
+      description += `Turn learning into a quest! ${catalyst} mechanics fuel motivation, while the "${twist}" twist introduces surprising checkpoints and rewards. → Learners unlock achievements and collaborate.`;
+    } else if (framework.includes("Design Thinking")) {
+      description += `Empathize → Define → Ideate → Prototype → Test. Using ${catalyst} as empathy tool, and the “${twist}” twist to rethink constraints. → Sparks innovative solutions and iteration mindset.`;
+    } else if (framework.includes("Flipped")) {
+      description += `Pre-class content + in-class active application. ${catalyst} becomes the active learning engine, magnified by the “${twist}” engagement hook. → Maximizes peer interaction & deeper analysis.`;
+    } else if (framework.includes("Culturally Responsive")) {
+      description += `Honor students' cultural assets. ${catalyst} allows identity expression, while ${twist} creates inclusive rituals. → Builds belonging and academic rigor.`;
+    } else if (framework.includes("SEL")) {
+      description += `Integrates emotional check-ins and growth mindset. ${catalyst} fosters empathy & collaboration, and the twist “${twist}” invites joyful risk-taking. → Nurtures whole-child development.`;
+    } else if (framework.includes("Maker")) {
+      description += `Hands-on creation & tinkering. Using ${catalyst} students prototype, debug, share. The twist “${twist}” turns making into an epic challenge. → Develops resilience and engineering thinking.`;
+    } else {
+      description += `Using ${framework}, we invite students to engage with ${catalyst}. The "${twist}" twist ensures novelty and wonder. This mix encourages agency, collaboration and flexible thinking. Implementation tip: introduce the twist as a surprise element at the beginning of the lesson.`;
+    }
+    // add extra spark for catalyst if needed
+    if (catalyst.includes("Role-Playing")) {
+      description += ` Role‑play deepens perspective‑taking. Consider character cards and reflection dialogues.`;
+    } else if (catalyst.includes("Digital Storytelling")) {
+      description += ` Multimedia stories amplify voice. Use free tools like Canva or GarageBand.`;
+    } else if (catalyst.includes("Escape Room")) {
+      description += ` Design puzzles related to curriculum objectives — collaboration skyrockets!`;
+    } else if (catalyst.includes("Debate")) {
+      description += ` Structured debates foster critical listening & argumentation. The twist can introduce unexpected “power‑ups”.`;
+    }
+    return description;
+  }
+
+  // Update entire UI based on current variables
+  function updateUI() {
+    frameworkSpan.innerText = currentFramework;
+    catalystSpan.innerText = currentCatalyst;
+    twistSpan.innerText = currentTwist;
+    const newDescription = generateRichDescription(currentFramework, currentCatalyst, currentTwist);
+    dynamicDescDiv.innerText = newDescription;
+  }
+
+  // Randomize single category helper
+  function randomFromArray(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function randomizeFramework() {
+    let newVal = randomFromArray(teachingFrameworks);
+    while (newVal === currentFramework && teachingFrameworks.length > 1) newVal = randomFromArray(teachingFrameworks);
+    currentFramework = newVal;
+    updateUI();
+  }
+
+  function randomizeCatalyst() {
+    let newVal = randomFromArray(creativeCatalysts);
+    while (newVal === currentCatalyst && creativeCatalysts.length > 1) newVal = randomFromArray(creativeCatalysts);
+    currentCatalyst = newVal;
+    updateUI();
+  }
+
+  function randomizeTwist() {
+    let newVal = randomFromArray(engagementTwists);
+    while (newVal === currentTwist && engagementTwists.length > 1) newVal = randomFromArray(engagementTwists);
+    currentTwist = newVal;
+    updateUI();
+  }
+
+  // Surprise Me: randomize all three categories + increment explore counter + playful animation
+  function surpriseMe() {
+    randomizeFrameworkNoLoop();
+    randomizeCatalystNoLoop();
+    randomizeTwistNoLoop();
+    // force final UI refresh
+    updateUI();
+    ideasExploredCount++;
+    exploreCounterSpan.innerHTML = `<i class="fas fa-chart-simple"></i> Ideas explored: ${ideasExploredCount}`;
+    // add micro-interaction: quick pulse on output
+    const outputDiv = document.getElementById("ideaOutput");
+    outputDiv.style.transform = "scale(0.99)";
+    setTimeout(() => { outputDiv.style.transform = "scale(1)"; }, 120);
+  }
+
+  // Helper unique randomization without while infinite risk but simple random (allow same occasionally)
+  function randomizeFrameworkNoLoop() {
+    currentFramework = teachingFrameworks[Math.floor(Math.random() * teachingFrameworks.length)];
+  }
+  function randomizeCatalystNoLoop() {
+    currentCatalyst = creativeCatalysts[Math.floor(Math.random() * creativeCatalysts.length)];
+  }
+  function randomizeTwistNoLoop() {
+    currentTwist = engagementTwists[Math.floor(Math.random() * engagementTwists.length)];
+  }
+
+  // Save current combo to notebook
+  function saveCurrentIdea() {
+    const title = `${currentFramework} + ${currentCatalyst} (${currentTwist})`;
+    const fullDescription = generateRichDescription(currentFramework, currentCatalyst, currentTwist);
+    const ideaObj = {
+      id: Date.now() + Math.random(),
+      title: title,
+      description: fullDescription
+    };
+    savedIdeas.unshift(ideaObj);  // newest on top
+    renderSavedIdeas();
+  }
+
+  // Render saved ideas list
+  function renderSavedIdeas() {
+    if (!savedContainer) return;
+    if (savedIdeas.length === 0) {
+      savedContainer.innerHTML = `<div class="empty-notebook"><i class="fas fa-folder-open"></i> No saved ideas yet. Mix & click "Save to Notebook"!</div>`;
+      return;
+    }
+    let html = '';
+    savedIdeas.forEach(idea => {
+      html += `
+        <div class="saved-item" data-id="${idea.id}">
+          <div class="saved-text">
+            <strong><i class="fas fa-graduation-cap"></i> ${escapeHtml(idea.title)}</strong><br>
+            <span style="font-size:0.8rem; color:#5a3c22;">${escapeHtml(idea.description.substring(0, 140))}${idea.description.length > 140 ? '…' : ''}</span>
+          </div>
+          <button class="delete-idea" data-id="${idea.id}" title="Remove idea"><i class="fas fa-trash-can"></i></button>
+        </div>
+      `;
+    });
+    savedContainer.innerHTML = html;
+    // attach delete events
+    document.querySelectorAll('.delete-idea').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = Number(btn.getAttribute('data-id'));
+        savedIdeas = savedIdeas.filter(idea => idea.id !== id);
+        renderSavedIdeas();
+      });
+    });
+  }
+
+  // simple escape helper
+  function escapeHtml(str) {
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+      return c;
+    });
+  }
+
+  function clearNotebook() {
+    if (confirm("Clear all saved teaching ideas?")) {
+      savedIdeas = [];
+      renderSavedIdeas();
+    }
+  }
+
+  // Random challenge update
+  let currentChallenge = classroomChallenges[0];
+  function updateChallengeUI() {
+    challengeDisplaySpan.innerText = currentChallenge;
+  }
+  function randomizeChallenge() {
+    let newChallenge = randomFromArray(classroomChallenges);
+    while (newChallenge === currentChallenge && classroomChallenges.length > 1) newChallenge = randomFromArray(classroomChallenges);
+    currentChallenge = newChallenge;
+    updateChallengeUI();
+  }
+
+  // initial random setup for all categories
+  function initGame() {
+    currentFramework = randomFromArray(teachingFrameworks);
+    currentCatalyst = randomFromArray(creativeCatalysts);
+    currentTwist = randomFromArray(engagementTwists);
+    currentChallenge = randomFromArray(classroomChallenges);
+    updateUI();
+    updateChallengeUI();
+    ideasExploredCount = 0;
+    exploreCounterSpan.innerHTML = `<i class="fas fa-chart-simple"></i> Ideas explored: 0`;
+    savedIdeas = [];
+    renderSavedIdeas();
+  }
+
+  // ---- EVENT LISTENERS ----
+  document.getElementById("randomFrameworkBtn").addEventListener("click", () => {
+    randomizeFramework();
+  });
+  document.getElementById("randomCatalystBtn").addEventListener("click", () => {
+    randomizeCatalyst();
+  });
+  document.getElementById("randomTwistBtn").addEventListener("click", () => {
+    randomizeTwist();
+  });
+  document.getElementById("surpriseMeBtn").addEventListener("click", () => {
+    surpriseMe();
+  });
+  document.getElementById("saveIdeaBtn").addEventListener("click", () => {
+    saveCurrentIdea();
+  });
+  document.getElementById("clearNotebookBtn").addEventListener("click", () => {
+    clearNotebook();
+  });
+  document.getElementById("newChallengeBtn").addEventListener("click", () => {
+    randomizeChallenge();
+  });
+
+  // start everything
+  initGame();
+
+  // small extra: when individual random buttons click we don't increase exploreCounter to keep it for full mix only
+  // but it's a design choice: "ideas explored" counts full random combos, encourages using Surprise Me.
+  // perfect for game feel.
+</script>
+</body>
+</html>
